@@ -4,10 +4,9 @@ import { Menu, X, User } from 'lucide-react';
 
 interface PublicNavbarProps {
   onNavigate: (view: any) => void;
-  onLogin: (portal: 'customer' | 'staff' | 'admin') => void;
 }
 
-export const PublicNavbar: React.FC<PublicNavbarProps> = ({ onNavigate, onLogin }) => {
+export const PublicNavbar: React.FC<PublicNavbarProps> = ({ onNavigate }) => {
   const [isOpen, setIsOpen] = React.useState(false);
 
   return (
@@ -27,7 +26,7 @@ export const PublicNavbar: React.FC<PublicNavbarProps> = ({ onNavigate, onLogin 
               className="text-[10px] font-bold tracking-widest text-white/80 hover:text-teal transition-all uppercase flex items-center gap-2 px-4 py-2 border border-white/10 rounded-full hover:border-teal/50 glass-card"
             >
               <User size={12} className="text-teal" />
-              Client Portal
+              Portals
             </button>
 
             <button onClick={() => onNavigate('booking')} className="btn-primary text-[10px] py-2 px-6 flex items-center gap-2">
@@ -46,9 +45,10 @@ export const PublicNavbar: React.FC<PublicNavbarProps> = ({ onNavigate, onLogin 
       {/* Mobile Menu */}
       {isOpen && (
         <div className="md:hidden bg-charcoal/98 backdrop-blur-xl border-b border-white/10 p-4 flex flex-col gap-4">
-          <button onClick={() => { onNavigate('selection'); setIsOpen(false); }} className="text-xs font-bold tracking-widest text-white text-left uppercase">Home</button>
+          <button onClick={() => { onNavigate('landing'); setIsOpen(false); }} className="text-xs font-bold tracking-widest text-white text-left uppercase">Home</button>
           <button onClick={() => { onNavigate('landing'); setIsOpen(false); }} className="text-xs font-bold tracking-widest text-white text-left uppercase">Services</button>
           <button onClick={() => { onNavigate('estimator'); setIsOpen(false); }} className="text-xs font-bold tracking-widest text-white text-left uppercase">Estimator</button>
+          <button onClick={() => { onNavigate('selection'); setIsOpen(false); }} className="text-xs font-bold tracking-widest text-white text-left uppercase">Portal</button>
         </div>
       )}
     </nav>

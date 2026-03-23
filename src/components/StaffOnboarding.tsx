@@ -1,16 +1,16 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { Briefcase, Phone, BadgeCheck, ArrowRight, ShieldCheck } from 'lucide-react';
+import { Briefcase, Phone, ArrowRight, ShieldCheck } from 'lucide-react';
 import { db, auth } from '../firebase';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 
 interface OnboardingProps {
-  onComplete: (role: string) => void;
+  onComplete: () => void;
 }
 
 export const StaffOnboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
   const [formData, setFormData] = React.useState({
-    phone: '',
+    phoneNumber: '',
     position: 'detailing',
     experience: ''
   });
@@ -19,17 +19,22 @@ export const StaffOnboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
     e.preventDefault();
     if (!auth.currentUser) return;
 
-    await setDoc(doc(db, 'users', auth.currentUser.uid), {
+    const payload: Record<string, unknown> = {
       uid: auth.currentUser.uid,
       email: auth.currentUser.email,
-      displayName: auth.currentUser.displayName,
       role: 'employee',
       ...formData,
       onboarded: true,
-      createdAt: serverTimestamp()
-    }, { merge: true });
+      updatedAt: serverTimestamp()
+    };
 
-    onComplete('employee');
+    if (auth.currentUser.displayName) {
+      payload.displayName = auth.currentUser.displayName;
+    }
+
+    await setDoc(doc(db, 'users', auth.currentUser.uid), payload, { merge: true });
+
+    onComplete();
   };
 
   return (
@@ -57,8 +62,8 @@ export const StaffOnboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                 type="tel"
                 placeholder="+44 7000 000000"
                 className="input-field bg-white/5 border-white/10 text-white pl-12 focus:border-teal"
-                value={formData.phone}
-                onChange={e => setFormData({...formData, phone: e.target.value})}
+                value={formData.phoneNumber}
+                onChange={e => setFormData({ ...formData, phoneNumber: e.target.value })}
               />
             </div>
           </div>
@@ -68,7 +73,7 @@ export const StaffOnboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
             <select 
               className="input-field bg-white/5 border-white/10 text-white focus:border-teal"
               value={formData.position}
-              onChange={e => setFormData({...formData, position: e.target.value})}
+              onChange={e => setFormData({ ...formData, position: e.target.value })}
             >
               <option value="detailing" className="bg-charcoal text-white">Master Detailer</option>
               <option value="commercial" className="bg-charcoal text-white">Commercial Specialist</option>
@@ -84,7 +89,7 @@ export const StaffOnboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
               placeholder="e.g. 5"
               className="input-field bg-white/5 border-white/10 text-white focus:border-teal"
               value={formData.experience}
-              onChange={e => setFormData({...formData, experience: e.target.value})}
+              onChange={e => setFormData({ ...formData, experience: e.target.value })}
             />
           </div>
 

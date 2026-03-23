@@ -9,7 +9,7 @@ interface CostEstimatorProps {
 }
 
 export const CostEstimator: React.FC<CostEstimatorProps> = ({ onBook }) => {
-  const [selectedService, setSelectedService] = React.useState(SERVICES[1]); // Default to Full Detail
+  const [selectedService, setSelectedService] = React.useState(SERVICES[0]);
   const [selectedAddons, setSelectedAddons] = React.useState<string[]>([]);
 
   const toggleAddon = (id: string) => {

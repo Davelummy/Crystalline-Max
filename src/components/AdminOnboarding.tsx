@@ -1,38 +1,36 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { ShieldCheck, Key, Lock, ArrowRight, AlertTriangle } from 'lucide-react';
+import { ShieldCheck, Lock, ArrowRight, Phone } from 'lucide-react';
 import { db, auth } from '../firebase';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 
 interface OnboardingProps {
-  onComplete: (role: string) => void;
+  onComplete: () => void;
 }
 
 export const AdminOnboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
-  const [accessCode, setAccessCode] = React.useState('');
-  const [error, setError] = React.useState('');
+  const [phoneNumber, setPhoneNumber] = React.useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!auth.currentUser) return;
 
-    // In a real app, this would verify against a secret or pre-approved list
-    // For this demo, we'll allow it if they have the code "MAX-2026"
-    if (accessCode !== 'MAX-2026' && auth.currentUser.email !== 'jennerwatkins@gmail.com') {
-      setError('Invalid administrative access code.');
-      return;
-    }
-
-    await setDoc(doc(db, 'users', auth.currentUser.uid), {
+    const payload: Record<string, unknown> = {
       uid: auth.currentUser.uid,
       email: auth.currentUser.email,
-      displayName: auth.currentUser.displayName,
       role: 'admin',
+      phoneNumber,
       onboarded: true,
-      createdAt: serverTimestamp()
-    }, { merge: true });
+      updatedAt: serverTimestamp()
+    };
 
-    onComplete('admin');
+    if (auth.currentUser.displayName) {
+      payload.displayName = auth.currentUser.displayName;
+    }
+
+    await setDoc(doc(db, 'users', auth.currentUser.uid), payload, { merge: true });
+
+    onComplete();
   };
 
   return (
@@ -47,33 +45,27 @@ export const AdminOnboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
             <ShieldCheck size={32} />
           </div>
           <h1 className="text-2xl font-display uppercase tracking-wider text-white">Admin Access</h1>
-          <p className="text-white/40 text-[10px] uppercase tracking-widest mt-2">Restricted administrative portal</p>
+          <p className="text-white/40 text-[10px] uppercase tracking-widest mt-2">Complete your admin profile to continue</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label className="block text-[10px] font-bold uppercase tracking-widest text-white/40 mb-2">Access Code</label>
+            <label className="block text-[10px] font-bold uppercase tracking-widest text-white/40 mb-2">Contact Phone</label>
             <div className="relative">
-              <Key className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={16} />
+              <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={16} />
               <input 
                 required
-                type="password"
-                placeholder="Enter admin code"
+                type="tel"
+                placeholder="+44 7000 000000"
                 className="input-field bg-white/5 border-white/10 text-white pl-12 focus:border-teal"
-                value={accessCode}
-                onChange={e => { setAccessCode(e.target.value); setError(''); }}
+                value={phoneNumber}
+                onChange={e => setPhoneNumber(e.target.value)}
               />
             </div>
-            {error && (
-              <div className="mt-4 p-4 bg-red-500/10 border border-red-500/20 rounded-lg text-red-500 text-[10px] uppercase tracking-widest flex items-center gap-2">
-                <AlertTriangle size={14} />
-                {error}
-              </div>
-            )}
           </div>
 
           <button type="submit" className="btn-primary w-full flex items-center justify-center gap-2">
-            AUTHORIZE ACCESS <ArrowRight size={16} />
+            COMPLETE PROFILE <ArrowRight size={16} />
           </button>
         </form>
 

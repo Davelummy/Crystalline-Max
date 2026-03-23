@@ -1,122 +1,81 @@
 import React from 'react';
-import { db, auth } from '../firebase';
-import { collection, query, orderBy, onSnapshot, getDocs, where } from 'firebase/firestore';
+import { Activity, AlertCircle, Calendar as CalendarIcon, Clock, MapPin, Play, Users } from 'lucide-react';
 import { motion } from 'motion/react';
-import { Users, Clock, MapPin, CheckCircle2, AlertCircle, Play, Calendar as CalendarIcon, Activity } from 'lucide-react';
-import * as d3 from 'd3';
+import { collection, onSnapshot, orderBy, query, where } from 'firebase/firestore';
+import { db } from '../firebase';
+import { formatSchedule, getStatusLabel, sortBookingsByCreatedAt, sortBookingsBySchedule } from '../lib/bookings';
+import type { AppUserData, BookingRecord } from '../types';
 
 export const AdminDashboard: React.FC = () => {
   const [checkins, setCheckins] = React.useState<any[]>([]);
-  const [employees, setEmployees] = React.useState<any[]>([]);
-  const [activeServices, setActiveServices] = React.useState<any[]>([]);
-  const [schedules, setSchedules] = React.useState<any[]>([]);
+  const [employees, setEmployees] = React.useState<AppUserData[]>([]);
+  const [bookings, setBookings] = React.useState<BookingRecord[]>([]);
   const [loading, setLoading] = React.useState(true);
-  const mapRef = React.useRef<SVGSVGElement>(null);
 
   React.useEffect(() => {
-    const q = query(collection(db, 'checkins'), orderBy('timestamp', 'desc'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setCheckins(data);
-      setLoading(false);
-    }, (error) => {
-      console.error("Error fetching checkins:", error);
+    const checkinsQuery = query(collection(db, 'checkins'), orderBy('timestamp', 'desc'));
+    const employeesQuery = query(collection(db, 'users'), where('role', '==', 'employee'));
+    const bookingsQuery = query(collection(db, 'bookings'));
+
+    const unsubCheckins = onSnapshot(checkinsQuery, (snapshot) => {
+      setCheckins(snapshot.docs.map((entry) => ({ id: entry.id, ...entry.data() })));
     });
+    const unsubEmployees = onSnapshot(employeesQuery, (snapshot) => {
+      setEmployees(snapshot.docs.map((entry) => entry.data() as AppUserData));
+    });
+    const unsubBookings = onSnapshot(bookingsQuery, (snapshot) => {
+      const records = snapshot.docs.map((entry) => ({
+        id: entry.id,
+        ...(entry.data() as Omit<BookingRecord, 'id'>),
+      }));
+      setBookings(sortBookingsByCreatedAt(records));
+      setLoading(false);
+    }, () => setLoading(false));
 
-    // Mock Active Services
-    setActiveServices([
-      { id: '1', client: 'John Smith', service: 'Full Detailing', location: 'Salford Quays', status: 'In Progress', startTime: '10:00' },
-      { id: '2', client: 'Sarah Jones', service: 'Office Clean', location: 'Spinningfields', status: 'In Progress', startTime: '11:30' },
-    ]);
-
-    // Mock Schedules
-    setSchedules([
-      { id: '1', client: 'Mike Ross', service: 'Home Clean', date: 'Tomorrow', time: '09:00', staff: 'Unassigned' },
-      { id: '2', client: 'Rachel Zane', service: 'Exterior Wash', date: 'Tomorrow', time: '14:00', staff: 'Unassigned' },
-    ]);
-
-    const fetchEmployees = async () => {
-      const q = query(collection(db, 'users'), where('role', '==', 'employee'));
-      const snapshot = await getDocs(q);
-      setEmployees(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    return () => {
+      unsubCheckins();
+      unsubEmployees();
+      unsubBookings();
     };
-
-    fetchEmployees();
-    return () => unsubscribe();
   }, []);
 
-  // D3 Map Effect
-  React.useEffect(() => {
-    if (!mapRef.current || loading) return;
+  const activeBookings = bookings.filter((booking) => ['confirmed', 'in_progress'].includes(booking.status)).slice(0, 4);
+  const scheduleQueue = sortBookingsBySchedule(
+    bookings.filter((booking) => !['completed', 'cancelled'].includes(booking.status)),
+  ).slice(0, 5);
+  const pendingCount = bookings.filter((booking) => booking.status === 'pending').length;
+  const revenue = bookings.reduce((sum, booking) => sum + booking.total, 0);
 
-    const svg = d3.select(mapRef.current);
-    svg.selectAll("*").remove();
+  const areaCoverage: Array<[string, number]> = (Object.entries(
+    bookings.reduce<Record<string, number>>((counts, booking) => {
+      const area = booking.postcode?.split(' ')[0] || booking.city || 'Unknown';
+      counts[area] = (counts[area] || 0) + 1;
+      return counts;
+    }, {}),
+  ) as Array<[string, number]>)
+    .sort((left, right) => right[1] - left[1])
+    .slice(0, 4);
 
-    const width = 400;
-    const height = 300;
-
-    // Simple Manchester Map Representation
-    const projection = d3.geoMercator()
-      .center([-2.2426, 53.4808]) // Manchester center
-      .scale(40000)
-      .translate([width / 2, height / 2]);
-
-    // Mock districts
-    const districts = [
-      { name: 'City Centre', coords: [-2.2426, 53.4808], active: true },
-      { name: 'Salford', coords: [-2.2901, 53.4875], active: true },
-      { name: 'Trafford', coords: [-2.3553, 53.4441], active: false },
-      { name: 'Stockport', coords: [-2.1548, 53.4106], active: true },
-    ];
-
-    svg.selectAll("circle")
-      .data(districts)
-      .enter()
-      .append("circle")
-      .attr("cx", d => projection(d.coords as [number, number])![0])
-      .attr("cy", d => projection(d.coords as [number, number])![1])
-      .attr("r", d => d.active ? 15 : 10)
-      .attr("fill", d => d.active ? "#00D1C1" : "#ffffff10")
-      .attr("stroke", "#00D1C1")
-      .attr("stroke-width", 1)
-      .attr("opacity", 0.6);
-
-    svg.selectAll("text")
-      .data(districts)
-      .enter()
-      .append("text")
-      .attr("x", d => projection(d.coords as [number, number])![0])
-      .attr("y", d => projection(d.coords as [number, number])![1] + 25)
-      .attr("text-anchor", "middle")
-      .attr("fill", "white")
-      .attr("font-size", "8px")
-      .attr("font-weight", "bold")
-      .attr("class", "uppercase tracking-widest")
-      .text(d => d.name);
-
-  }, [loading]);
+  const maxAreaCount = areaCoverage[0]?.[1] || 1;
 
   if (loading) return <div className="pt-32 text-center">Loading Dashboard...</div>;
 
   return (
     <div className="pt-32 pb-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-      <div className="mb-12 flex justify-between items-end">
+      <div className="mb-12 flex flex-col sm:flex-row sm:justify-between sm:items-end gap-6">
         <div>
           <h1 className="text-4xl mb-4 font-display uppercase tracking-wider">Admin Control</h1>
-          <p className="text-charcoal/60">Oversee employee activity, service performance, and coverage.</p>
+          <p className="text-charcoal/60">Live operations from customer bookings, staff activity, and team assignments.</p>
         </div>
-        <div className="flex gap-4">
-          <div className="text-right">
-            <p className="text-[10px] text-white/40 uppercase tracking-widest">System Status</p>
-            <p className="text-teal font-bold uppercase tracking-widest flex items-center gap-2">
-              <Activity size={12} /> Operational
-            </p>
-          </div>
+        <div className="text-right">
+          <p className="text-[10px] text-white/40 uppercase tracking-widest">System Status</p>
+          <p className="text-teal font-bold uppercase tracking-widest flex items-center gap-2 sm:justify-end">
+            <Activity size={12} /> Operational
+          </p>
         </div>
       </div>
 
       <div className="grid lg:grid-cols-3 gap-8">
-        {/* Left Column: Stats & Map */}
         <div className="lg:col-span-1 space-y-8">
           <div className="grid grid-cols-2 gap-4">
             <div className="dark-card p-6">
@@ -131,70 +90,75 @@ export const AdminDashboard: React.FC = () => {
                 <Play className="text-teal" size={20} />
                 <h2 className="text-xs font-display uppercase tracking-widest">Live</h2>
               </div>
-              <p className="text-3xl font-bold">{activeServices.length}</p>
+              <p className="text-3xl font-bold">{activeBookings.length}</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="dark-card p-6">
+              <p className="text-[10px] text-white/40 uppercase tracking-widest mb-2">Pending</p>
+              <p className="text-2xl font-display text-teal">{pendingCount}</p>
+            </div>
+            <div className="dark-card p-6">
+              <p className="text-[10px] text-white/40 uppercase tracking-widest mb-2">Revenue</p>
+              <p className="text-2xl font-display text-teal">£{revenue.toFixed(0)}</p>
             </div>
           </div>
 
           <div className="dark-card p-6">
-            <h2 className="text-xs font-display uppercase tracking-widest mb-6 border-b border-white/10 pb-4">Area Coverage Map</h2>
-            <div className="bg-black/20 rounded-lg p-4 flex items-center justify-center">
-              <svg ref={mapRef} width="100%" height="300" viewBox="0 0 400 300" />
-            </div>
-            <div className="mt-4 flex justify-between text-[8px] uppercase tracking-[0.2em] text-white/40">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-teal" /> Active Zone
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-white/10 border border-teal" /> Expansion Zone
-              </div>
+            <h2 className="text-xs font-display uppercase tracking-widest mb-6 border-b border-white/10 pb-4">Coverage Snapshot</h2>
+            <div className="space-y-4">
+              {areaCoverage.length > 0 ? areaCoverage.map(([area, count]) => (
+                <div key={area}>
+                  <div className="flex justify-between items-center text-[10px] uppercase tracking-widest mb-2">
+                    <span>{area}</span>
+                    <span className="text-teal">{count} bookings</span>
+                  </div>
+                  <div className="h-2 rounded-full bg-white/5 overflow-hidden">
+                    <div
+                      className="h-full bg-teal rounded-full"
+                      style={{ width: `${Math.max(20, (count / maxAreaCount) * 100)}%` }}
+                    />
+                  </div>
+                </div>
+              )) : (
+                <p className="text-sm text-white/40">Coverage data appears once bookings are created.</p>
+              )}
             </div>
           </div>
         </div>
 
-        {/* Middle Column: Services in Progress & Schedules */}
         <div className="lg:col-span-1 space-y-8">
           <div className="dark-card p-6">
-            <h2 className="text-xs font-display uppercase tracking-widest mb-6 border-b border-white/10 pb-4">Services In Progress</h2>
+            <h2 className="text-xs font-display uppercase tracking-widest mb-6 border-b border-white/10 pb-4">Active & Upcoming Bookings</h2>
             <div className="space-y-4">
-              {activeServices.map(service => (
-                <div key={service.id} className="p-4 rounded bg-white/5 border border-white/5">
-                  <div className="flex justify-between items-start mb-2">
-                    <h3 className="text-xs font-bold uppercase tracking-widest">{service.client}</h3>
-                    <span className="text-[8px] bg-teal/20 text-teal px-2 py-1 rounded uppercase font-bold">Active</span>
-                  </div>
-                  <p className="text-[10px] text-white/60 uppercase tracking-widest mb-1">{service.service}</p>
-                  <div className="flex items-center gap-2 text-[8px] text-white/40 uppercase tracking-widest">
-                    <MapPin size={10} /> {service.location}
-                    <Clock size={10} className="ml-2" /> Started {service.startTime}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="dark-card p-6">
-            <h2 className="text-xs font-display uppercase tracking-widest mb-6 border-b border-white/10 pb-4">Booking Schedules</h2>
-            <div className="space-y-4">
-              {schedules.map(item => (
-                <div key={item.id} className="p-4 rounded bg-white/5 border border-white/5">
-                  <div className="flex justify-between items-start mb-2">
-                    <h3 className="text-xs font-bold uppercase tracking-widest">{item.client}</h3>
-                    <div className="flex items-center gap-1 text-[8px] text-white/40 uppercase tracking-widest">
-                      <CalendarIcon size={10} /> {item.date}
+              {scheduleQueue.length > 0 ? scheduleQueue.map((booking) => (
+                <div key={booking.id} className="p-4 rounded bg-white/5 border border-white/5">
+                  <div className="flex justify-between items-start mb-2 gap-4">
+                    <div>
+                      <h3 className="text-xs font-bold uppercase tracking-widest">{booking.customerName}</h3>
+                      <p className="text-[10px] text-white/60 uppercase tracking-widest mt-1">{booking.serviceLabel}</p>
                     </div>
+                    <span className="text-[8px] bg-teal/20 text-teal px-2 py-1 rounded uppercase font-bold">
+                      {getStatusLabel(booking.status)}
+                    </span>
                   </div>
-                  <p className="text-[10px] text-white/60 uppercase tracking-widest mb-1">{item.service}</p>
-                  <div className="flex justify-between items-center">
-                    <span className="text-[8px] text-teal uppercase tracking-widest font-bold">{item.time}</span>
-                    <span className="text-[8px] text-white/20 uppercase tracking-widest">{item.staff}</span>
+                  <div className="flex flex-col gap-1 text-[8px] text-white/40 uppercase tracking-widest">
+                    <span className="flex items-center gap-2"><CalendarIcon size={10} /> {formatSchedule(booking)}</span>
+                    <span className="flex items-center gap-2"><MapPin size={10} /> {booking.postcode}</span>
+                    <span className="flex items-center gap-2"><Users size={10} /> {booking.assignedStaffName || 'Unassigned'}</span>
                   </div>
                 </div>
-              ))}
+              )) : (
+                <div className="text-center py-10 text-white/40">
+                  <AlertCircle className="mx-auto mb-4 opacity-20" size={32} />
+                  <p className="uppercase tracking-widest text-[8px]">No bookings yet</p>
+                </div>
+              )}
             </div>
           </div>
         </div>
 
-        {/* Right Column: Live Feed */}
         <div className="lg:col-span-1">
           <div className="dark-card p-6 min-h-[600px]">
             <h2 className="text-xs font-display uppercase tracking-widest mb-6 border-b border-white/10 pb-4">Live Activity Feed</h2>
@@ -205,25 +169,27 @@ export const AdminDashboard: React.FC = () => {
                   <p className="uppercase tracking-widest text-[8px]">No activity logged yet</p>
                 </div>
               ) : (
-                checkins.slice(0, 8).map((c) => (
-                  <motion.div 
-                    key={c.id}
+                checkins.slice(0, 8).map((checkin) => (
+                  <motion.div
+                    key={checkin.id}
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     className="flex items-start gap-3 p-3 rounded bg-white/5 border border-white/5"
                   >
-                    <div className={`w-1.5 h-1.5 rounded-full mt-1.5 ${c.type === 'in' ? 'bg-teal' : 'bg-red-500'}`} />
+                    <div className={`w-1.5 h-1.5 rounded-full mt-1.5 ${checkin.type === 'in' ? 'bg-teal' : 'bg-red-500'}`} />
                     <div className="flex-grow">
                       <div className="flex justify-between items-start">
                         <h3 className="text-[10px] font-bold uppercase tracking-wider">
-                          {c.employeeName || 'Unknown'}
+                          {checkin.employeeName || 'Unknown'}
                         </h3>
                         <span className="text-[8px] text-white/40 uppercase tracking-widest">
-                          {c.timestamp?.toDate ? c.timestamp.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : new Date(c.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          {checkin.timestamp?.toDate
+                            ? checkin.timestamp.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                            : 'Pending'}
                         </span>
                       </div>
                       <p className="text-[8px] text-white/40 uppercase tracking-widest mt-0.5">
-                        Checked {c.type === 'in' ? 'In' : 'Out'}
+                        Checked {checkin.type === 'in' ? 'In' : 'Out'}
                       </p>
                     </div>
                   </motion.div>

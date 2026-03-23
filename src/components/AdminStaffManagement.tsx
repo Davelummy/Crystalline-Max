@@ -1,16 +1,141 @@
 import React from 'react';
+import {
+  BadgeCheck,
+  CheckCircle2,
+  Clock,
+  Copy,
+  Mail,
+  MapPin,
+  Search,
+  ShieldCheck,
+  Star,
+  UserPlus,
+  Users,
+} from 'lucide-react';
 import { motion } from 'motion/react';
-import { Users, UserPlus, Search, MoreVertical, Star, ShieldCheck, Clock, MapPin } from 'lucide-react';
-import { cn } from '@/src/lib/utils';
+import { collection, doc, onSnapshot, query, serverTimestamp, setDoc, updateDoc, where } from 'firebase/firestore';
+import { db } from '../firebase';
+import { formatSchedule, sortBookingsBySchedule } from '../lib/bookings';
+import type { AppUserData, BookingRecord, EmployeeInvite } from '../types';
 
-const STAFF = [
-  { id: '1619642751034-765dfdf7c58e', name: 'Marcus Thorne', role: 'Senior Specialist', rating: 4.9, status: 'active', location: 'M1, Manchester', jobs: 452 },
-  { id: '1584622650111-993a426fbf0a', name: 'Sarah Jenkins', role: 'Detailer', rating: 4.7, status: 'active', location: 'M2, Manchester', jobs: 218 },
-  { id: '1603584173870-7f3118941648', name: 'James Wilson', role: 'Cleaner', rating: 4.8, status: 'on-break', location: 'M3, Manchester', jobs: 184 },
-  { id: '1584622781564-1d987f7333c1', name: 'Elena Rodriguez', role: 'Detailer', rating: 4.6, status: 'off-duty', location: 'M4, Manchester', jobs: 92 },
-];
+function generateEmployeeId() {
+  return `CMX-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
+}
 
 export const AdminStaffManagement: React.FC = () => {
+  const [staff, setStaff] = React.useState<AppUserData[]>([]);
+  const [bookings, setBookings] = React.useState<BookingRecord[]>([]);
+  const [invites, setInvites] = React.useState<EmployeeInvite[]>([]);
+  const [search, setSearch] = React.useState('');
+  const [inviteForm, setInviteForm] = React.useState({
+    displayName: '',
+    email: '',
+    position: 'field-operator',
+  });
+  const [inviteStatus, setInviteStatus] = React.useState<string | null>(null);
+  const [inviteError, setInviteError] = React.useState<string | null>(null);
+  const [isCreatingInvite, setIsCreatingInvite] = React.useState(false);
+
+  React.useEffect(() => {
+    const staffQuery = query(collection(db, 'users'), where('role', '==', 'employee'));
+    const bookingsQuery = query(collection(db, 'bookings'));
+    const invitesQuery = query(collection(db, 'employeeInvites'));
+
+    const unsubStaff = onSnapshot(staffQuery, (snapshot) => {
+      setStaff(snapshot.docs.map((entry) => entry.data() as AppUserData));
+    });
+    const unsubBookings = onSnapshot(bookingsQuery, (snapshot) => {
+      setBookings(snapshot.docs.map((entry) => ({
+        id: entry.id,
+        ...(entry.data() as Omit<BookingRecord, 'id'>),
+      })));
+    });
+    const unsubInvites = onSnapshot(invitesQuery, (snapshot) => {
+      setInvites(snapshot.docs.map((entry) => entry.data() as EmployeeInvite));
+    });
+
+    return () => {
+      unsubStaff();
+      unsubBookings();
+      unsubInvites();
+    };
+  }, []);
+
+  const filteredStaff = staff.filter((member) => {
+    const label = `${member.displayName || ''} ${member.email || ''} ${member.position || ''} ${member.employeeId || ''}`.toLowerCase();
+    return label.includes(search.toLowerCase());
+  });
+
+  const recentInvites = React.useMemo(
+    () => [...invites].sort((left, right) => left.employeeId.localeCompare(right.employeeId)).slice(0, 8),
+    [invites],
+  );
+
+  const unassignedBookings = sortBookingsBySchedule(
+    bookings.filter((booking) => !booking.assignedStaffId && !['completed', 'cancelled'].includes(booking.status)),
+  );
+
+  const handleAssign = async (bookingId: string, staffMember: AppUserData | null) => {
+    await updateDoc(doc(db, 'bookings', bookingId), {
+      assignedStaffId: staffMember?.uid || null,
+      assignedStaffName: staffMember?.displayName || staffMember?.email || null,
+      status: staffMember ? 'confirmed' : 'pending',
+      updatedAt: serverTimestamp(),
+    });
+  };
+
+  const handleCreateInvite = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setIsCreatingInvite(true);
+    setInviteStatus(null);
+    setInviteError(null);
+
+    try {
+      const employeeId = generateEmployeeId();
+      const normalizedEmail = inviteForm.email.trim().toLowerCase();
+
+      await setDoc(doc(db, 'employeeInvites', employeeId), {
+        employeeId,
+        displayName: inviteForm.displayName.trim(),
+        email: normalizedEmail,
+        position: inviteForm.position,
+        claimed: false,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+
+      setInviteStatus(`Employee ID generated: ${employeeId}`);
+      setInviteForm({
+        displayName: '',
+        email: '',
+        position: 'field-operator',
+      });
+    } catch (error) {
+      console.error('Failed to create employee invite:', error);
+      setInviteError('Employee ID could not be generated. Check Firestore permissions and try again.');
+    } finally {
+      setIsCreatingInvite(false);
+    }
+  };
+
+  const copyInvite = async (employeeId: string) => {
+    if (!navigator.clipboard) {
+      setInviteError('Clipboard access is not available in this browser.');
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(employeeId);
+      setInviteStatus(`Copied ${employeeId} to clipboard.`);
+      setInviteError(null);
+    } catch (error) {
+      console.error('Failed to copy employee ID:', error);
+      setInviteError('Copy failed. You can still share the employee ID manually.');
+    }
+  };
+
+  const getAssignedCount = (staffId: string) => bookings.filter((booking) => booking.assignedStaffId === staffId).length;
+
   return (
     <div className="min-h-screen bg-charcoal pt-32 pb-20 px-4">
       <div className="max-w-6xl mx-auto">
@@ -18,81 +143,220 @@ export const AdminStaffManagement: React.FC = () => {
           <div>
             <h2 className="text-teal text-xs tracking-[0.4em] mb-4 uppercase">Human Resources</h2>
             <h3 className="text-4xl text-white font-display uppercase">Staff Management</h3>
-            <p className="text-white/40 mt-2 uppercase tracking-widest text-xs font-bold">Manage your precision team</p>
+            <p className="text-white/40 mt-2 uppercase tracking-widest text-xs font-bold">Issue employee IDs, review team records, and assign work</p>
           </div>
           <div className="flex gap-4">
             <div className="relative">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
-              <input type="text" placeholder="Search staff..." className="bg-white/5 border border-white/10 rounded-custom pl-12 pr-6 py-3 text-sm text-white focus:border-teal/50 outline-none transition-all" />
+              <input
+                type="text"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Search staff..."
+                className="bg-white/5 border border-white/10 rounded-custom pl-12 pr-6 py-3 text-sm text-white focus:border-teal/50 outline-none transition-all"
+              />
             </div>
-            <button 
-              onClick={() => alert('Add Staff flow coming soon')}
-              className="btn-primary flex items-center gap-2 px-6 py-3"
-            >
-              <UserPlus size={18} /> ADD STAFF
-            </button>
+            <div className="btn-secondary flex items-center gap-2 px-6 py-3 cursor-default">
+              <UserPlus size={18} /> {staff.length} STAFF
+            </div>
           </div>
         </header>
 
-        <div className="grid grid-cols-1 gap-4">
-          {STAFF.map((staff, idx) => (
-            <motion.div
-              key={staff.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: idx * 0.05 }}
-              className="group dark-card p-6 border-white/5 hover:border-teal/30 transition-all flex flex-wrap items-center justify-between gap-6"
-            >
-              <div className="flex items-center gap-6">
-                <div className="w-16 h-16 rounded-2xl bg-white/5 overflow-hidden border border-white/10 group-hover:border-teal/30 transition-all">
-                  <img 
-                    src={`https://images.unsplash.com/photo-${staff.id}?auto=format&fit=crop&q=80&w=200`} 
-                    className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500" 
-                    referrerPolicy="no-referrer"
+        <div className="grid gap-8">
+          <div className="grid lg:grid-cols-[1.1fr_0.9fr] gap-8">
+            <div className="dark-card p-6 border-white/5">
+              <h4 className="text-xs font-bold uppercase tracking-widest text-white/40 mb-6">Create Staff Employee ID</h4>
+              <form onSubmit={handleCreateInvite} className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-widest text-white/40 mb-2">
+                    Staff Name
+                  </label>
+                  <input
+                    type="text"
+                    value={inviteForm.displayName}
+                    onChange={(event) => setInviteForm((current) => ({ ...current, displayName: event.target.value }))}
+                    placeholder="Amina Yusuf"
+                    className="input-field bg-white/5 border-white/10 text-white focus:border-teal"
+                    required
                   />
                 </div>
-                
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <h4 className="text-xl font-display uppercase text-white">{staff.name}</h4>
-                    <ShieldCheck size={14} className="text-teal" />
-                  </div>
-                  <p className="text-teal text-xs font-bold uppercase tracking-widest mb-3">{staff.role}</p>
-                  <div className="flex flex-wrap items-center gap-6 text-[10px] text-white/40 uppercase tracking-widest font-bold">
-                    <span className="flex items-center gap-1"><Star size={12} className="fill-teal text-teal" /> {staff.rating}</span>
-                    <span className="flex items-center gap-1"><Clock size={12} className="text-teal/40" /> {staff.jobs} Jobs</span>
-                    <span className="flex items-center gap-1"><MapPin size={12} className="text-teal/40" /> {staff.location}</span>
-                  </div>
-                </div>
-              </div>
 
-              <div className="flex items-center gap-8">
-                <div className="text-right">
-                  <p className="text-[10px] text-white/20 uppercase font-bold mb-1">Status</p>
-                  <div className={cn(
-                    "px-3 py-1 rounded-full text-[8px] font-bold uppercase tracking-[0.2em] border",
-                    staff.status === 'active' ? "bg-teal/10 border-teal/20 text-teal" :
-                    staff.status === 'on-break' ? "bg-amber-500/10 border-amber-500/20 text-amber-500" :
-                    "bg-white/5 border-white/10 text-white/20"
-                  )}>
-                    {staff.status}
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-widest text-white/40 mb-2">
+                    Reserved Email
+                  </label>
+                  <div className="relative">
+                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={16} />
+                    <input
+                      type="email"
+                      value={inviteForm.email}
+                      onChange={(event) => setInviteForm((current) => ({ ...current, email: event.target.value }))}
+                      placeholder="optional@crystallinemax.co.uk"
+                      className="input-field bg-white/5 border-white/10 text-white pl-12 focus:border-teal"
+                    />
                   </div>
                 </div>
-                
-                <div className="flex gap-2">
-                  <button 
-                    onClick={() => alert(`Viewing profile for ${staff.name}`)}
-                    className="btn-secondary py-2 px-4 text-[10px]"
+
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-widest text-white/40 mb-2">
+                    Position
+                  </label>
+                  <select
+                    value={inviteForm.position}
+                    onChange={(event) => setInviteForm((current) => ({ ...current, position: event.target.value }))}
+                    className="input-field bg-white/5 border-white/10 text-white focus:border-teal"
                   >
-                    VIEW PROFILE
-                  </button>
-                  <button className="p-2 text-white/20 hover:text-white transition-colors">
-                    <MoreVertical size={20} />
+                    <option value="field-operator" className="bg-charcoal text-white">Field Operator</option>
+                    <option value="detailing" className="bg-charcoal text-white">Master Detailer</option>
+                    <option value="commercial" className="bg-charcoal text-white">Commercial Specialist</option>
+                    <option value="residential" className="bg-charcoal text-white">Residential Specialist</option>
+                  </select>
+                </div>
+
+                <div className="flex items-end">
+                  <button
+                    type="submit"
+                    disabled={isCreatingInvite}
+                    className="btn-primary w-full flex items-center justify-center gap-3 disabled:opacity-50"
+                  >
+                    <BadgeCheck size={18} />
+                    {isCreatingInvite ? 'GENERATING...' : 'ISSUE EMPLOYEE ID'}
                   </button>
                 </div>
+              </form>
+
+              <div className="mt-4 min-h-6">
+                {inviteStatus && (
+                  <p className="text-[10px] uppercase tracking-widest text-teal font-bold">{inviteStatus}</p>
+                )}
+                {inviteError && (
+                  <p className="text-[10px] uppercase tracking-widest text-red-500 font-bold">{inviteError}</p>
+                )}
               </div>
-            </motion.div>
-          ))}
+            </div>
+
+            <div className="dark-card p-6 border-white/5">
+              <h4 className="text-xs font-bold uppercase tracking-widest text-white/40 mb-6">Recent Employee IDs</h4>
+              <div className="space-y-4">
+                {recentInvites.length > 0 ? recentInvites.map((invite) => (
+                  <div key={invite.employeeId} className="rounded-2xl border border-white/5 bg-white/5 p-4">
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-widest text-white">
+                          {invite.displayName || 'Unnamed Staff Invite'}
+                        </p>
+                        <p className="text-[10px] uppercase tracking-widest text-teal mt-2">{invite.employeeId}</p>
+                        <p className="text-[10px] uppercase tracking-widest text-white/40 mt-2">
+                          {invite.email || 'Any company email can claim this ID'}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => void copyInvite(invite.employeeId)}
+                        className="rounded-xl border border-white/10 px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-white/60 hover:border-teal/40 hover:text-teal transition-colors"
+                      >
+                        <Copy size={14} />
+                      </button>
+                    </div>
+
+                    <div className="mt-4 flex flex-wrap items-center gap-4 text-[10px] uppercase tracking-widest font-bold">
+                      <span className={invite.claimed ? 'text-emerald-400' : 'text-amber-300'}>
+                        {invite.claimed ? 'Claimed' : 'Waiting for Signup'}
+                      </span>
+                      <span className="text-white/30">{invite.position || 'field-operator'}</span>
+                      {invite.claimedByEmail && (
+                        <span className="text-white/30">{invite.claimedByEmail}</span>
+                      )}
+                    </div>
+                  </div>
+                )) : (
+                  <p className="text-sm text-white/50">No employee IDs issued yet.</p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="grid lg:grid-cols-[1.2fr_0.8fr] gap-8">
+            <div className="grid grid-cols-1 gap-4">
+              {filteredStaff.length > 0 ? filteredStaff.map((member, idx) => (
+                <motion.div
+                  key={member.uid}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: idx * 0.05 }}
+                  className="group dark-card p-6 border-white/5 hover:border-teal/30 transition-all flex flex-wrap items-center justify-between gap-6"
+                >
+                  <div className="flex items-center gap-6">
+                    <div className="w-16 h-16 rounded-2xl bg-white/5 overflow-hidden border border-white/10 group-hover:border-teal/30 transition-all flex items-center justify-center">
+                      <Users className="text-teal" />
+                    </div>
+
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <h4 className="text-xl font-display uppercase text-white">{member.displayName || member.email}</h4>
+                        <ShieldCheck size={14} className="text-teal" />
+                      </div>
+                      <p className="text-teal text-xs font-bold uppercase tracking-widest mb-3">{member.position || 'Field Specialist'}</p>
+                      <div className="flex flex-wrap items-center gap-6 text-[10px] text-white/40 uppercase tracking-widest font-bold">
+                        <span className="flex items-center gap-1"><BadgeCheck size={12} className="text-teal" /> {member.employeeId || 'No ID saved'}</span>
+                        <span className="flex items-center gap-1"><Star size={12} className="fill-teal text-teal" /> {member.experience || '0'} yrs</span>
+                        <span className="flex items-center gap-1"><Clock size={12} className="text-teal/40" /> {getAssignedCount(member.uid)} assigned</span>
+                        <span className="flex items-center gap-1"><MapPin size={12} className="text-teal/40" /> {member.postcode || 'Manchester'}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="text-right">
+                    <p className="text-[10px] text-white/20 uppercase font-bold mb-1">Contact</p>
+                    <p className="text-[10px] uppercase tracking-widest text-white/60">{member.phoneNumber || 'No phone saved'}</p>
+                  </div>
+                </motion.div>
+              )) : (
+                <div className="dark-card p-8 text-sm text-white/50">
+                  No staff records found yet. Issue employee IDs above, then have staff create their own account from the public portal.
+                </div>
+              )}
+            </div>
+
+            <div className="dark-card p-6 border-white/5 h-fit">
+              <h4 className="text-xs font-bold uppercase tracking-widest text-white/40 mb-6">Assignment Queue</h4>
+              <div className="space-y-4">
+                {unassignedBookings.length > 0 ? unassignedBookings.map((booking) => (
+                  <div key={booking.id} className="rounded-2xl border border-white/5 bg-white/5 p-4 space-y-4">
+                    <div>
+                      <p className="text-xs font-bold uppercase tracking-widest text-white">{booking.customerName}</p>
+                      <p className="text-[10px] uppercase tracking-widest text-white/40 mt-1">{booking.serviceLabel}</p>
+                      <p className="text-[10px] uppercase tracking-widest text-teal mt-2">{formatSchedule(booking)}</p>
+                    </div>
+                    <select
+                      className="input-field bg-white/5 border-white/10 text-white focus:border-teal"
+                      value={booking.assignedStaffId || ''}
+                      onChange={(event) => {
+                        const selected = staff.find((member) => member.uid === event.target.value) || null;
+                        void handleAssign(booking.id, selected);
+                      }}
+                    >
+                      <option value="" className="bg-charcoal text-white">Assign staff member</option>
+                      {staff.map((member) => (
+                        <option key={member.uid} value={member.uid} className="bg-charcoal text-white">
+                          {member.displayName || member.email}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )) : (
+                  <p className="text-sm text-white/50">All pending bookings are assigned or there are no bookings yet.</p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="dark-card p-6 border-white/5">
+            <div className="flex items-center gap-3 text-white/30 text-[10px] uppercase tracking-widest font-bold">
+              <CheckCircle2 size={14} className="text-teal" />
+              Staff account flow: admin issues employee ID, staff creates account with employee ID plus company email, admin accounts stay manually provisioned in Firestore.
+            </div>
+          </div>
         </div>
       </div>
     </div>

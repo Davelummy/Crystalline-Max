@@ -1,47 +1,6 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // ===============================================================
-    // Assumed Data Model
-    // ===============================================================
-    //
-    // Collection: users
-    // Document ID: userId (Auth UID)
-    // Fields:
-    //   - uid: string (required)
-    //   - email: string (required)
-    //   - role: string (required, ['admin', 'employee', 'client'])
-    //   - bookingCount: int (optional)
-    //   - phoneNumber: string (optional)
-    //   - address: string (optional)
-    //   - city: string (optional)
-    //   - postcode: string (optional)
-    //   - onboarded: bool (optional)
-    //   - createdAt: timestamp (required)
-    //
-    // Collection: bookings
-    // Document ID: auto-generated
-    // Fields:
-    //   - userId: string (required)
-    //   - serviceId: string (required)
-    //   - package: string (optional)
-    //   - addons: list (optional)
-    //   - address: string (optional)
-    //   - date: string (optional)
-    //   - time: string (optional)
-    //   - timeWindow: string (optional)
-    //   - total: number (optional)
-    //   - status: string (required, ['pending', 'confirmed', 'completed', 'cancelled'])
-    //   - paymentStatus: string (optional, ['pending', 'paid'])
-    //   - createdAt: timestamp (required)
-    //
-    // ===============================================================
-
-    // ===============================================================
-    // Helper Functions
-    // ===============================================================
-    
     function isAuthenticated() {
       return request.auth != null;
     }
@@ -50,34 +9,179 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == userId;
     }
 
+    function actorDoc() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+
+    function actorRole() {
+      return isAuthenticated() && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        ? actorDoc().data.role
+        : null;
+    }
+
     function isAdmin() {
-      return isAuthenticated() && (
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
-        (request.auth.token.email == "jennerwatkins@gmail.com" && request.auth.token.email_verified == true)
-      );
+      return actorRole() == 'admin';
     }
 
     function isEmployee() {
-      return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'employee';
+      return actorRole() == 'employee' || actorRole() == 'admin';
     }
 
-    function isValidUser(data) {
+    function isCompanyEmail() {
+      return isAuthenticated() &&
+             request.auth.token.email is string &&
+             request.auth.token.email.matches('.*@crystallinemax\\.co\\.uk$');
+    }
+
+    function isAuthEmail(email) {
+      return isAuthenticated() &&
+             request.auth.token.email is string &&
+             request.auth.token.email == email;
+    }
+
+    function inviteDoc(employeeId) {
+      return get(/databases/$(database)/documents/employeeInvites/$(employeeId));
+    }
+
+    function hasValidEmployeeInvite(employeeId, email) {
+      return exists(/databases/$(database)/documents/employeeInvites/$(employeeId)) &&
+             inviteDoc(employeeId).data.employeeId == employeeId &&
+             inviteDoc(employeeId).data.claimed == false &&
+             (
+               inviteDoc(employeeId).data.email == '' ||
+               inviteDoc(employeeId).data.email == email
+             );
+    }
+
+    function isValidUser(data, userId) {
       let requiredFields = ['uid', 'email', 'role', 'createdAt'];
-      let allowedFields = ['uid', 'email', 'role', 'createdAt', 'displayName', 'bookingCount', 'phoneNumber', 'address', 'city', 'postcode', 'onboarded'];
+      let allowedFields = [
+        'uid',
+        'email',
+        'role',
+        'displayName',
+        'employeeId',
+        'bookingCount',
+        'phoneNumber',
+        'address',
+        'city',
+        'postcode',
+        'position',
+        'experience',
+        'onboarded',
+        'createdAt',
+        'updatedAt'
+      ];
+
       return data.keys().hasAll(requiredFields) &&
              data.keys().hasOnly(allowedFields) &&
-             data.uid is string &&
+             data.uid == userId &&
              data.email is string &&
              data.role in ['admin', 'employee', 'client'] &&
-             (data.createdAt is timestamp || data.createdAt is string);
+             (!('displayName' in data) || data.displayName == null || data.displayName is string) &&
+             (!('employeeId' in data) || data.employeeId is string) &&
+             (!('phoneNumber' in data) || data.phoneNumber is string) &&
+             (!('address' in data) || data.address is string) &&
+             (!('city' in data) || data.city is string) &&
+             (!('postcode' in data) || data.postcode is string) &&
+             (!('position' in data) || data.position is string) &&
+             (!('experience' in data) || data.experience is string) &&
+             (!('onboarded' in data) || data.onboarded is bool) &&
+             (data.createdAt is timestamp || data.createdAt is string) &&
+             (!('updatedAt' in data) || data.updatedAt is timestamp || data.updatedAt is string) &&
+             (!('bookingCount' in data) || data.bookingCount is int);
+    }
+
+    function isValidInvite(data, employeeId) {
+      let requiredFields = ['employeeId', 'displayName', 'email', 'position', 'claimed', 'createdAt'];
+      let allowedFields = requiredFields.concat([
+        'claimedAt',
+        'claimedByUid',
+        'claimedByEmail',
+        'updatedAt'
+      ]);
+
+      return data.keys().hasAll(requiredFields) &&
+             data.keys().hasOnly(allowedFields) &&
+             data.employeeId == employeeId &&
+             data.displayName is string &&
+             data.email is string &&
+             data.position is string &&
+             data.claimed is bool &&
+             (data.createdAt is timestamp || data.createdAt is string) &&
+             (!('claimedAt' in data) || data.claimedAt is timestamp || data.claimedAt is string) &&
+             (!('claimedByUid' in data) || data.claimedByUid is string) &&
+             (!('claimedByEmail' in data) || data.claimedByEmail is string) &&
+             (!('updatedAt' in data) || data.updatedAt is timestamp || data.updatedAt is string);
+    }
+
+    function isClaimingInvite(employeeId) {
+      return isCompanyEmail() &&
+             resource.data.employeeId == employeeId &&
+             resource.data.claimed == false &&
+             request.resource.data.employeeId == resource.data.employeeId &&
+             request.resource.data.displayName == resource.data.displayName &&
+             request.resource.data.email == resource.data.email &&
+             request.resource.data.position == resource.data.position &&
+             request.resource.data.createdAt == resource.data.createdAt &&
+             request.resource.data.claimed == true &&
+             request.resource.data.claimedByUid == request.auth.uid &&
+             request.resource.data.claimedByEmail == request.auth.token.email &&
+             (resource.data.email == '' || resource.data.email == request.auth.token.email) &&
+             request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+               'claimed',
+               'claimedAt',
+               'claimedByUid',
+               'claimedByEmail',
+               'updatedAt'
+             ]) &&
+             isValidInvite(request.resource.data, employeeId);
     }
 
     function isValidBooking(data) {
-      let requiredFields = ['userId', 'serviceId', 'status', 'createdAt'];
+      let requiredFields = [
+        'userId',
+        'customerName',
+        'customerEmail',
+        'serviceId',
+        'serviceLabel',
+        'addons',
+        'address',
+        'city',
+        'postcode',
+        'date',
+        'time',
+        'timeWindow',
+        'total',
+        'status',
+        'paymentStatus',
+        'createdAt'
+      ];
+      let allowedFields = requiredFields.concat([
+        'assignedStaffId',
+        'assignedStaffName',
+        'updatedAt'
+      ]);
+
       return data.keys().hasAll(requiredFields) &&
-             data.userId == request.auth.uid &&
-             data.status in ['pending', 'confirmed', 'completed', 'cancelled'] &&
-             (data.createdAt is timestamp || data.createdAt is string);
+             data.keys().hasOnly(allowedFields) &&
+             data.userId is string &&
+             data.customerEmail is string &&
+             data.customerName is string &&
+             data.serviceId is string &&
+             data.serviceLabel is string &&
+             data.addons is list &&
+             data.address is string &&
+             data.city is string &&
+             data.postcode is string &&
+             data.date is string &&
+             data.time is string &&
+             data.timeWindow is string &&
+             data.total is number &&
+             data.status in ['pending', 'confirmed', 'in_progress', 'completed', 'cancelled'] &&
+             data.paymentStatus in ['pending', 'paid', 'not_required'] &&
+             (data.createdAt is timestamp || data.createdAt is string) &&
+             (!('updatedAt' in data) || data.updatedAt is timestamp || data.updatedAt is string);
     }
 
     function isValidCheckIn(data) {
@@ -87,35 +191,77 @@ service cloud.firestore {
              data.timestamp is timestamp;
     }
 
-    // ===============================================================
-    // Rules
-    // ===============================================================
-
     match /users/{userId} {
-      allow read: if isAuthenticated() && (isOwner(userId) || isAdmin());
-      allow create: if isAuthenticated() && isOwner(userId) && isValidUser(request.resource.data) && (request.resource.data.role == 'client' || isAdmin());
-      allow update: if isAuthenticated() && isOwner(userId) && 
-                    isValidUser(request.resource.data) && 
-                    (request.resource.data.role == resource.data.role || isAdmin()) &&
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId) &&
+                    isValidUser(request.resource.data, userId) &&
+                    isAuthEmail(request.resource.data.email) &&
                     (
-                      !request.resource.data.diff(resource.data).affectedKeys().hasAny(['bookingCount']) ||
+                      request.resource.data.role == 'client' ||
                       (
-                        request.resource.data.bookingCount == resource.data.bookingCount + 1 ||
-                        (resource.data.bookingCount == 1 && !('bookingCount' in resource.data))
+                        request.resource.data.role == 'employee' &&
+                        isCompanyEmail() &&
+                        'employeeId' in request.resource.data &&
+                        hasValidEmployeeInvite(request.resource.data.employeeId, request.resource.data.email)
                       )
                     );
+      allow update: if (
+        isOwner(userId) &&
+        isValidUser(request.resource.data, userId) &&
+        request.resource.data.role == resource.data.role &&
+        request.resource.data.uid == resource.data.uid &&
+        request.resource.data.email == resource.data.email &&
+        (
+          resource.data.role != 'employee' ||
+          request.resource.data.employeeId == resource.data.employeeId
+        )
+      ) || (
+        isAdmin() &&
+        isValidUser(request.resource.data, userId) &&
+        request.resource.data.uid == resource.data.uid &&
+        request.resource.data.email == resource.data.email
+      );
     }
 
-    match /checkins/{checkinId} {
-      allow read: if isAdmin();
-      allow list: if isAdmin() || (isAuthenticated() && request.query.limit <= 50 && request.query.filters.employeeUid == request.auth.uid);
-      allow create: if isAuthenticated() && (isEmployee() || isAdmin()) && isValidCheckIn(request.resource.data);
+    match /employeeInvites/{employeeId} {
+      allow get: if isAdmin() || isCompanyEmail();
+      allow list: if isAdmin();
+      allow create: if isAdmin() && isValidInvite(request.resource.data, employeeId);
+      allow update: if (
+        isAdmin() &&
+        isValidInvite(request.resource.data, employeeId)
+      ) || isClaimingInvite(employeeId);
+      allow delete: if isAdmin();
     }
 
     match /bookings/{bookingId} {
-      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin() || isEmployee());
-      allow create: if isAuthenticated() && isValidBooking(request.resource.data);
-      allow update: if isAdmin() || (isEmployee() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']));
+      allow read: if isAuthenticated() &&
+                  (resource.data.userId == request.auth.uid || isEmployee());
+      allow create: if isAuthenticated() &&
+                    isValidBooking(request.resource.data) &&
+                    request.resource.data.userId == request.auth.uid &&
+                    request.resource.data.customerEmail == request.auth.token.email;
+      allow update: if (
+        isAuthenticated() &&
+        resource.data.userId == request.auth.uid &&
+        request.resource.data.userId == resource.data.userId &&
+        request.resource.data.status == 'cancelled' &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt'])
+      ) || (
+        isEmployee() &&
+        isValidBooking(request.resource.data)
+      );
+    }
+
+    match /checkins/{checkinId} {
+      allow get: if isAdmin() || (isAuthenticated() && resource.data.employeeUid == request.auth.uid);
+      allow list: if isAdmin() || isEmployee();
+      allow create: if isEmployee() && isValidCheckIn(request.resource.data);
+    }
+
+    match /settings/{settingId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
     }
 
     match /{path=**} {

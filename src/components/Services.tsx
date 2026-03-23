@@ -6,6 +6,7 @@ import { SafeImage } from './SafeImage';
 const services = [
   {
     id: 'car',
+    bookingId: 'car-full',
     title: 'Car Detailing',
     desc: 'Full interior and exterior restoration using premium ceramic coatings.',
     details: [
@@ -19,6 +20,7 @@ const services = [
   },
   {
     id: 'home',
+    bookingId: 'home',
     title: 'Home Cleaning',
     desc: 'Deep residential cleaning with crystalline standard sanitization.',
     details: [
@@ -32,6 +34,7 @@ const services = [
   },
   {
     id: 'office',
+    bookingId: 'office',
     title: 'Office Cleaning',
     desc: 'Commercial workspace maintenance for high-performance teams.',
     details: [
@@ -147,7 +150,7 @@ export const Services: React.FC<ServicesProps> = ({ onBook }) => {
                   </button>
                 </div>
                 <button 
-                  onClick={() => onBook?.(service.id)}
+                  onClick={() => onBook?.(service.bookingId)}
                   className="btn-primary w-full py-3 text-[10px] flex items-center justify-center gap-2"
                 >
                   BOOK NOW <ArrowRight size={14} />

@@ -1,36 +1,40 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { User, Mail, Phone, MapPin, ArrowRight } from 'lucide-react';
+import { User, Phone, MapPin, ArrowRight } from 'lucide-react';
 import { db, auth } from '../firebase';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
 
 interface OnboardingProps {
-  onComplete: (role: string) => void;
+  onComplete: () => void;
 }
 
 export const CustomerOnboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
-  const [step, setStep] = React.useState(1);
   const [formData, setFormData] = React.useState({
-    phone: '',
+    phoneNumber: '',
     address: '',
-    preferences: ''
+    city: '',
+    postcode: ''
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!auth.currentUser) return;
 
-    await setDoc(doc(db, 'users', auth.currentUser.uid), {
+    const userRef = doc(db, 'users', auth.currentUser.uid);
+    const existing = await getDoc(userRef);
+
+    await setDoc(userRef, {
       uid: auth.currentUser.uid,
       email: auth.currentUser.email,
       displayName: auth.currentUser.displayName,
       role: 'client',
       ...formData,
       onboarded: true,
-      createdAt: serverTimestamp()
+      ...(existing.exists() ? {} : { bookingCount: 0, createdAt: serverTimestamp() }),
+      updatedAt: serverTimestamp()
     }, { merge: true });
 
-    onComplete('client');
+    onComplete();
   };
 
   return (
@@ -57,9 +61,9 @@ export const CustomerOnboarding: React.FC<OnboardingProps> = ({ onComplete }) =>
                 required
                 type="tel"
                 placeholder="+44 7000 000000"
-                className="input-field pl-12"
-                value={formData.phone}
-                onChange={e => setFormData({...formData, phone: e.target.value})}
+                className="input-field-light pl-12"
+                value={formData.phoneNumber}
+                onChange={e => setFormData({ ...formData, phoneNumber: e.target.value })}
               />
             </div>
           </div>
@@ -72,9 +76,34 @@ export const CustomerOnboarding: React.FC<OnboardingProps> = ({ onComplete }) =>
                 required
                 type="text"
                 placeholder="123 Street Name, Manchester"
-                className="input-field pl-12"
+                className="input-field-light pl-12"
                 value={formData.address}
-                onChange={e => setFormData({...formData, address: e.target.value})}
+                onChange={e => setFormData({ ...formData, address: e.target.value })}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-[10px] font-bold uppercase tracking-widest text-charcoal/60 mb-2">City</label>
+              <input
+                required
+                type="text"
+                placeholder="Manchester"
+                className="input-field-light"
+                value={formData.city}
+                onChange={e => setFormData({ ...formData, city: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className="block text-[10px] font-bold uppercase tracking-widest text-charcoal/60 mb-2">Postcode</label>
+              <input
+                required
+                type="text"
+                placeholder="M1 4BT"
+                className="input-field-light"
+                value={formData.postcode}
+                onChange={e => setFormData({ ...formData, postcode: e.target.value })}
               />
             </div>
           </div>

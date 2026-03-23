@@ -1,6 +1,6 @@
 import React from 'react';
 import { db, auth } from '../firebase';
-import { collection, addDoc, serverTimestamp, query, where, orderBy, limit, onSnapshot } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, query, where, onSnapshot } from 'firebase/firestore';
 import { motion, AnimatePresence } from 'motion/react';
 import { LogIn, LogOut, MapPin, CheckCircle2, AlertCircle, Clock } from 'lucide-react';
 
@@ -15,14 +15,18 @@ export const EmployeeCheckIn: React.FC = () => {
 
     const q = query(
       collection(db, 'checkins'),
-      where('employeeUid', '==', auth.currentUser.uid),
-      orderBy('timestamp', 'desc'),
-      limit(1)
+      where('employeeUid', '==', auth.currentUser.uid)
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       if (!snapshot.empty) {
-        const last = snapshot.docs[0].data();
+        const last = snapshot.docs
+          .map((entry) => entry.data())
+          .sort((left, right) => {
+            const leftValue = left.timestamp?.toDate ? left.timestamp.toDate().getTime() : 0;
+            const rightValue = right.timestamp?.toDate ? right.timestamp.toDate().getTime() : 0;
+            return rightValue - leftValue;
+          })[0];
         setLastAction(last);
         setStatus(last.type === 'in' ? 'in' : 'out');
       } else {

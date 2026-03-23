@@ -1,19 +1,21 @@
 import React from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { MapPin, Calendar, CreditCard, ChevronRight, Check, LogIn, UserPlus, Sparkles, Clock } from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
+import { ChevronRight, Check, Clock, LogIn, MapPin, Sparkles } from 'lucide-react';
+import { collection, addDoc, doc, getDoc, increment, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore';
+import { getAuthErrorMessage, signInWithGoogle } from '../lib/auth';
 import { cn } from '@/src/lib/utils';
 import { auth, db } from '../firebase';
-import { signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
-import { doc, getDoc, updateDoc, increment, addDoc, collection } from 'firebase/firestore';
-import { SERVICES, CAR_ADDONS, HOME_ADDONS } from '../constants';
+import { CAR_ADDONS, HOME_ADDONS, SERVICES } from '../constants';
+import { getAddonLabel, getServiceById } from '../lib/bookings';
+import type { AppUserData } from '../types';
 
 const steps = [
-  { id: 1, title: 'Service', icon: Check },
-  { id: 2, title: 'Add-ons', icon: Check },
-  { id: 3, title: 'Location', icon: Check },
-  { id: 4, title: 'Time', icon: Check },
-  { id: 5, title: 'Account', icon: Check },
-  { id: 6, title: 'Payment', icon: Check },
+  { id: 1, title: 'Service' },
+  { id: 2, title: 'Add-ons' },
+  { id: 3, title: 'Location' },
+  { id: 4, title: 'Time' },
+  { id: 5, title: 'Account' },
+  { id: 6, title: 'Confirm' },
 ];
 
 interface BookingFlowProps {
@@ -21,113 +23,178 @@ interface BookingFlowProps {
   onComplete?: () => void;
 }
 
+interface BookingSelection {
+  serviceId: string;
+  addons: string[];
+  address: string;
+  city: string;
+  postcode: string;
+  date: string;
+  time: string;
+  timeWindow: string;
+}
+
 export const BookingFlow: React.FC<BookingFlowProps> = ({ initialServiceId, onComplete }) => {
   const [currentStep, setCurrentStep] = React.useState(initialServiceId ? 2 : 1);
   const [user, setUser] = React.useState(auth.currentUser);
-  const [userData, setUserData] = React.useState<any>(null);
+  const [userData, setUserData] = React.useState<AppUserData | null>(null);
   const [isSuccess, setIsSuccess] = React.useState(false);
-  const [selection, setSelection] = React.useState({
+  const [submitting, setSubmitting] = React.useState(false);
+  const [authLoading, setAuthLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+  const [selection, setSelection] = React.useState<BookingSelection>({
     serviceId: initialServiceId || '',
-    addons: [] as string[],
+    addons: [],
     address: '',
+    city: 'Manchester',
+    postcode: '',
     time: '',
     timeWindow: '',
-    date: new Date().toISOString().split('T')[0]
+    date: new Date().toISOString().split('T')[0],
   });
 
   React.useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged(async (u) => {
-      setUser(u);
-      if (u) {
-        const userDoc = await getDoc(doc(db, 'users', u.uid));
-        if (userDoc.exists()) {
-          setUserData(userDoc.data());
-        }
-      } else {
+    const unsubscribe = auth.onAuthStateChanged(async (nextUser) => {
+      setUser(nextUser);
+      if (!nextUser) {
         setUserData(null);
+        return;
       }
+
+      const userDoc = await getDoc(doc(db, 'users', nextUser.uid));
+      setUserData(userDoc.exists() ? (userDoc.data() as AppUserData) : null);
     });
+
     return () => unsubscribe();
   }, []);
 
-  const selectedService = SERVICES.find(s => s.id === selection.serviceId);
+  const selectedService = getServiceById(selection.serviceId);
   const isDetailing = selectedService?.type === 'car';
-  const availableAddons = selectedService?.type === 'car' ? CAR_ADDONS : 
-                          selectedService?.type === 'home' ? HOME_ADDONS : [];
+  const availableAddons =
+    selectedService?.type === 'car'
+      ? CAR_ADDONS
+      : selectedService?.type === 'home'
+        ? HOME_ADDONS
+        : [];
 
-  const calculateTotal = () => {
+  const total = React.useMemo(() => {
     if (!selectedService) return 0;
-    const addonsTotal = selection.addons.reduce((acc, id) => {
-      const addon = availableAddons.find(a => a.id === id);
-      return acc + (addon?.price || 0);
+
+    const addonsTotal = selection.addons.reduce((sum, id) => {
+      const addon = availableAddons.find((item) => item.id === id);
+      return sum + (addon?.price || 0);
     }, 0);
-    
     const baseTotal = selectedService.basePrice + addonsTotal;
     const bookingCount = userData?.bookingCount || 0;
-    
-    let discount = 0;
-    if (bookingCount === 0) discount = 0.10; // 10% off first booking
-    else if (bookingCount >= 3) discount = 0.05; // 5% off from 4th booking onwards
-    
-    return baseTotal * (1 - discount);
-  };
+
+    if (bookingCount === 0) return baseTotal * 0.9;
+    if (bookingCount >= 3) return baseTotal * 0.95;
+    return baseTotal;
+  }, [availableAddons, selectedService, selection.addons, userData?.bookingCount]);
 
   const nextStep = () => {
     if (currentStep === 4 && user) {
-      setCurrentStep(6); // Skip account step if already logged in
-    } else {
-      setCurrentStep(prev => Math.min(prev + 1, 6));
+      setCurrentStep(6);
+      return;
     }
+    setCurrentStep((step) => Math.min(step + 1, 6));
   };
+
   const prevStep = () => {
     if (currentStep === 6 && user) {
       setCurrentStep(4);
-    } else {
-      setCurrentStep(prev => Math.max(prev - 1, 1));
+      return;
     }
-  };
-
-  const handleSocialLogin = async () => {
-    const provider = new GoogleAuthProvider();
-    try {
-      await signInWithPopup(auth, provider);
-      setCurrentStep(6);
-    } catch (error) {
-      console.error("Login failed:", error);
-    }
+    setCurrentStep((step) => Math.max(step - 1, 1));
   };
 
   const toggleAddon = (id: string) => {
-    setSelection(prev => ({
+    setSelection((prev) => ({
       ...prev,
-      addons: prev.addons.includes(id) 
-        ? prev.addons.filter(a => a !== id) 
-        : [...prev.addons, id]
+      addons: prev.addons.includes(id)
+        ? prev.addons.filter((addonId) => addonId !== id)
+        : [...prev.addons, id],
     }));
   };
 
-  const handleFinalize = async () => {
+  const handleSocialLogin = async () => {
+    setAuthLoading(true);
+    setError(null);
+
     try {
-      if (user) {
-        await addDoc(collection(db, 'bookings'), {
-          ...selection,
-          userId: user.uid,
-          total: calculateTotal(),
-          status: 'confirmed',
-          paymentStatus: 'paid',
-          createdAt: new Date().toISOString()
-        });
-        
-        await updateDoc(doc(db, 'users', user.uid), {
-          bookingCount: increment(1)
+      const result = await signInWithGoogle('customer');
+      if (!result?.user) return;
+      setCurrentStep(6);
+    } catch (authError) {
+      console.error('Login failed:', authError);
+      setError(getAuthErrorMessage(authError));
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const handleFinalize = async () => {
+    if (!user || !selectedService) {
+      setError('Sign in to continue with your booking request.');
+      return;
+    }
+
+    setSubmitting(true);
+    setError(null);
+
+    try {
+      const userRef = doc(db, 'users', user.uid);
+      const latestUserDoc = await getDoc(userRef);
+
+      if (!latestUserDoc.exists()) {
+        await setDoc(userRef, {
+          uid: user.uid,
+          email: user.email,
+          displayName: user.displayName,
+          role: 'client',
+          bookingCount: 0,
+          onboarded: false,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
         });
       }
+
+      await addDoc(collection(db, 'bookings'), {
+        userId: user.uid,
+        customerName: user.displayName || user.email || 'Crystalline Max Customer',
+        customerEmail: user.email,
+        serviceId: selectedService.id,
+        serviceLabel: selectedService.label,
+        addons: selection.addons,
+        address: selection.address,
+        city: selection.city,
+        postcode: selection.postcode,
+        date: selection.date,
+        time: selection.time,
+        timeWindow: selection.timeWindow,
+        total: Number(total.toFixed(2)),
+        status: 'pending',
+        paymentStatus: 'pending',
+        assignedStaffId: null,
+        assignedStaffName: null,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+
+      await updateDoc(userRef, {
+        bookingCount: increment(1),
+        updatedAt: serverTimestamp(),
+      });
+
       setIsSuccess(true);
-      setTimeout(() => {
+      window.setTimeout(() => {
         onComplete?.();
-      }, 3000);
-    } catch (error) {
-      console.error("Booking failed:", error);
+      }, 2500);
+    } catch (bookingError) {
+      console.error('Booking failed:', bookingError);
+      setError('The booking could not be saved. Check your Firebase rules and try again.');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -141,9 +208,9 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ initialServiceId, onCo
         >
           <Check size={48} strokeWidth={3} />
         </motion.div>
-        <h2 className="text-4xl font-display uppercase mb-4">Booking Confirmed!</h2>
-        <p className="text-charcoal/60 max-w-sm mb-8">
-          Thank you for choosing Crystalline Max. We've sent a confirmation email with all the details.
+        <h2 className="text-4xl font-display uppercase mb-4">Booking Request Received</h2>
+        <p className="text-charcoal/60 max-w-md mb-8">
+          Your booking has been saved as pending. You can review it in your customer portal while your team confirms the schedule and payment.
         </p>
         <div className="text-xs font-bold uppercase tracking-widest text-teal animate-pulse">
           Redirecting to your dashboard...
@@ -159,13 +226,16 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ initialServiceId, onCo
           <div className="space-y-4">
             <h3 className="text-2xl mb-6 font-display uppercase">Select Service</h3>
             <div className="grid grid-cols-1 gap-3">
-              {SERVICES.map(item => (
+              {SERVICES.map((item) => (
                 <button
                   key={item.id}
-                  onClick={() => { setSelection({ ...selection, serviceId: item.id, addons: [] }); nextStep(); }}
+                  onClick={() => {
+                    setSelection((prev) => ({ ...prev, serviceId: item.id, addons: [] }));
+                    nextStep();
+                  }}
                   className={cn(
-                    "w-full p-6 flex items-center justify-between frost-card-light hover:border-teal transition-all group",
-                    selection.serviceId === item.id && "border-teal bg-teal/5"
+                    'w-full p-6 flex items-center justify-between frost-card-light hover:border-teal transition-all group',
+                    selection.serviceId === item.id && 'border-teal bg-teal/5',
                   )}
                 >
                   <div className="flex items-center gap-4">
@@ -174,7 +244,9 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ initialServiceId, onCo
                     </div>
                     <div className="text-left">
                       <span className="block font-bold uppercase tracking-wider">{item.label}</span>
-                      <span className="text-xs text-charcoal/40 uppercase tracking-widest">Starting from £{item.basePrice}</span>
+                      <span className="text-xs text-charcoal/40 uppercase tracking-widest">
+                        Starting from £{item.basePrice}
+                      </span>
                     </div>
                   </div>
                   <ChevronRight size={20} className="text-silver" />
@@ -189,20 +261,22 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ initialServiceId, onCo
             <h3 className="text-2xl mb-6 font-display uppercase">Add Enhancements</h3>
             {availableAddons.length > 0 ? (
               <div className="grid grid-cols-1 gap-3">
-                {availableAddons.map(addon => (
+                {availableAddons.map((addon) => (
                   <button
                     key={addon.id}
                     onClick={() => toggleAddon(addon.id)}
                     className={cn(
-                      "w-full p-5 flex items-center justify-between frost-card-light transition-all",
-                      selection.addons.includes(addon.id) ? "border-teal bg-teal/5" : "hover:border-teal/30"
+                      'w-full p-5 flex items-center justify-between frost-card-light transition-all',
+                      selection.addons.includes(addon.id) ? 'border-teal bg-teal/5' : 'hover:border-teal/30',
                     )}
                   >
                     <div className="flex items-center gap-3">
-                      <div className={cn(
-                        "w-5 h-5 rounded border flex items-center justify-center",
-                        selection.addons.includes(addon.id) ? "bg-teal border-teal" : "border-charcoal/20"
-                      )}>
+                      <div
+                        className={cn(
+                          'w-5 h-5 rounded border flex items-center justify-center',
+                          selection.addons.includes(addon.id) ? 'bg-teal border-teal' : 'border-charcoal/20',
+                        )}
+                      >
                         {selection.addons.includes(addon.id) && <Check size={12} className="text-charcoal" />}
                       </div>
                       <span className="text-sm font-medium uppercase tracking-wider">{addon.label}</span>
@@ -227,27 +301,33 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ initialServiceId, onCo
             <h3 className="text-2xl mb-6 font-display uppercase">Service Location</h3>
             <div className="relative">
               <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-teal" size={20} />
-              <input 
-                type="text" 
-                placeholder="Enter Manchester address..." 
+              <input
+                type="text"
+                placeholder="Street address"
                 className="input-field-light pl-12"
                 value={selection.address}
-                onChange={(e) => setSelection({...selection, address: e.target.value})}
+                onChange={(event) => setSelection((prev) => ({ ...prev, address: event.target.value }))}
               />
             </div>
-            <div className="h-48 bg-silver/20 rounded-lg overflow-hidden relative border border-charcoal/5">
-              <div className="absolute inset-0 flex items-center justify-center text-charcoal/30 text-[10px] font-bold uppercase tracking-widest">
-                Map Preview (Manchester Area)
-              </div>
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-                <div className="w-8 h-8 bg-teal/20 rounded-full flex items-center justify-center animate-pulse">
-                  <div className="w-3 h-3 bg-teal rounded-full shadow-[0_0_10px_rgba(45,212,191,0.5)]" />
-                </div>
-              </div>
+            <div className="grid grid-cols-2 gap-3">
+              <input
+                type="text"
+                placeholder="City"
+                className="input-field-light"
+                value={selection.city}
+                onChange={(event) => setSelection((prev) => ({ ...prev, city: event.target.value }))}
+              />
+              <input
+                type="text"
+                placeholder="Postcode"
+                className="input-field-light"
+                value={selection.postcode}
+                onChange={(event) => setSelection((prev) => ({ ...prev, postcode: event.target.value }))}
+              />
             </div>
-            <button 
-              onClick={nextStep} 
-              disabled={!selection.address}
+            <button
+              onClick={nextStep}
+              disabled={!selection.address || !selection.city || !selection.postcode}
               className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed"
             >
               CONFIRM LOCATION
@@ -257,17 +337,28 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ initialServiceId, onCo
       case 4:
         return (
           <div className="space-y-6">
-            <h3 className="text-2xl mb-6 font-display uppercase">Select {isDetailing ? 'Time Slot' : 'Time Window'}</h3>
+            <h3 className="text-2xl mb-2 font-display uppercase">Select Schedule</h3>
+            <p className="text-sm text-charcoal/50">Choose the date and the slot you want us to review.</p>
+            <input
+              type="date"
+              className="input-field-light"
+              value={selection.date}
+              min={new Date().toISOString().split('T')[0]}
+              onChange={(event) => setSelection((prev) => ({ ...prev, date: event.target.value }))}
+            />
             <div className="grid grid-cols-1 gap-3">
               {isDetailing ? (
                 <div className="grid grid-cols-2 gap-3">
-                  {['08:00', '10:30', '13:00', '15:30', '18:00'].map(time => (
+                  {['08:00', '10:30', '13:00', '15:30', '18:00'].map((time) => (
                     <button
                       key={time}
-                      onClick={() => { setSelection({...selection, time, timeWindow: ''}); nextStep(); }}
+                      onClick={() => {
+                        setSelection((prev) => ({ ...prev, time, timeWindow: '' }));
+                        nextStep();
+                      }}
                       className={cn(
-                        "p-4 text-sm font-bold frost-card-light hover:border-teal transition-all",
-                        selection.time === time && "border-teal bg-teal/5"
+                        'p-4 text-sm font-bold frost-card-light hover:border-teal transition-all',
+                        selection.time === time && 'border-teal bg-teal/5',
                       )}
                     >
                       {time}
@@ -279,19 +370,22 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ initialServiceId, onCo
                   {[
                     { id: 'morning', label: 'Morning', window: '08:00 - 12:00' },
                     { id: 'afternoon', label: 'Afternoon', window: '12:00 - 16:00' },
-                    { id: 'evening', label: 'Evening', window: '16:00 - 20:00' }
-                  ].map(w => (
+                    { id: 'evening', label: 'Evening', window: '16:00 - 20:00' },
+                  ].map((item) => (
                     <button
-                      key={w.id}
-                      onClick={() => { setSelection({...selection, timeWindow: w.id, time: ''}); nextStep(); }}
+                      key={item.id}
+                      onClick={() => {
+                        setSelection((prev) => ({ ...prev, timeWindow: item.id, time: '' }));
+                        nextStep();
+                      }}
                       className={cn(
-                        "w-full p-6 flex items-center justify-between frost-card-light hover:border-teal transition-all",
-                        selection.timeWindow === w.id && "border-teal bg-teal/5"
+                        'w-full p-6 flex items-center justify-between frost-card-light hover:border-teal transition-all',
+                        selection.timeWindow === item.id && 'border-teal bg-teal/5',
                       )}
                     >
                       <div className="text-left">
-                        <span className="block font-bold uppercase tracking-wider">{w.label}</span>
-                        <span className="text-[10px] text-charcoal/40 uppercase tracking-widest">{w.window}</span>
+                        <span className="block font-bold uppercase tracking-wider">{item.label}</span>
+                        <span className="text-[10px] text-charcoal/40 uppercase tracking-widest">{item.window}</span>
                       </div>
                       <Clock size={16} className="text-teal" />
                     </button>
@@ -299,72 +393,81 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ initialServiceId, onCo
                 </div>
               )}
             </div>
-            <p className="text-[10px] text-charcoal/40 text-center uppercase tracking-[0.3em]">
-              {isDetailing ? 'Exact booking required for detailing' : 'Flexible windows for cleaning services'}
-            </p>
           </div>
         );
       case 5:
         return (
           <div className="space-y-8 text-center">
             <div className="w-20 h-20 bg-teal/10 text-teal rounded-full flex items-center justify-center mx-auto mb-6">
-              <UserPlus size={40} />
+              <LogIn size={40} />
             </div>
-            <h3 className="text-2xl uppercase font-display tracking-wider">Create Your Account</h3>
-            <p className="text-charcoal/60 text-sm max-w-xs mx-auto">
-              Save your details for faster future bookings and track your service history.
+            <h3 className="text-2xl uppercase font-display tracking-wider">Sign In To Save Your Booking</h3>
+            <p className="text-charcoal/60 text-sm max-w-sm mx-auto">
+              Bookings are tied to a customer account so you can track status, billing, and future discounts.
             </p>
-            <div className="space-y-4">
-              <button onClick={handleSocialLogin} className="btn-primary w-full flex items-center justify-center gap-3">
-                <LogIn size={18} /> CONTINUE WITH GOOGLE
-              </button>
-              <button onClick={nextStep} className="text-[10px] font-bold uppercase tracking-widest text-charcoal/40 hover:text-charcoal transition-colors">
-                Continue as Guest
-              </button>
-            </div>
+            <button
+              onClick={handleSocialLogin}
+              disabled={authLoading}
+              className="btn-primary w-full flex items-center justify-center gap-3 disabled:opacity-50"
+            >
+              <LogIn size={18} /> {authLoading ? 'SYNCING ACCOUNT...' : 'CONTINUE WITH GOOGLE'}
+            </button>
           </div>
         );
       case 6:
         return (
           <div className="space-y-6">
-            <h3 className="text-2xl mb-6 font-display uppercase">Secure Payment</h3>
+            <h3 className="text-2xl mb-6 font-display uppercase">Confirm Booking Request</h3>
             <div className="frost-card-light p-6 space-y-4 border-teal/20">
               <div className="flex justify-between text-xs">
                 <span className="text-charcoal/60 uppercase tracking-widest">Service</span>
                 <span className="font-bold uppercase">{selectedService?.label}</span>
               </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-charcoal/60 uppercase tracking-widest">Schedule</span>
+                <span className="font-bold uppercase">
+                  {selection.time || selection.timeWindow || 'Pending'}
+                </span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-charcoal/60 uppercase tracking-widest">Location</span>
+                <span className="font-bold uppercase text-right">{selection.postcode}</span>
+              </div>
               {selection.addons.length > 0 && (
                 <div className="space-y-2">
-                  <span className="text-[10px] text-charcoal/40 uppercase tracking-widest">Add-ons:</span>
-                  {selection.addons.map(id => {
-                    const addon = availableAddons.find(a => a.id === id);
-                    return (
-                      <div key={id} className="flex justify-between text-[10px]">
-                        <span className="text-charcoal/60 uppercase tracking-widest">• {addon?.label}</span>
-                        <span className="font-bold">+£{addon?.price}</span>
-                      </div>
-                    );
-                  })}
+                  <span className="text-[10px] text-charcoal/40 uppercase tracking-widest">Add-ons</span>
+                  {selection.addons.map((addonId) => (
+                    <div key={addonId} className="flex justify-between text-[10px]">
+                      <span className="text-charcoal/60 uppercase tracking-widest">
+                        {getAddonLabel(selection.serviceId, addonId)}
+                      </span>
+                      <span className="font-bold">Included</span>
+                    </div>
+                  ))}
                 </div>
               )}
               <div className="flex justify-between text-lg pt-4 border-t border-charcoal/5">
-                <span className="text-charcoal/60 uppercase font-display">Total</span>
-                <span className="text-teal font-bold">£{calculateTotal()}.00</span>
-              </div>
-              <hr className="border-charcoal/5" />
-              <div className="space-y-3">
-                <div className="relative">
-                  <CreditCard className="absolute left-4 top-1/2 -translate-y-1/2 text-charcoal/30" size={18} />
-                  <input type="text" placeholder="Card Number" className="input-field-light pl-12" />
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <input type="text" placeholder="MM/YY" className="input-field-light" />
-                  <input type="text" placeholder="CVC" className="input-field-light" />
-                </div>
+                <span className="text-charcoal/60 uppercase font-display">Estimated Total</span>
+                <span className="text-teal font-bold">£{total.toFixed(2)}</span>
               </div>
             </div>
-            <button onClick={handleFinalize} className="btn-primary w-full py-5 text-lg shadow-lg shadow-teal/20">
-              PAY & BOOK NOW
+
+            <div className="rounded-2xl border border-teal/20 bg-teal/5 p-5 text-sm text-charcoal/70">
+              No card is captured in this local build. Submitting creates a pending booking in Firestore so you can test the customer, staff, and admin flows end-to-end.
+            </div>
+
+            {error && (
+              <div className="rounded-2xl border border-red-500/20 bg-red-500/5 p-4 text-sm text-red-500">
+                {error}
+              </div>
+            )}
+
+            <button
+              onClick={handleFinalize}
+              disabled={submitting}
+              className="btn-primary w-full py-5 text-lg shadow-lg shadow-teal/20 disabled:opacity-50"
+            >
+              {submitting ? 'SUBMITTING...' : 'CREATE BOOKING REQUEST'}
             </button>
           </div>
         );
@@ -376,16 +479,16 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ initialServiceId, onCo
   return (
     <section className="py-24 bg-white min-h-screen">
       <div className="max-w-xl mx-auto px-4">
-        {/* Stepper */}
         <div className="flex justify-between mb-16 relative">
           <div className="absolute top-4 left-0 right-0 h-[1px] bg-charcoal/10 -z-10" />
-          {steps.map(step => (
+          {steps.map((step) => (
             <div key={step.id} className="flex flex-col items-center gap-2">
-              <div className={cn(
-                "step-indicator w-8 h-8 text-xs",
-                currentStep === step.id ? "step-active" : 
-                currentStep > step.id ? "step-completed" : "step-inactive"
-              )}>
+              <div
+                className={cn(
+                  'step-indicator w-8 h-8 text-xs',
+                  currentStep === step.id ? 'step-active' : currentStep > step.id ? 'step-completed' : 'step-inactive',
+                )}
+              >
                 {currentStep > step.id ? <Check size={14} /> : step.id}
               </div>
               <span className="text-[9px] font-bold uppercase tracking-widest text-charcoal/40">{step.title}</span>
@@ -407,7 +510,7 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ initialServiceId, onCo
         </AnimatePresence>
 
         {currentStep > 1 && (
-          <button 
+          <button
             onClick={prevStep}
             className="mt-12 text-[10px] font-bold uppercase tracking-widest text-charcoal/40 hover:text-charcoal transition-colors flex items-center gap-2"
           >
