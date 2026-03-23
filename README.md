@@ -32,8 +32,8 @@ Yes. The app can be pointed at a different Firebase project by changing the `VIT
 - `VITE_FIREBASE_PROJECT_ID`, `VITE_FIREBASE_DATABASE_ID`: Firestore project and database
 - `VITE_FIREBASE_STORAGE_BUCKET`: Storage bucket
 - `VITE_FIREBASE_AUTH_DOMAIN`, `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_APP_ID`, `VITE_FIREBASE_MESSAGING_SENDER_ID`: Auth/app connection details
-
-The checked-in `firebase-applet-config.json` is now only a fallback. Your local env vars take precedence.
+ 
+The app now initializes Firebase from local `VITE_FIREBASE_*` environment variables only. No environment-specific Firebase app config file is committed.
 
 ## Local Test Notes
 

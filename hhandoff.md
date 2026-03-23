@@ -11,6 +11,7 @@ This file records the changes made to the project in this working session so the
   - `firestore.indexes.json`
   - `storage.rules`
 - Refactored Firebase app bootstrapping so the frontend reads Firebase config from environment variables in `src/firebase.ts`.
+- Removed the checked-in Firebase fallback config file so environment-specific Firebase values are no longer stored in Git.
 - Added `.nvmrc` to pin local development to Node 20.
 - Updated `README.md`, `.env.example`, `package.json`, `package-lock.json`, `tsconfig.json`, and `vite.config.ts` to support the current app setup and local testing flow.
 
@@ -90,6 +91,7 @@ This file records the changes made to the project in this working session so the
 ## Important Operational Notes
 
 - `.env.local` contains local Firebase credentials for the connected project but is intentionally not committed.
+- `firebase-applet-config.json` has been removed from the repo and added to `.gitignore` so Firebase app config stays local.
 - To use admin login successfully:
   1. Create the admin in Firebase Authentication.
   2. Create the matching Firestore `users/{uid}` document.
