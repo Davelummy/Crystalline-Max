@@ -1,0 +1,7 @@
+{
+  "name": "Crystalline Max",
+  "description": "Premium mobile car detailing and cleaning services platform.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}

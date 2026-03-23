@@ -1,0 +1,125 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Document ID: userId (Auth UID)
+    // Fields:
+    //   - uid: string (required)
+    //   - email: string (required)
+    //   - role: string (required, ['admin', 'employee', 'client'])
+    //   - bookingCount: int (optional)
+    //   - phoneNumber: string (optional)
+    //   - address: string (optional)
+    //   - city: string (optional)
+    //   - postcode: string (optional)
+    //   - onboarded: bool (optional)
+    //   - createdAt: timestamp (required)
+    //
+    // Collection: bookings
+    // Document ID: auto-generated
+    // Fields:
+    //   - userId: string (required)
+    //   - serviceId: string (required)
+    //   - package: string (optional)
+    //   - addons: list (optional)
+    //   - address: string (optional)
+    //   - date: string (optional)
+    //   - time: string (optional)
+    //   - timeWindow: string (optional)
+    //   - total: number (optional)
+    //   - status: string (required, ['pending', 'confirmed', 'completed', 'cancelled'])
+    //   - paymentStatus: string (optional, ['pending', 'paid'])
+    //   - createdAt: timestamp (required)
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && (
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+        (request.auth.token.email == "jennerwatkins@gmail.com" && request.auth.token.email_verified == true)
+      );
+    }
+
+    function isEmployee() {
+      return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'employee';
+    }
+
+    function isValidUser(data) {
+      let requiredFields = ['uid', 'email', 'role', 'createdAt'];
+      let allowedFields = ['uid', 'email', 'role', 'createdAt', 'displayName', 'bookingCount', 'phoneNumber', 'address', 'city', 'postcode', 'onboarded'];
+      return data.keys().hasAll(requiredFields) &&
+             data.keys().hasOnly(allowedFields) &&
+             data.uid is string &&
+             data.email is string &&
+             data.role in ['admin', 'employee', 'client'] &&
+             (data.createdAt is timestamp || data.createdAt is string);
+    }
+
+    function isValidBooking(data) {
+      let requiredFields = ['userId', 'serviceId', 'status', 'createdAt'];
+      return data.keys().hasAll(requiredFields) &&
+             data.userId == request.auth.uid &&
+             data.status in ['pending', 'confirmed', 'completed', 'cancelled'] &&
+             (data.createdAt is timestamp || data.createdAt is string);
+    }
+
+    function isValidCheckIn(data) {
+      return data.keys().hasAll(['employeeUid', 'type', 'timestamp']) &&
+             data.employeeUid == request.auth.uid &&
+             data.type in ['in', 'out'] &&
+             data.timestamp is timestamp;
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      allow read: if isAuthenticated() && (isOwner(userId) || isAdmin());
+      allow create: if isAuthenticated() && isOwner(userId) && isValidUser(request.resource.data) && (request.resource.data.role == 'client' || isAdmin());
+      allow update: if isAuthenticated() && isOwner(userId) && 
+                    isValidUser(request.resource.data) && 
+                    (request.resource.data.role == resource.data.role || isAdmin()) &&
+                    (
+                      !request.resource.data.diff(resource.data).affectedKeys().hasAny(['bookingCount']) ||
+                      (
+                        request.resource.data.bookingCount == resource.data.bookingCount + 1 ||
+                        (resource.data.bookingCount == 1 && !('bookingCount' in resource.data))
+                      )
+                    );
+    }
+
+    match /checkins/{checkinId} {
+      allow read: if isAdmin();
+      allow list: if isAdmin() || (isAuthenticated() && request.query.limit <= 50 && request.query.filters.employeeUid == request.auth.uid);
+      allow create: if isAuthenticated() && (isEmployee() || isAdmin()) && isValidCheckIn(request.resource.data);
+    }
+
+    match /bookings/{bookingId} {
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin() || isEmployee());
+      allow create: if isAuthenticated() && isValidBooking(request.resource.data);
+      allow update: if isAdmin() || (isEmployee() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']));
+    }
+
+    match /{path=**} {
+      allow read, write: if false;
+    }
+  }
+}
