@@ -177,11 +177,12 @@ Roadmap corrections already accepted before implementation:
 ### Current Migration Checkpoint
 
 - Phase 1 foundation cleanup is complete and verified
-- `react-router-dom` has been added
-- Auth state extraction has started with [AuthContext.tsx](/Users/davidolumide/Crystalline-Max/src/context/AuthContext.tsx)
-- Route guard scaffolding has been added in [RouteGuard.tsx](/Users/davidolumide/Crystalline-Max/src/components/RouteGuard.tsx)
-- [main.tsx](/Users/davidolumide/Crystalline-Max/src/main.tsx) now wraps the app in `AuthProvider`
-- Full route replacement of the `App.tsx` state machine is still in progress
+- Phase 2 router migration is now complete and verified
+- `react-router-dom` is installed and live
+- [AuthContext.tsx](/Users/davidolumide/Crystalline-Max/src/context/AuthContext.tsx) provides shared auth/profile state
+- [RouteGuard.tsx](/Users/davidolumide/Crystalline-Max/src/components/RouteGuard.tsx) enforces role-based access
+- [App.tsx](/Users/davidolumide/Crystalline-Max/src/App.tsx) is now route-driven and no longer uses the old `currentView` / `portal` state machine
+- Direct-loadable route pages now exist for customer and admin booking detail views
 
 ### Authentication Refactor
 

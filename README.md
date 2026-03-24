@@ -11,7 +11,7 @@ The platform runs on React, Vite, TypeScript, Firebase Authentication, Firestore
 Current migration status:
 
 - Phase 1 foundation cleanup is complete
-- Phase 2 router migration has started with `react-router-dom`, `AuthProvider`, and `RouteGuard` scaffolding now present in the codebase
+- Phase 2 router migration is complete with real route trees, protected layouts, URL-driven navigation, and direct-load support for public, customer, staff, and admin surfaces
 
 ## Approved Roadmap
 

@@ -2,6 +2,7 @@ import React from 'react';
 import { onAuthStateChanged, type User } from 'firebase/auth';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { auth, db } from '@/firebase';
+import { isCompanyEmail } from '@/lib/auth';
 import type { AppUserData } from '@/types';
 
 interface AuthContextValue {
@@ -44,7 +45,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         (snapshot) => {
           if (!snapshot.exists()) {
             setUserData(null);
-            setUserRole(null);
+            setUserRole(isCompanyEmail(nextUser.email || '') ? null : 'client');
             setLoading(false);
             return;
           }

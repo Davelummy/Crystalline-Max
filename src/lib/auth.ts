@@ -9,6 +9,7 @@ import { auth } from '../firebase';
 import type { Portal } from '../types';
 
 const LOGIN_TARGET_KEY = 'crystalline-max-login-target';
+const LOGIN_RETURN_PATH_KEY = 'crystalline-max-login-return-path';
 export const COMPANY_EMAIL_DOMAIN = '@crystallinemax.co.uk';
 
 function readLoginTargetStorage() {
@@ -46,6 +47,28 @@ export function saveLoginTarget(portal: Exclude<Portal, 'public'>) {
 export function clearLoginTarget() {
   window.sessionStorage.removeItem(LOGIN_TARGET_KEY);
   window.localStorage.removeItem(LOGIN_TARGET_KEY);
+}
+
+export function saveLoginReturnPath(pathname?: string | null) {
+  const value = pathname?.trim();
+  if (!value) return;
+  window.sessionStorage.setItem(LOGIN_RETURN_PATH_KEY, value);
+  window.localStorage.setItem(LOGIN_RETURN_PATH_KEY, value);
+}
+
+export function getSavedLoginReturnPath() {
+  if (typeof window === 'undefined') return null;
+
+  return (
+    window.sessionStorage.getItem(LOGIN_RETURN_PATH_KEY) ||
+    window.localStorage.getItem(LOGIN_RETURN_PATH_KEY)
+  );
+}
+
+export function clearLoginReturnPath() {
+  if (typeof window === 'undefined') return;
+  window.sessionStorage.removeItem(LOGIN_RETURN_PATH_KEY);
+  window.localStorage.removeItem(LOGIN_RETURN_PATH_KEY);
 }
 
 export function shouldUseRedirectAuth() {
