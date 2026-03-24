@@ -32,6 +32,7 @@ Each user type has a dedicated route and dedicated interaction flow.
 - public marketing is separate from customer tasks
 - staff login and staff signup are separate
 - admin access is path-only through `/admin`
+- staff operational routes are employee-only in the approved roadmap
 
 This reduces cognitive load and prevents role confusion.
 
@@ -302,3 +303,7 @@ The following documents should stay aligned whenever design, UX, flow logic, or 
 - `README.md`
 - `handoff.md`
 - `design.md`
+
+The implementation sequence and future architectural migrations are documented in:
+
+- `implementation-brief.md`

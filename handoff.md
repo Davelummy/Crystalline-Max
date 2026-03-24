@@ -141,6 +141,29 @@ Defined primarily in [src/types.ts](/Users/davidolumide/Crystalline-Max/src/type
 
 Shared booking behavior lives in [src/lib/bookings.ts](/Users/davidolumide/Crystalline-Max/src/lib/bookings.ts).
 
+## Approved Roadmap
+
+The next implementation cycle is now locked in [implementation-brief.md](/Users/davidolumide/Crystalline-Max/implementation-brief.md).
+
+That roadmap is the execution reference for:
+
+- router migration
+- Cloud Functions rollout
+- payment integration
+- server-side geofence enforcement
+- notifications
+- admin lifecycle completion
+- availability management
+- testing and launch hardening
+
+Roadmap corrections already accepted before implementation:
+
+- employee-only access for `/staff/*`
+- reminder scheduling in `Europe/London`
+- draft legal pages marked for review
+- zero build errors as the baseline acceptance target
+- booking metric semantics to be revisited before server-trigger rollout
+
 ## Major Upgrades Completed
 
 ### Firebase And Environment Hardening
@@ -253,6 +276,7 @@ Local Firebase configuration is expected in `.env.local` and must not be committ
 
 - [README.md](/Users/davidolumide/Crystalline-Max/README.md)
 - [design.md](/Users/davidolumide/Crystalline-Max/design.md)
+- [implementation-brief.md](/Users/davidolumide/Crystalline-Max/implementation-brief.md)
 - [firestore.rules](/Users/davidolumide/Crystalline-Max/firestore.rules)
 - [src/App.tsx](/Users/davidolumide/Crystalline-Max/src/App.tsx)
 - [src/types.ts](/Users/davidolumide/Crystalline-Max/src/types.ts)

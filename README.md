@@ -8,6 +8,26 @@ Crystalline Max is a premium service operations platform for a mobile detailing 
 
 The platform runs on React, Vite, TypeScript, Firebase Authentication, Firestore, and Firebase Storage. The booking record is the operational source of truth, so customer progress, staff execution, and admin oversight all stay synchronized in real time.
 
+## Approved Roadmap
+
+The approved execution roadmap for the next implementation cycle is in [implementation-brief.md](/Users/davidolumide/Crystalline-Max/implementation-brief.md).
+
+It locks:
+
+- the route map
+- planned data-model additions
+- Cloud Functions scope
+- payment and notification behavior
+- phase order
+- acceptance standards
+
+Key approved constraints from that brief:
+
+- `/staff/*` routes are employee-only
+- reminder scheduling targets `Europe/London`
+- legal pages are drafted for UK compliance but marked pending final review
+- build completion is measured against zero errors, not against existing bundle warnings
+
 ## Core Capabilities
 
 ### Public Experience
@@ -184,6 +204,7 @@ To point the repo at another Firebase project:
 
 - [handoff.md](/Users/davidolumide/Crystalline-Max/handoff.md)
 - [design.md](/Users/davidolumide/Crystalline-Max/design.md)
+- [implementation-brief.md](/Users/davidolumide/Crystalline-Max/implementation-brief.md)
 - [src/App.tsx](/Users/davidolumide/Crystalline-Max/src/App.tsx)
 - [src/types.ts](/Users/davidolumide/Crystalline-Max/src/types.ts)
 - [src/lib/auth.ts](/Users/davidolumide/Crystalline-Max/src/lib/auth.ts)
@@ -209,3 +230,7 @@ When features, architecture, auth logic, booking flow, data model, or design beh
 - `README.md`
 - `handoff.md`
 - `design.md`
+
+When changes affect the approved build-out sequence, acceptance criteria, or locked architectural decisions, update:
+
+- `implementation-brief.md`
