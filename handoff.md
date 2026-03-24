@@ -180,6 +180,7 @@ Roadmap corrections already accepted before implementation:
 - Phase 1 foundation cleanup is complete and verified
 - Phase 2 router migration is now complete and verified
 - Phase 3 Cloud Functions platform setup is now complete and verified
+- Phase 4 data integrity and storage security hardening is now complete and verified
 - `react-router-dom` is installed and live
 - [AuthContext.tsx](/Users/davidolumide/Crystalline-Max/src/context/AuthContext.tsx) provides shared auth/profile state
 - [RouteGuard.tsx](/Users/davidolumide/Crystalline-Max/src/components/RouteGuard.tsx) enforces role-based access
@@ -195,6 +196,10 @@ Roadmap corrections already accepted before implementation:
 - Root scripts now include `npm run build:functions` and `npm run dev:emulators`
 - Placeholder Firebase secrets were created in the linked project for `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, and `RESEND_API_KEY`
 - Local backend verification now includes a successful startup of Auth, Functions, Firestore, Storage, and Emulator UI on `127.0.0.1:4000`
+- Deployed Functions now include:
+  - `onBookingCreated`
+  - `onBookingCountDecrement`
+- Emulator smoke verification confirmed the booking-count triggers increment on booking create and decrement on cancellation
 
 ### Authentication Refactor
 
@@ -219,6 +224,16 @@ Roadmap corrections already accepted before implementation:
   - legacy photo compatibility
   - enriched check-in payloads
 - Rules have been deployed to the linked Firebase project
+
+### Data Integrity And Storage Hardening
+
+- Removed the client-side `bookingCount` increment from [BookingFlow.tsx](/Users/davidolumide/Crystalline-Max/src/components/BookingFlow.tsx)
+- Moved booking-count updates to deployed Firestore triggers in [functions/src/index.ts](/Users/davidolumide/Crystalline-Max/functions/src/index.ts)
+- Prevented client owners from mutating `bookingCount` directly in [firestore.rules](/Users/davidolumide/Crystalline-Max/firestore.rules)
+- Hardened employee ID issuance against collisions in [AdminStaffManagement.tsx](/Users/davidolumide/Crystalline-Max/src/components/AdminStaffManagement.tsx)
+- Reduced staff check-in history queries to the latest record only in [EmployeeCheckIn.tsx](/Users/davidolumide/Crystalline-Max/src/components/EmployeeCheckIn.tsx)
+- Added deployed composite indexes in [firestore.indexes.json](/Users/davidolumide/Crystalline-Max/firestore.indexes.json)
+- Replaced permissive Storage rules with booking-aware access control in [storage.rules](/Users/davidolumide/Crystalline-Max/storage.rules)
 
 ### Booking And Operations Upgrade
 

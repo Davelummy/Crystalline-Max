@@ -1,6 +1,6 @@
 import React from 'react';
 import { db, auth } from '../firebase';
-import { collection, addDoc, serverTimestamp, query, where, onSnapshot } from 'firebase/firestore';
+import { addDoc, collection, limit, onSnapshot, orderBy, query, serverTimestamp, where } from 'firebase/firestore';
 import { motion, AnimatePresence } from 'motion/react';
 import { LogIn, LogOut, MapPin, CheckCircle2, AlertCircle, Clock } from 'lucide-react';
 import { formatSchedule, getAfterPhotos, getTaskProgressPercent, sortBookingsBySchedule } from '../lib/bookings';
@@ -60,22 +60,15 @@ export const EmployeeCheckIn: React.FC = () => {
 
     const q = query(
       collection(db, 'checkins'),
-      where('employeeUid', '==', auth.currentUser.uid)
+      where('employeeUid', '==', auth.currentUser.uid),
+      orderBy('timestamp', 'desc'),
+      limit(1),
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       if (!snapshot.empty) {
-        const last = snapshot.docs
-          .map((entry) => ({ id: entry.id, ...(entry.data() as Omit<CheckIn, 'id'>) }))
-          .sort((left, right) => {
-            const leftValue = typeof left.timestamp === 'object' && left.timestamp && 'toDate' in left.timestamp && typeof left.timestamp.toDate === 'function'
-              ? left.timestamp.toDate().getTime()
-              : 0;
-            const rightValue = typeof right.timestamp === 'object' && right.timestamp && 'toDate' in right.timestamp && typeof right.timestamp.toDate === 'function'
-              ? right.timestamp.toDate().getTime()
-              : 0;
-            return rightValue - leftValue;
-          })[0];
+        const [entry] = snapshot.docs;
+        const last = { id: entry.id, ...(entry.data() as Omit<CheckIn, 'id'>) };
         setLastAction(last);
         setStatus(last.type === 'in' ? 'in' : 'out');
       } else {

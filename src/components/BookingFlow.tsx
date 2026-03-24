@@ -1,7 +1,7 @@
 import React from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { ChevronRight, Check, Clock, LogIn, MapPin, Sparkles } from 'lucide-react';
-import { collection, addDoc, doc, getDoc, increment, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore';
+import { addDoc, collection, doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { getAuthErrorMessage, signInWithGoogle } from '../lib/auth';
 import { cn } from '@/lib/utils';
 import { auth, db } from '../firebase';
@@ -226,12 +226,6 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ initialServiceId, onCo
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
-
-      await updateDoc(userRef, {
-        bookingCount: increment(1),
-        updatedAt: serverTimestamp(),
-      });
-
       setIsSuccess(true);
       window.setTimeout(() => {
         onComplete?.();

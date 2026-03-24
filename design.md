@@ -89,6 +89,18 @@ Current baseline now in the repo:
 
 This follows the product rule that payments, geofence validation, and notification dispatch should not depend solely on mutable client state.
 
+### 8. Derived Data Must Be Server-Owned
+
+Metrics that can drift under concurrent client writes are being moved off the frontend and into Firestore-triggered server logic.
+
+Current application of that rule:
+
+- `bookingCount` is no longer incremented by the booking form
+- booking metric changes now originate from Functions triggers
+- direct client mutation of that metric is blocked by Firestore rules
+
+This keeps loyalty and discount behavior tied to one authoritative write path instead of multiple browsers.
+
 ## Interface Patterns
 
 ## Portal Model
@@ -265,6 +277,19 @@ Guidelines followed:
 - wide situational awareness
 - quick workforce issuance and assignment
 - direct access to live progress and evidence
+
+## Security Patterns
+
+### Media Access Pattern
+
+Booking media is now governed by booking-aware Storage rules:
+
+- assigned staff can write booking media
+- booking owner can read booking media
+- admin can read and delete booking media
+- all unrelated access is denied
+
+This matches the product principle that proof-of-work imagery is operational evidence, not public content.
 
 ## Domain Patterns
 

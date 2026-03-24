@@ -13,13 +13,26 @@ import {
   Users,
 } from 'lucide-react';
 import { motion } from 'motion/react';
-import { collection, doc, onSnapshot, query, serverTimestamp, setDoc, updateDoc, where } from 'firebase/firestore';
+import { collection, doc, getDoc, onSnapshot, query, serverTimestamp, setDoc, updateDoc, where } from 'firebase/firestore';
 import { db } from '../firebase';
 import { formatSchedule, sortBookingsBySchedule } from '../lib/bookings';
 import type { AppUserData, BookingRecord, EmployeeInvite } from '../types';
 
-function generateEmployeeId() {
-  return `CMX-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
+async function generateUniqueEmployeeId() {
+  let attempts = 0;
+
+  while (attempts < 10) {
+    const candidate = `CMX-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
+    const existingInvite = await getDoc(doc(db, 'employeeInvites', candidate));
+
+    if (!existingInvite.exists()) {
+      return candidate;
+    }
+
+    attempts += 1;
+  }
+
+  throw new Error('Could not generate a unique employee ID. Try again.');
 }
 
 export const AdminStaffManagement: React.FC = () => {
@@ -93,7 +106,7 @@ export const AdminStaffManagement: React.FC = () => {
     setInviteError(null);
 
     try {
-      const employeeId = generateEmployeeId();
+      const employeeId = await generateUniqueEmployeeId();
       const normalizedEmail = inviteForm.email.trim().toLowerCase();
 
       await setDoc(doc(db, 'employeeInvites', employeeId), {

@@ -277,6 +277,7 @@ service cloud.firestore {
         request.resource.data.role == resource.data.role &&
         request.resource.data.uid == resource.data.uid &&
         request.resource.data.email == resource.data.email &&
+        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['bookingCount']) &&
         (
           resource.data.role != 'employee' ||
           request.resource.data.employeeId == resource.data.employeeId
