@@ -2,6 +2,13 @@
 
 This document is the approved execution roadmap for the next major build-out of Crystalline Max. It is the implementation contract for the work that follows and should be treated as the source of truth for phase order, dependencies, acceptance criteria, and locked decisions.
 
+Current execution checkpoint:
+
+- Phase 1 complete
+- Phase 2 complete
+- Phase 3 complete
+- Phase 4 next
+
 ## Locked Corrections
 
 These corrections are applied to the roadmap before implementation starts:
@@ -324,4 +331,3 @@ These do not block Phase 1, but they must be resolved during implementation:
 - whether to replace `bookingCount` with `completedBookingCount`
 - final real-world business identity fields for footer and legal pages
 - whether FCM remains single-device via `fcmToken` or expands to multi-device support
-

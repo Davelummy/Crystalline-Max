@@ -12,6 +12,7 @@ Current migration status:
 
 - Phase 1 foundation cleanup is complete
 - Phase 2 router migration is complete with real route trees, protected layouts, URL-driven navigation, and direct-load support for public, customer, staff, and admin surfaces
+- Phase 3 Cloud Functions platform setup is complete with a TypeScript functions workspace, emulator wiring, shared server utilities, and verified local backend emulators
 
 ## Approved Roadmap
 
@@ -124,6 +125,7 @@ Primary collections:
 ### Prerequisites
 
 - Node.js 20+
+- Java/OpenJDK for Firestore and Storage emulators
 - Firebase CLI
 - A Firebase project with Authentication, Firestore, and Storage enabled
 
@@ -137,23 +139,55 @@ Primary collections:
    ```bash
    npm install
    ```
-3. Copy env values:
+3. Install the Functions workspace dependencies:
+   ```bash
+   npm --prefix functions install
+   ```
+4. Copy env values:
    ```bash
    cp .env.example .env.local
    ```
-4. Fill `.env.local` with your Firebase web app values.
-5. Start the app:
+5. Fill `.env.local` with your Firebase web app values.
+6. Start the app:
    ```bash
    npm run dev
    ```
-6. Deploy rules:
+7. Build the Functions workspace:
+   ```bash
+   npm run build:functions
+   ```
+8. Start local emulators when backend work is needed:
+   ```bash
+   export PATH="/usr/local/opt/openjdk/bin:$PATH"
+   npm run dev:emulators
+   ```
+9. Deploy rules:
    ```bash
    firebase deploy --only firestore:rules
    ```
-7. Optionally deploy storage rules:
+10. Optionally deploy storage rules:
    ```bash
    firebase deploy --only storage
    ```
+
+### Functions Workspace
+
+The repo now includes a dedicated Firebase Functions v2 TypeScript workspace in [functions/package.json](/Users/davidolumide/Crystalline-Max/functions/package.json).
+
+Phase 3 baseline currently provides:
+
+- global Functions runtime configuration
+- shared server utility modules for distance checks, booking task derivation, and notification payload shaping
+- local emulator wiring for Auth, Functions, Firestore, Storage, and Emulator UI
+- root scripts for backend compilation and emulator startup
+
+Configured emulator ports:
+
+- Auth: `127.0.0.1:9099`
+- Functions: `127.0.0.1:5001`
+- Firestore: `127.0.0.1:8080`
+- Storage: `127.0.0.1:9199`
+- Emulator UI: `127.0.0.1:4000`
 
 ## Firebase Configuration
 

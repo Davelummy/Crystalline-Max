@@ -115,6 +115,7 @@ Booking is now a real Firestore-backed workflow rather than a fake success flow.
 - Firebase Authentication
 - Firestore
 - Firebase Storage
+- Firebase Functions v2 in a dedicated TypeScript workspace
 - Firebase CLI project configuration checked into the repo
 
 ### Realtime Data Model
@@ -178,11 +179,22 @@ Roadmap corrections already accepted before implementation:
 
 - Phase 1 foundation cleanup is complete and verified
 - Phase 2 router migration is now complete and verified
+- Phase 3 Cloud Functions platform setup is now complete and verified
 - `react-router-dom` is installed and live
 - [AuthContext.tsx](/Users/davidolumide/Crystalline-Max/src/context/AuthContext.tsx) provides shared auth/profile state
 - [RouteGuard.tsx](/Users/davidolumide/Crystalline-Max/src/components/RouteGuard.tsx) enforces role-based access
 - [App.tsx](/Users/davidolumide/Crystalline-Max/src/App.tsx) is now route-driven and no longer uses the old `currentView` / `portal` state machine
 - Direct-loadable route pages now exist for customer and admin booking detail views
+- [functions/package.json](/Users/davidolumide/Crystalline-Max/functions/package.json) now defines a separate Node 20 Functions workspace
+- [functions/src/index.ts](/Users/davidolumide/Crystalline-Max/functions/src/index.ts) sets the Functions v2 runtime baseline
+- Shared server utility modules now exist in:
+  - [functions/src/lib/bookings.ts](/Users/davidolumide/Crystalline-Max/functions/src/lib/bookings.ts)
+  - [functions/src/lib/distance.ts](/Users/davidolumide/Crystalline-Max/functions/src/lib/distance.ts)
+  - [functions/src/lib/notifications.ts](/Users/davidolumide/Crystalline-Max/functions/src/lib/notifications.ts)
+- [firebase.json](/Users/davidolumide/Crystalline-Max/firebase.json) now defines Functions source plus local emulators for auth, functions, firestore, storage, and Emulator UI
+- Root scripts now include `npm run build:functions` and `npm run dev:emulators`
+- Placeholder Firebase secrets were created in the linked project for `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, and `RESEND_API_KEY`
+- Local backend verification now includes a successful startup of Auth, Functions, Firestore, Storage, and Emulator UI on `127.0.0.1:4000`
 
 ### Authentication Refactor
 
@@ -250,6 +262,7 @@ Roadmap corrections already accepted before implementation:
 - Linked project: `crystalline-max-dolumide-2026`
 
 Local Firebase configuration is expected in `.env.local` and must not be committed.
+Local Firestore and Storage emulator use also requires Java/OpenJDK on the machine PATH.
 
 ## Current Auth Model
 

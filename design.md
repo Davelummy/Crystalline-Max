@@ -77,6 +77,18 @@ Examples:
 - check-out is blocked until tasks and after photos are complete
 - admin cannot be self-created from public UI
 
+### 7. Server Trust Boundary
+
+Client-side interactions can drive the experience, but high-trust business decisions are being moved behind Firebase Functions.
+
+Current baseline now in the repo:
+
+- dedicated Functions v2 TypeScript workspace
+- shared server utilities for distance checks, booking task derivation, and notification payload shaping
+- local emulator-first backend verification
+
+This follows the product rule that payments, geofence validation, and notification dispatch should not depend solely on mutable client state.
+
 ## Interface Patterns
 
 ## Portal Model
@@ -155,6 +167,8 @@ This keeps the three interfaces synchronized without manual refresh patterns.
 Auth state is now being centralized through a shared provider so route-level access control and portal decisions can move away from local app-shell state and toward explicit guarded routes.
 
 This has now been implemented in the app shell with routed public/customer/staff/admin surfaces and role-based route guards.
+
+Backend work now also follows an emulator-first pattern for secure features, with Auth, Functions, Firestore, and Storage configured together so server logic can be verified locally before touching production data.
 
 ## Form And Flow Patterns
 
