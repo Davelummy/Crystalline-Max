@@ -86,6 +86,7 @@ Current baseline now in the repo:
 - dedicated Functions v2 TypeScript workspace
 - shared server utilities for distance checks, booking task derivation, and notification payload shaping
 - local emulator-first backend verification
+- server-enforced staff check-in/check-out validation via callable function
 
 This follows the product rule that payments, geofence validation, and notification dispatch should not depend solely on mutable client state.
 
@@ -290,6 +291,19 @@ Booking media is now governed by booking-aware Storage rules:
 - all unrelated access is denied
 
 This matches the product principle that proof-of-work imagery is operational evidence, not public content.
+
+### Attendance Validation Pattern
+
+Staff attendance is treated as a server-trusted event, not a UI toggle.
+
+Pattern now in place:
+
+- client gathers geolocation and intent
+- backend validates assignment ownership and geofence
+- backend validates checkout prerequisites
+- backend writes the canonical check-in record with `serverValidated: true`
+
+This keeps operational attendance defensible when disputes or audit questions arise.
 
 ## Domain Patterns
 

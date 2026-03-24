@@ -329,7 +329,6 @@ service cloud.firestore {
     match /checkins/{checkinId} {
       allow get: if isAdmin() || (isAuthenticated() && resource.data.employeeUid == request.auth.uid);
       allow list: if isAdmin() || isEmployee();
-      allow create: if isEmployee() && isValidCheckIn(request.resource.data);
     }
 
     match /settings/{settingId} {

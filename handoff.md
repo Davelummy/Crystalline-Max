@@ -181,6 +181,7 @@ Roadmap corrections already accepted before implementation:
 - Phase 2 router migration is now complete and verified
 - Phase 3 Cloud Functions platform setup is now complete and verified
 - Phase 4 data integrity and storage security hardening is now complete and verified
+- Phase 5 server-side check-in enforcement is now complete and verified
 - `react-router-dom` is installed and live
 - [AuthContext.tsx](/Users/davidolumide/Crystalline-Max/src/context/AuthContext.tsx) provides shared auth/profile state
 - [RouteGuard.tsx](/Users/davidolumide/Crystalline-Max/src/components/RouteGuard.tsx) enforces role-based access
@@ -197,9 +198,16 @@ Roadmap corrections already accepted before implementation:
 - Placeholder Firebase secrets were created in the linked project for `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, and `RESEND_API_KEY`
 - Local backend verification now includes a successful startup of Auth, Functions, Firestore, Storage, and Emulator UI on `127.0.0.1:4000`
 - Deployed Functions now include:
+  - `validateCheckin`
   - `onBookingCreated`
   - `onBookingCountDecrement`
 - Emulator smoke verification confirmed the booking-count triggers increment on booking create and decrement on cancellation
+- Emulator smoke verification confirmed `validateCheckin` enforces:
+  - distance gate
+  - assignment ownership
+  - incomplete checkout rejection
+  - missing after photo rejection
+  - successful server-written `serverValidated` checkins
 
 ### Authentication Refactor
 
@@ -255,6 +263,14 @@ Roadmap corrections already accepted before implementation:
   - live checklist updates
   - end-of-job completion rules
 - Reworked `EmployeeCheckIn` with geofenced site validation and check-out gating
+
+### Server-Enforced Check-In Upgrade
+
+- Added deployed callable enforcement in [functions/src/index.ts](/Users/davidolumide/Crystalline-Max/functions/src/index.ts)
+- [EmployeeCheckIn.tsx](/Users/davidolumide/Crystalline-Max/src/components/EmployeeCheckIn.tsx) now writes through `httpsCallable(functions, 'validateCheckin')`
+- Client direct create access to `checkins` was removed from [firestore.rules](/Users/davidolumide/Crystalline-Max/firestore.rules)
+- Successful check-ins now write `serverValidated: true`
+- Check-in rules are now enforced from the backend instead of trusting browser-only writes
 
 ### Customer And Admin Visibility Upgrade
 

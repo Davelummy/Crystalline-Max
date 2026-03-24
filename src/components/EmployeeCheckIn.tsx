@@ -1,6 +1,7 @@
 import React from 'react';
-import { db, auth } from '../firebase';
-import { addDoc, collection, limit, onSnapshot, orderBy, query, serverTimestamp, where } from 'firebase/firestore';
+import { auth, db, functions } from '../firebase';
+import { collection, limit, onSnapshot, orderBy, query, where } from 'firebase/firestore';
+import { httpsCallable } from 'firebase/functions';
 import { motion, AnimatePresence } from 'motion/react';
 import { LogIn, LogOut, MapPin, CheckCircle2, AlertCircle, Clock } from 'lucide-react';
 import { formatSchedule, getAfterPhotos, getTaskProgressPercent, sortBookingsBySchedule } from '../lib/bookings';
@@ -54,6 +55,10 @@ export const EmployeeCheckIn: React.FC = () => {
   const [assignedBookings, setAssignedBookings] = React.useState<BookingRecord[]>([]);
   const [assignmentLoading, setAssignmentLoading] = React.useState(true);
   const [distanceFromSite, setDistanceFromSite] = React.useState<number | null>(null);
+  const validateCheckin = React.useMemo(() => httpsCallable<
+    { bookingId: string; type: 'in' | 'out'; latitude: number; longitude: number },
+    { success: true }
+  >(functions, 'validateCheckin'), []);
 
   React.useEffect(() => {
     if (!auth.currentUser) return;
@@ -186,16 +191,25 @@ export const EmployeeCheckIn: React.FC = () => {
         }
       }
 
-      await addDoc(collection(db, 'checkins'), {
+      await validateCheckin({
+        bookingId: matchedBookingId || assignment.id,
+        type,
+        latitude: location.latitude,
+        longitude: location.longitude,
+      });
+
+      setLastAction({
+        id: lastAction?.id || 'pending-sync',
         employeeUid: auth.currentUser.uid,
         employeeName: auth.currentUser.displayName || auth.currentUser.email,
         type,
-        timestamp: serverTimestamp(),
+        timestamp: new Date().toISOString(),
         location,
         bookingId: matchedBookingId,
         bookingAddress: matchedBookingAddress,
         distanceMeters: matchedDistanceMeters,
       });
+      setStatus(type === 'in' ? 'in' : 'out');
 
     } catch (err) {
       console.error('Check-in error:', err);

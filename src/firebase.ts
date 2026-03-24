@@ -1,6 +1,7 @@
 import { initializeApp } from 'firebase/app';
 import { browserLocalPersistence, getAuth, setPersistence } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
+import { getFunctions } from 'firebase/functions';
 import { getStorage } from 'firebase/storage';
 
 const env = import.meta.env as Record<string, string | undefined>;
@@ -34,6 +35,7 @@ const firestoreDatabaseId = env.VITE_FIREBASE_DATABASE_ID || '(default)';
 const app = initializeApp(resolvedConfig);
 export const db = getFirestore(app, firestoreDatabaseId);
 export const auth = getAuth(app);
+export const functions = getFunctions(app, 'europe-west2');
 export const storage = getStorage(app);
 
 setPersistence(auth, browserLocalPersistence).catch((error) => {

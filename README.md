@@ -14,6 +14,7 @@ Current migration status:
 - Phase 2 router migration is complete with real route trees, protected layouts, URL-driven navigation, and direct-load support for public, customer, staff, and admin surfaces
 - Phase 3 Cloud Functions platform setup is complete with a TypeScript functions workspace, emulator wiring, shared server utilities, and verified local backend emulators
 - Phase 4 data integrity and storage security hardening is complete with booking-count triggers, secured media rules, composite indexes, and tighter client write constraints
+- Phase 5 server-side check-in enforcement is complete with a deployed `validateCheckin` callable and client-side check-in writes removed
 
 ## Approved Roadmap
 
@@ -182,6 +183,7 @@ Phase 3 baseline currently provides:
 - local emulator wiring for Auth, Functions, Firestore, Storage, and Emulator UI
 - root scripts for backend compilation and emulator startup
 - deployed Firestore triggers for booking-count increment and cancellation decrement
+- deployed `validateCheckin` callable for server-side geofence and checkout enforcement
 
 Configured emulator ports:
 
@@ -266,6 +268,7 @@ npm run build:functions
 firebase deploy --only firestore:rules
 firebase deploy --only firestore:indexes,storage
 firebase deploy --only functions
+firebase emulators:exec --only auth,firestore,functions,storage
 ```
 
 ## Documentation Maintenance Rule
