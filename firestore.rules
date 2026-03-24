@@ -183,6 +183,8 @@ service cloud.firestore {
         'paymentAmount',
         'paidAt',
         'adminNote',
+        'cancelledAt',
+        'cancelledBy',
         'updatedAt'
       ]);
 
@@ -211,6 +213,8 @@ service cloud.firestore {
              (!('paymentAmount' in data) || data.paymentAmount == null || data.paymentAmount is number) &&
              (!('paidAt' in data) || data.paidAt == null || data.paidAt is timestamp || data.paidAt is string) &&
              (!('adminNote' in data) || data.adminNote == null || data.adminNote is string) &&
+             (!('cancelledAt' in data) || data.cancelledAt == null || data.cancelledAt is timestamp || data.cancelledAt is string) &&
+             (!('cancelledBy' in data) || data.cancelledBy == null || data.cancelledBy in ['customer', 'admin']) &&
              (!('completedTaskIds' in data) || data.completedTaskIds is list) &&
              (!('taskProgressPercent' in data) || data.taskProgressPercent is number) &&
              (data.createdAt is timestamp || data.createdAt is string) &&
@@ -317,7 +321,8 @@ service cloud.firestore {
         resource.data.userId == request.auth.uid &&
         request.resource.data.userId == resource.data.userId &&
         request.resource.data.status == 'cancelled' &&
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt'])
+        request.resource.data.cancelledBy == 'customer' &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt', 'cancelledAt', 'cancelledBy'])
       ) || (
         isAdmin() &&
         isValidBooking(request.resource.data)

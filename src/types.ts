@@ -97,6 +97,8 @@ export interface BookingRecord {
   paymentAmount?: number | null;
   paidAt?: unknown | null;
   adminNote?: string | null;
+  cancelledAt?: unknown | null;
+  cancelledBy?: 'customer' | 'admin' | null;
   assignedStaffId?: string | null;
   assignedStaffName?: string | null;
   assignedAt?: unknown;

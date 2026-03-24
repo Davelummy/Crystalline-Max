@@ -17,6 +17,7 @@ Current migration status:
 - Phase 5 server-side check-in enforcement is complete with a deployed `validateCheckin` callable and client-side check-in writes removed
 - Phase 6 payments integration is implemented and deployed with Stripe-backed checkout session creation, webhook payment confirmation, customer pay-now actions, and admin offline payment override
 - Phase 7 notifications is implemented and deployed with booking update email triggers and a Europe/London scheduled reminder job
+- Phase 8 admin capability completion is implemented with booking confirm/cancel flows, reassignment controls, and richer admin booking detail actions
 
 ## Approved Roadmap
 
@@ -78,6 +79,7 @@ Key approved constraints from that brief:
 - Staff assignment and workforce control
 - Live dashboard for bookings, check-ins, staff activity, and progress
 - Before and after photo review with gallery overlay
+- Booking detail actions for confirmation, cancellation, reassignment, unassignment, and offline payment override
 
 ## Product Rules
 

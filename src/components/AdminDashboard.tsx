@@ -1,13 +1,15 @@
 import React from 'react';
 import { Activity, AlertCircle, Calendar as CalendarIcon, Clock, MapPin, Play, Users } from 'lucide-react';
 import { motion } from 'motion/react';
-import { collection, onSnapshot, orderBy, query, where } from 'firebase/firestore';
+import { collection, doc, onSnapshot, orderBy, query, serverTimestamp, updateDoc, where } from 'firebase/firestore';
+import { useNavigate } from 'react-router-dom';
 import { db } from '../firebase';
 import { formatSchedule, getAfterPhotos, getBeforePhotos, getPrimaryAfterPhotoUrl, getPrimaryBeforePhotoUrl, getStatusLabel, getTaskProgressPercent, sortBookingsByCreatedAt, sortBookingsBySchedule } from '../lib/bookings';
 import { PhotoGalleryOverlay } from './PhotoGalleryOverlay';
 import type { AppUserData, BookingPhoto, BookingRecord, CheckIn } from '../types';
 
 export const AdminDashboard: React.FC = () => {
+  const navigate = useNavigate();
   const [checkins, setCheckins] = React.useState<CheckIn[]>([]);
   const [employees, setEmployees] = React.useState<AppUserData[]>([]);
   const [bookings, setBookings] = React.useState<BookingRecord[]>([]);
@@ -61,6 +63,23 @@ export const AdminDashboard: React.FC = () => {
     .slice(0, 4);
 
   const maxAreaCount = areaCoverage[0]?.[1] || 1;
+
+  const handleCancelBooking = async (bookingId: string) => {
+    if (!window.confirm('Cancel this booking? This cannot be undone.')) {
+      return;
+    }
+
+    await updateDoc(doc(db, 'bookings', bookingId), {
+      status: 'cancelled',
+      cancelledBy: 'admin',
+      cancelledAt: serverTimestamp(),
+      assignedStaffId: null,
+      assignedStaffName: null,
+      assignedAt: null,
+      staffAcknowledgedAt: null,
+      updatedAt: serverTimestamp(),
+    });
+  };
 
   if (loading) return <div className="pt-32 text-center">Loading Dashboard...</div>;
 
@@ -203,6 +222,28 @@ export const AdminDashboard: React.FC = () => {
                         <p className="mt-2">Pending</p>
                       )}
                     </div>
+                  </div>
+                  <div className="mt-4 grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => navigate(`/admin/bookings/${booking.id}`)}
+                      className="rounded-lg border border-white/10 bg-white/5 px-2 py-2 text-[8px] font-bold uppercase tracking-widest text-white/85 transition-colors hover:border-teal hover:text-teal"
+                    >
+                      Open Detail
+                    </button>
+                    {['pending', 'confirmed'].includes(booking.status) ? (
+                      <button
+                        type="button"
+                        onClick={() => void handleCancelBooking(booking.id)}
+                        className="rounded-lg border border-red-500/30 bg-red-500/10 px-2 py-2 text-[8px] font-bold uppercase tracking-widest text-red-300 transition-colors hover:border-red-400 hover:text-red-200"
+                      >
+                        Cancel
+                      </button>
+                    ) : (
+                      <div className="rounded-lg border border-white/10 bg-white/5 px-2 py-2 text-[8px] font-bold uppercase tracking-widest text-white/35">
+                        {booking.status === 'completed' ? 'Completed' : 'Locked'}
+                      </div>
+                    )}
                   </div>
                 </div>
               )) : (

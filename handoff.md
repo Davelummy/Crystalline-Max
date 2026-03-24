@@ -53,6 +53,7 @@ The product is built around one shared operational truth: bookings live in Fires
 - Live operational dashboard
 - Coverage, revenue, active booking, and activity visibility
 - Before and after photo gallery review
+- Admin booking detail with confirm, cancel, reassign, unassign, and offline payment override controls
 
 ## Core Business Flows
 
@@ -184,6 +185,7 @@ Roadmap corrections already accepted before implementation:
 - Phase 5 server-side check-in enforcement is now complete and verified
 - Phase 6 payments integration is now implemented and deployed
 - Phase 7 notifications is now implemented and deployed
+- Phase 8 admin capability completion is now implemented and verified
 - `react-router-dom` is installed and live
 - [AuthContext.tsx](/Users/davidolumide/Crystalline-Max/src/context/AuthContext.tsx) provides shared auth/profile state
 - [RouteGuard.tsx](/Users/davidolumide/Crystalline-Max/src/components/RouteGuard.tsx) enforces role-based access
@@ -258,6 +260,9 @@ Roadmap corrections already accepted before implementation:
 - Added before and after photo evidence support
 - Added multi-image galleries for admin and customer
 - Added task completion support for add-ons
+- Added admin-side booking cancellation with cancellation attribution fields
+- Added admin reassignment and unassignment controls from both dashboard and staff management surfaces
+- Added richer admin booking detail actions for confirmation, payment override, check-in review, and lifecycle control
 
 ### Staff Operations Upgrade
 

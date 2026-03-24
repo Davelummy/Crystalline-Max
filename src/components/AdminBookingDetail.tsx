@@ -11,7 +11,7 @@ import {
   getStatusLabel,
   getTaskProgressPercent,
 } from '@/lib/bookings';
-import type { BookingPhoto, BookingRecord, CheckIn } from '@/types';
+import type { AppUserData, BookingPhoto, BookingRecord, CheckIn } from '@/types';
 import { PhotoGalleryOverlay } from './PhotoGalleryOverlay';
 
 interface AdminBookingDetailProps {
@@ -22,10 +22,12 @@ interface AdminBookingDetailProps {
 export const AdminBookingDetail: React.FC<AdminBookingDetailProps> = ({ bookingId, onBack }) => {
   const [booking, setBooking] = React.useState<BookingRecord | null>(null);
   const [checkins, setCheckins] = React.useState<CheckIn[]>([]);
+  const [staff, setStaff] = React.useState<AppUserData[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [gallery, setGallery] = React.useState<{ title: string; photos: BookingPhoto[] } | null>(null);
   const [paymentBusy, setPaymentBusy] = React.useState(false);
+  const [actionBusy, setActionBusy] = React.useState(false);
 
   React.useEffect(() => {
     const unsubscribeBooking = onSnapshot(
@@ -53,6 +55,15 @@ export const AdminBookingDetail: React.FC<AdminBookingDetailProps> = ({ bookingI
   }, [bookingId]);
 
   React.useEffect(() => {
+    const staffQuery = query(collection(db, 'users'), where('role', '==', 'employee'));
+    const unsubscribe = onSnapshot(staffQuery, (snapshot) => {
+      setStaff(snapshot.docs.map((entry) => entry.data() as AppUserData));
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  React.useEffect(() => {
     if (!booking?.assignedStaffId) {
       setCheckins([]);
       return;
@@ -60,7 +71,17 @@ export const AdminBookingDetail: React.FC<AdminBookingDetailProps> = ({ bookingI
 
     const checkinsQuery = query(collection(db, 'checkins'), where('bookingId', '==', bookingId));
     const unsubscribe = onSnapshot(checkinsQuery, (snapshot) => {
-      setCheckins(snapshot.docs.map((entry) => ({ id: entry.id, ...(entry.data() as Omit<CheckIn, 'id'>) })));
+      const entries = snapshot.docs.map((entry) => ({ id: entry.id, ...(entry.data() as Omit<CheckIn, 'id'>) }));
+      entries.sort((left, right) => {
+        const leftValue = typeof left.timestamp === 'string'
+          ? new Date(left.timestamp).getTime()
+          : ((left.timestamp as { seconds?: number } | undefined)?.seconds ?? 0) * 1000;
+        const rightValue = typeof right.timestamp === 'string'
+          ? new Date(right.timestamp).getTime()
+          : ((right.timestamp as { seconds?: number } | undefined)?.seconds ?? 0) * 1000;
+        return rightValue - leftValue;
+      });
+      setCheckins(entries);
     });
 
     return () => unsubscribe();
@@ -70,6 +91,30 @@ export const AdminBookingDetail: React.FC<AdminBookingDetailProps> = ({ bookingI
   const afterPhotos = getAfterPhotos(booking);
   const tasks = booking ? getBookingTasks(booking.serviceId, booking.addons) : [];
   const completed = new Set(getCompletedTaskIds(booking));
+  const canManageAssignment = booking != null && ['pending', 'confirmed'].includes(booking.status);
+  const canCancel = booking != null && ['pending', 'confirmed'].includes(booking.status);
+  const canConfirm = booking?.status === 'pending';
+
+  const updateBooking = async (payload: Partial<BookingRecord>) => {
+    if (!booking) {
+      return;
+    }
+
+    setActionBusy(true);
+    setError(null);
+
+    try {
+      await updateDoc(doc(db, 'bookings', booking.id), {
+        ...payload,
+        updatedAt: serverTimestamp(),
+      });
+    } catch (bookingError) {
+      console.error('Admin booking update failed:', bookingError);
+      setError('Booking update could not be saved.');
+    } finally {
+      setActionBusy(false);
+    }
+  };
 
   const handleMarkOfflinePayment = async () => {
     if (!booking) {
@@ -91,6 +136,47 @@ export const AdminBookingDetail: React.FC<AdminBookingDetailProps> = ({ bookingI
     } finally {
       setPaymentBusy(false);
     }
+  };
+
+  const handleConfirmBooking = async () => {
+    await updateBooking({
+      status: 'confirmed',
+    });
+  };
+
+  const handleCancelBooking = async () => {
+    if (!booking || !window.confirm('Cancel this booking? This cannot be undone.')) {
+      return;
+    }
+
+    await updateBooking({
+      status: 'cancelled',
+      cancelledBy: 'admin',
+      cancelledAt: serverTimestamp(),
+      assignedStaffId: null,
+      assignedStaffName: null,
+      assignedAt: null,
+      staffAcknowledgedAt: null,
+    });
+  };
+
+  const handleAssignChange = async (staffId: string) => {
+    if (!booking) {
+      return;
+    }
+
+    const selectedStaff = staff.find((member) => member.uid === staffId) || null;
+    const nextStatus = selectedStaff
+      ? (booking.status === 'pending' ? 'confirmed' : booking.status)
+      : 'pending';
+
+    await updateBooking({
+      assignedStaffId: selectedStaff?.uid || null,
+      assignedStaffName: selectedStaff?.displayName || selectedStaff?.email || null,
+      assignedAt: selectedStaff ? serverTimestamp() : null,
+      staffAcknowledgedAt: null,
+      status: nextStatus,
+    });
   };
 
   return (
@@ -129,6 +215,17 @@ export const AdminBookingDetail: React.FC<AdminBookingDetailProps> = ({ bookingI
                     <p className="flex items-center gap-2"><MapPin size={16} className="text-teal" /> {booking.locationLabel || booking.postcode}</p>
                     <p className="flex items-center gap-2"><Users size={16} className="text-teal" /> {booking.assignedStaffName || 'Unassigned'}</p>
                   </div>
+                  <div className="mt-6 grid gap-3 text-sm text-white/68 sm:grid-cols-2">
+                    <p>{booking.customerEmail}</p>
+                    <p>{booking.address}, {booking.city}, {booking.postcode}</p>
+                    <p>Total quoted: £{booking.total.toFixed(2)}</p>
+                    <p>Add-ons: {booking.addons.length > 0 ? booking.addons.length : 'None'}</p>
+                  </div>
+                  {booking.cancelledBy && (
+                    <p className="mt-4 text-[10px] font-bold uppercase tracking-widest text-red-400">
+                      Cancelled by {booking.cancelledBy}
+                    </p>
+                  )}
                 </div>
                 <div className="rounded-2xl border border-white/10 bg-white/5 p-5 text-sm">
                   <p className="text-[10px] font-bold uppercase tracking-widest text-white/50">Status</p>
@@ -158,6 +255,53 @@ export const AdminBookingDetail: React.FC<AdminBookingDetailProps> = ({ bookingI
                   <p className="mt-4 text-[10px] font-bold uppercase tracking-widest text-white/50">Progress</p>
                   <p className="mt-2 text-lg font-bold uppercase">{getTaskProgressPercent(booking)}%</p>
                 </div>
+              </div>
+              <div className="mt-6 grid gap-4 lg:grid-cols-[1fr_auto]">
+                <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-white/50">Assignment</p>
+                  <div className="mt-4 flex flex-col gap-3 lg:flex-row lg:items-center">
+                    <select
+                      value={booking.assignedStaffId || ''}
+                      onChange={(event) => void handleAssignChange(event.target.value)}
+                      disabled={!canManageAssignment || actionBusy}
+                      className="input-field bg-white/5 border-white/10 text-white focus:border-teal disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      <option value="" className="bg-charcoal text-white">Unassign booking</option>
+                      {staff.map((member) => (
+                        <option key={member.uid} value={member.uid} className="bg-charcoal text-white">
+                          {member.displayName || member.email}
+                        </option>
+                      ))}
+                    </select>
+                    <div className="text-[10px] font-bold uppercase tracking-widest text-white/45">
+                      {booking.assignedStaffName || 'No staff assigned yet'}
+                    </div>
+                  </div>
+                </div>
+                {booking.status !== 'cancelled' && (
+                  <div className="flex flex-wrap gap-3">
+                    {canConfirm && (
+                      <button
+                        type="button"
+                        onClick={() => void handleConfirmBooking()}
+                        disabled={actionBusy}
+                        className="rounded-xl bg-teal px-4 py-3 text-[10px] font-bold uppercase tracking-widest text-charcoal transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        {actionBusy ? 'Saving...' : 'Confirm Booking'}
+                      </button>
+                    )}
+                    {canCancel && (
+                      <button
+                        type="button"
+                        onClick={() => void handleCancelBooking()}
+                        disabled={actionBusy}
+                        className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-[10px] font-bold uppercase tracking-widest text-red-300 transition-colors hover:border-red-400 hover:text-red-200 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        {actionBusy ? 'Saving...' : 'Cancel Booking'}
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
 

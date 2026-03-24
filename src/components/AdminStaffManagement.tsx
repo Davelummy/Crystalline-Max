@@ -13,9 +13,10 @@ import {
   Users,
 } from 'lucide-react';
 import { motion } from 'motion/react';
+import { useNavigate } from 'react-router-dom';
 import { collection, doc, getDoc, onSnapshot, query, serverTimestamp, setDoc, updateDoc, where } from 'firebase/firestore';
 import { db } from '../firebase';
-import { formatSchedule, sortBookingsBySchedule } from '../lib/bookings';
+import { formatSchedule, getStatusLabel, sortBookingsBySchedule } from '../lib/bookings';
 import type { AppUserData, BookingRecord, EmployeeInvite } from '../types';
 
 async function generateUniqueEmployeeId() {
@@ -36,6 +37,7 @@ async function generateUniqueEmployeeId() {
 }
 
 export const AdminStaffManagement: React.FC = () => {
+  const navigate = useNavigate();
   const [staff, setStaff] = React.useState<AppUserData[]>([]);
   const [bookings, setBookings] = React.useState<BookingRecord[]>([]);
   const [invites, setInvites] = React.useState<EmployeeInvite[]>([]);
@@ -84,8 +86,8 @@ export const AdminStaffManagement: React.FC = () => {
     [invites],
   );
 
-  const unassignedBookings = sortBookingsBySchedule(
-    bookings.filter((booking) => !booking.assignedStaffId && !['completed', 'cancelled'].includes(booking.status)),
+  const manageableBookings = sortBookingsBySchedule(
+    bookings.filter((booking) => booking.status !== 'cancelled'),
   );
 
   const handleAssign = async (bookingId: string, staffMember: AppUserData | null) => {
@@ -94,6 +96,23 @@ export const AdminStaffManagement: React.FC = () => {
       assignedStaffName: staffMember?.displayName || staffMember?.email || null,
       status: staffMember ? 'confirmed' : 'pending',
       assignedAt: staffMember ? serverTimestamp() : null,
+      staffAcknowledgedAt: null,
+      updatedAt: serverTimestamp(),
+    });
+  };
+
+  const handleCancelBooking = async (bookingId: string) => {
+    if (!window.confirm('Cancel this booking? This cannot be undone.')) {
+      return;
+    }
+
+    await updateDoc(doc(db, 'bookings', bookingId), {
+      status: 'cancelled',
+      cancelledBy: 'admin',
+      cancelledAt: serverTimestamp(),
+      assignedStaffId: null,
+      assignedStaffName: null,
+      assignedAt: null,
       staffAcknowledgedAt: null,
       updatedAt: serverTimestamp(),
     });
@@ -336,31 +355,55 @@ export const AdminStaffManagement: React.FC = () => {
             <div className="dark-card p-6 border-white/5 h-fit">
               <h4 className="text-xs font-bold uppercase tracking-widest text-white/40 mb-6">Assignment Queue</h4>
               <div className="space-y-4">
-                {unassignedBookings.length > 0 ? unassignedBookings.map((booking) => (
+                {manageableBookings.length > 0 ? manageableBookings.map((booking) => (
                   <div key={booking.id} className="rounded-2xl border border-white/5 bg-white/5 p-4 space-y-4">
                     <div>
                       <p className="text-xs font-bold uppercase tracking-widest text-white">{booking.customerName}</p>
                       <p className="text-[10px] uppercase tracking-widest text-white/40 mt-1">{booking.serviceLabel}</p>
                       <p className="text-[10px] uppercase tracking-widest text-teal mt-2">{formatSchedule(booking)}</p>
+                      <p className="text-[10px] uppercase tracking-widest text-white/35 mt-2">{getStatusLabel(booking.status)}</p>
                     </div>
                     <select
                       className="input-field bg-white/5 border-white/10 text-white focus:border-teal"
                       value={booking.assignedStaffId || ''}
+                      disabled={!['pending', 'confirmed'].includes(booking.status)}
                       onChange={(event) => {
                         const selected = staff.find((member) => member.uid === event.target.value) || null;
                         void handleAssign(booking.id, selected);
                       }}
                     >
-                      <option value="" className="bg-charcoal text-white">Assign staff member</option>
+                      <option value="" className="bg-charcoal text-white">Unassign booking</option>
                       {staff.map((member) => (
                         <option key={member.uid} value={member.uid} className="bg-charcoal text-white">
                           {member.displayName || member.email}
                         </option>
                       ))}
                     </select>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => navigate(`/admin/bookings/${booking.id}`)}
+                        className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-[10px] font-bold uppercase tracking-widest text-white transition-colors hover:border-teal hover:text-teal"
+                      >
+                        Open Detail
+                      </button>
+                      {['pending', 'confirmed'].includes(booking.status) ? (
+                        <button
+                          type="button"
+                          onClick={() => void handleCancelBooking(booking.id)}
+                          className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-[10px] font-bold uppercase tracking-widest text-red-300 transition-colors hover:border-red-400 hover:text-red-200"
+                        >
+                          Cancel
+                        </button>
+                      ) : (
+                        <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-[10px] font-bold uppercase tracking-widest text-white/35">
+                          {booking.status === 'completed' ? 'Completed' : 'In progress'}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )) : (
-                  <p className="text-sm text-white/50">All pending bookings are assigned or there are no bookings yet.</p>
+                  <p className="text-sm text-white/50">There are no active bookings to manage right now.</p>
                 )}
               </div>
             </div>

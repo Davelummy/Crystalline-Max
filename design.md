@@ -207,6 +207,19 @@ Backend work now also follows an emulator-first pattern for secure features, wit
 - watch claim state
 - assign jobs
 
+### Admin Lifecycle Control Pattern
+
+Admin lifecycle actions are concentrated around the booking record rather than spread across unrelated screens.
+
+Current behavior:
+
+- pending bookings can be confirmed without leaving the booking context
+- pending and confirmed bookings can be cancelled with explicit confirmation
+- pending and confirmed bookings can be reassigned or unassigned from admin control surfaces
+- cancelled bookings become read-only in the detail view
+
+This keeps destructive actions deliberate and makes booking state transitions visible where the full job context is already present.
+
 ## Visual Principles
 
 ### Brand Tone
