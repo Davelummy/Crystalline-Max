@@ -12,7 +12,8 @@ Current execution checkpoint:
 - Phase 6 complete
 - Phase 7 complete
 - Phase 8 complete
-- Phase 9 next
+- Phase 9 complete
+- Phase 10 next
 
 ## Locked Corrections
 
@@ -303,7 +304,14 @@ No reversal path is planned from `paid` or `not_required`.
 - UK-oriented draft privacy and terms pages
 - clearly marked as draft pending final review
 
-### Phase 11 — Testing And CI
+### Phase 11 — Multi-Employee Job Assignment
+
+- move from single-assignee booking fields to a multi-assignee model
+- allow admin to assign more than one employee to the same booking
+- update staff schedule, notifications, check-in, task execution, and customer/admin displays for shared jobs
+- preserve backwards compatibility for existing single-assignee bookings during migration
+
+### Phase 12 — Testing And CI
 
 - Vitest
 - Firestore/rules tests
@@ -311,7 +319,7 @@ No reversal path is planned from `paid` or `not_required`.
 - Playwright
 - GitHub Actions
 
-### Phase 12 — Pre-Launch Hardening
+### Phase 13 — Pre-Launch Hardening
 
 - App Check
 - API restrictions
@@ -336,3 +344,8 @@ These do not block Phase 1, but they must be resolved during implementation:
 - whether to replace `bookingCount` with `completedBookingCount`
 - final real-world business identity fields for footer and legal pages
 - whether FCM remains single-device via `fcmToken` or expands to multi-device support
+
+## Roadmap Notes Added Mid-Execution
+
+- The admin navbar regression is treated as a router/admin-surface hardening issue and is folded into the completed routing/admin phases rather than treated as a new standalone phase.
+- Multi-employee job assignment is now a planned roadmap item because the current booking model is still single-assignee (`assignedStaffId` / `assignedStaffName`) and needs an explicit migration path.

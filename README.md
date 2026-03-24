@@ -18,6 +18,7 @@ Current migration status:
 - Phase 6 payments integration is implemented and deployed with Stripe-backed checkout session creation, webhook payment confirmation, customer pay-now actions, and admin offline payment override
 - Phase 7 notifications is implemented and deployed with booking update email triggers and a Europe/London scheduled reminder job
 - Phase 8 admin capability completion is implemented with booking confirm/cancel flows, reassignment controls, and richer admin booking detail actions
+- Phase 9 availability and capacity management is implemented with admin-managed blocked dates, booking-capacity controls, and a disabled-date customer calendar
 
 ## Approved Roadmap
 
@@ -38,6 +39,7 @@ Key approved constraints from that brief:
 - reminder scheduling targets `Europe/London`
 - legal pages are drafted for UK compliance but marked pending final review
 - build completion is measured against zero errors, not against existing bundle warnings
+- the roadmap now includes a dedicated multi-employee job-assignment phase because the live booking model is still single-assignee
 
 ## Core Capabilities
 
@@ -54,6 +56,7 @@ Key approved constraints from that brief:
 - Customer onboarding and profile editing
 - Live booking creation
 - Verified service location selection on a map
+- Availability-aware date selection with blocked/full dates visibly disabled
 - Booking history and billing visibility
 - Live progress updates during a job
 - Before and after photo evidence, including multi-image gallery viewing
@@ -80,6 +83,7 @@ Key approved constraints from that brief:
 - Live dashboard for bookings, check-ins, staff activity, and progress
 - Before and after photo review with gallery overlay
 - Booking detail actions for confirmation, cancellation, reassignment, unassignment, and offline payment override
+- Route-native admin navigation across dashboard, staff, and settings surfaces
 
 ## Product Rules
 
@@ -191,6 +195,8 @@ Phase 3 baseline currently provides:
 - deployed Stripe payment functions:
   - `createCheckoutSession`
   - `stripeWebhook`
+- deployed availability snapshot callable:
+  - `getAvailabilitySnapshot`
 
 Configured emulator ports:
 

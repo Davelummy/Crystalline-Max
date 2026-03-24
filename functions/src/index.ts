@@ -124,6 +124,25 @@ function addDays(date: Date, days: number) {
   return next;
 }
 
+function normalizeAvailabilitySettings(data: Record<string, unknown> | null) {
+  const blockedDates = getStringArray(data?.blockedDates);
+  const availableDetailingTimes = getStringArray(data?.availableDetailingTimes);
+  const availableTimeWindows = getStringArray(data?.availableTimeWindows).filter((value) =>
+    ['morning', 'afternoon', 'evening'].includes(value),
+  );
+
+  return {
+    maxBookingsPerDay: Math.max(1, Math.round(getNumber(data?.maxBookingsPerDay) ?? 4)),
+    blockedDates,
+    availableDetailingTimes: availableDetailingTimes.length > 0
+      ? availableDetailingTimes
+      : ['08:00', '10:30', '13:00', '15:30', '18:00'],
+    availableTimeWindows: availableTimeWindows.length > 0
+      ? availableTimeWindows
+      : ['morning', 'afternoon', 'evening'],
+  };
+}
+
 function getBookingNotificationInput(
   bookingId: string,
   data: Record<string, unknown>,
@@ -169,6 +188,36 @@ async function sendEmail(input: {
     console.error(`Email send failed for "${input.subject}"`, error);
   }
 }
+
+export const getAvailabilitySnapshot = onCall(async () => {
+  const today = getUkDateString(new Date());
+  const cutoff = getUkDateString(addDays(new Date(), 60));
+  const availabilitySnapshot = await db.doc('settings/availability').get();
+  const availability = normalizeAvailabilitySettings(asRecord(availabilitySnapshot.data()));
+
+  const bookingsSnapshot = await db
+    .collection('bookings')
+    .where('date', '>=', today)
+    .where('date', '<=', cutoff)
+    .get();
+
+  const bookedDateCounts = bookingsSnapshot.docs.reduce<Record<string, number>>((counts, docSnapshot) => {
+    const booking = asRecord(docSnapshot.data());
+    const date = getString(booking?.date);
+
+    if (!date || booking?.status === 'cancelled') {
+      return counts;
+    }
+
+    counts[date] = (counts[date] || 0) + 1;
+    return counts;
+  }, {});
+
+  return {
+    availability,
+    bookedDateCounts,
+  };
+});
 
 export const validateCheckin = onCall(async (request) => {
   if (!request.auth) {

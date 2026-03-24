@@ -347,17 +347,6 @@ function AdminLayout({ onLogout }: { onLogout: (nextPath?: string) => Promise<vo
       ) : (
         <>
           <AdminNavbar
-            onNavigate={(view) => {
-              if (view === 'staff-mgmt') {
-                navigate('/admin/staff');
-                return;
-              }
-              if (view === 'settings') {
-                navigate('/admin/settings');
-                return;
-              }
-              navigate('/admin/dashboard');
-            }}
             user={user}
             onLogout={() => void onLogout('/admin')}
           />

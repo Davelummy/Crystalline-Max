@@ -33,6 +33,7 @@ export type BookingStatus =
   | 'cancelled';
 
 export type PaymentStatus = 'pending' | 'paid' | 'not_required';
+export type AvailabilityTimeWindow = 'morning' | 'afternoon' | 'evening';
 
 export interface BookingPhoto {
   url: string;
@@ -146,4 +147,11 @@ export interface CheckIn {
   bookingAddress?: string | null;
   distanceMeters?: number | null;
   serverValidated?: boolean;
+}
+
+export interface AvailabilitySettings {
+  maxBookingsPerDay: number;
+  blockedDates: string[];
+  availableDetailingTimes: string[];
+  availableTimeWindows: AvailabilityTimeWindow[];
 }

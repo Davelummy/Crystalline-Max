@@ -1,14 +1,24 @@
 import React from 'react';
+import { DayPicker } from 'react-day-picker';
 import { AnimatePresence, motion } from 'motion/react';
 import { ChevronRight, Check, Clock, LogIn, MapPin, Sparkles } from 'lucide-react';
 import { addDoc, collection, doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
+import { httpsCallable } from 'firebase/functions';
 import { getAuthErrorMessage, signInWithGoogle } from '../lib/auth';
 import { cn } from '@/lib/utils';
-import { auth, db } from '../firebase';
+import { auth, db, functions } from '../firebase';
 import { MapLocationPicker } from './MapLocationPicker';
 import { CAR_ADDONS, HOME_ADDONS, SERVICES } from '../constants';
 import { getAddonLabel, getServiceById } from '../lib/bookings';
-import type { AppUserData, BookingLocationSelection } from '../types';
+import {
+  DEFAULT_AVAILABILITY_SETTINGS,
+  TIME_WINDOW_OPTIONS,
+  dateToIso,
+  isoToDate,
+  isDateUnavailable,
+  normalizeAvailabilitySettings,
+} from '@/lib/availability';
+import type { AppUserData, AvailabilitySettings, BookingLocationSelection } from '../types';
 
 const steps = [
   { id: 1, title: 'Service' },
@@ -39,10 +49,20 @@ interface BookingSelection {
   timeWindow: string;
 }
 
+interface AvailabilitySnapshotResponse {
+  availability: AvailabilitySettings;
+  bookedDateCounts: Record<string, number>;
+}
+
 export const BookingFlow: React.FC<BookingFlowProps> = ({ initialServiceId, onComplete }) => {
+  const todayIso = React.useMemo(() => dateToIso(new Date()), []);
   const [currentStep, setCurrentStep] = React.useState(initialServiceId ? 2 : 1);
   const [user, setUser] = React.useState(auth.currentUser);
   const [userData, setUserData] = React.useState<AppUserData | null>(null);
+  const [availability, setAvailability] = React.useState<AvailabilitySettings>(DEFAULT_AVAILABILITY_SETTINGS);
+  const [bookedDateCounts, setBookedDateCounts] = React.useState<Record<string, number>>({});
+  const [availabilityLoading, setAvailabilityLoading] = React.useState(true);
+  const [availabilityError, setAvailabilityError] = React.useState<string | null>(null);
   const [isSuccess, setIsSuccess] = React.useState(false);
   const [submitting, setSubmitting] = React.useState(false);
   const [authLoading, setAuthLoading] = React.useState(false);
@@ -59,8 +79,35 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ initialServiceId, onCo
     locationVerified: false,
     time: '',
     timeWindow: '',
-    date: new Date().toISOString().split('T')[0],
+    date: todayIso,
   });
+
+  const loadAvailabilitySnapshot = React.useCallback(async () => {
+    setAvailabilityLoading(true);
+    setAvailabilityError(null);
+
+    try {
+      const getSnapshot = httpsCallable<void, AvailabilitySnapshotResponse>(functions, 'getAvailabilitySnapshot');
+      const result = await getSnapshot();
+      const normalizedAvailability = normalizeAvailabilitySettings(result.data.availability);
+      const counts = result.data.bookedDateCounts || {};
+      setAvailability(normalizedAvailability);
+      setBookedDateCounts(counts);
+      return {
+        availability: normalizedAvailability,
+        bookedDateCounts: counts,
+      };
+    } catch (snapshotError) {
+      console.error('Availability snapshot failed:', snapshotError);
+      setAvailabilityError('Availability could not be loaded. You can still continue, but capacity will be rechecked before booking.');
+      return {
+        availability: DEFAULT_AVAILABILITY_SETTINGS,
+        bookedDateCounts: {},
+      };
+    } finally {
+      setAvailabilityLoading(false);
+    }
+  }, []);
 
   React.useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (nextUser) => {
@@ -76,6 +123,10 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ initialServiceId, onCo
 
     return () => unsubscribe();
   }, []);
+
+  React.useEffect(() => {
+    void loadAvailabilitySnapshot();
+  }, [loadAvailabilitySnapshot]);
 
   const selectedService = getServiceById(selection.serviceId);
   const isDetailing = selectedService?.type === 'car';
@@ -146,6 +197,14 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ initialServiceId, onCo
     };
   }, [selection]);
 
+  const selectedDateUnavailable = React.useMemo(
+    () => Boolean(selection.date) && isDateUnavailable(availability, selection.date, bookedDateCounts),
+    [availability, bookedDateCounts, selection.date],
+  );
+
+  const availableDetailingTimes = availability.availableDetailingTimes;
+  const availableTimeWindows = TIME_WINDOW_OPTIONS.filter((item) => availability.availableTimeWindows.includes(item.id));
+
   const handleSocialLogin = async () => {
     setAuthLoading(true);
     setError(null);
@@ -168,10 +227,35 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ initialServiceId, onCo
       return;
     }
 
+    if (!selection.date || (!selection.time && !selection.timeWindow)) {
+      setError('Select a valid date and time slot before submitting.');
+      return;
+    }
+
     setSubmitting(true);
     setError(null);
 
     try {
+      const latestAvailability = await loadAvailabilitySnapshot();
+
+      if (isDateUnavailable(latestAvailability.availability, selection.date, latestAvailability.bookedDateCounts)) {
+        setError('That date is no longer available. Choose another date before submitting.');
+        setCurrentStep(4);
+        return;
+      }
+
+      if (isDetailing && !latestAvailability.availability.availableDetailingTimes.includes(selection.time)) {
+        setError('That detailing time is no longer available. Choose another slot.');
+        setCurrentStep(4);
+        return;
+      }
+
+      if (!isDetailing && !latestAvailability.availability.availableTimeWindows.includes(selection.timeWindow as AvailabilitySettings['availableTimeWindows'][number])) {
+        setError('That service window is no longer available. Choose another slot.');
+        setCurrentStep(4);
+        return;
+      }
+
       const userRef = doc(db, 'users', user.uid);
       const latestUserDoc = await getDoc(userRef);
 
@@ -361,27 +445,67 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ initialServiceId, onCo
         return (
           <div className="space-y-6">
             <h3 className="text-2xl mb-2 font-display uppercase">Select Schedule</h3>
-            <p className="text-sm text-charcoal/50">Choose the date and the slot you want us to review.</p>
-            <input
-              type="date"
-              className="input-field-light"
-              value={selection.date}
-              min={new Date().toISOString().split('T')[0]}
-              onChange={(event) => setSelection((prev) => ({ ...prev, date: event.target.value }))}
-            />
+            <p className="text-sm text-charcoal/50">Choose the date and slot you want us to review. Blocked or fully booked dates are disabled.</p>
+            {availabilityError && (
+              <div className="rounded-2xl border border-amber-500/20 bg-amber-500/10 p-4 text-sm text-amber-700">
+                {availabilityError}
+              </div>
+            )}
+            <div className="booking-calendar rounded-2xl border border-charcoal/10 bg-charcoal/5 p-4">
+              <DayPicker
+                mode="single"
+                selected={selection.date ? isoToDate(selection.date) : undefined}
+                onSelect={(value) => {
+                  const nextDate = value ? dateToIso(value) : '';
+                  setSelection((prev) => ({
+                    ...prev,
+                    date: nextDate,
+                    time: '',
+                    timeWindow: '',
+                  }));
+                }}
+                disabled={(date) => {
+                  const dateIso = dateToIso(date);
+                  return dateIso < todayIso || isDateUnavailable(availability, dateIso, bookedDateCounts);
+                }}
+                showOutsideDays
+              />
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="rounded-2xl border border-charcoal/10 bg-charcoal/5 px-4 py-3 text-[10px] font-bold uppercase tracking-widest text-charcoal/55">
+                Capacity per day: {availability.maxBookingsPerDay}
+              </div>
+              <div className="rounded-2xl border border-charcoal/10 bg-charcoal/5 px-4 py-3 text-[10px] font-bold uppercase tracking-widest text-charcoal/55">
+                Blocked dates: {availability.blockedDates.length}
+              </div>
+            </div>
+            {selection.date && (
+              <div className={cn(
+                'rounded-2xl border px-4 py-3 text-[10px] font-bold uppercase tracking-widest',
+                selectedDateUnavailable
+                  ? 'border-red-500/20 bg-red-500/10 text-red-500'
+                  : 'border-emerald-500/20 bg-emerald-500/10 text-emerald-700',
+              )}>
+                {selectedDateUnavailable
+                  ? 'Selected date is no longer available.'
+                  : `${selection.date} has ${Math.max(availability.maxBookingsPerDay - (bookedDateCounts[selection.date] || 0), 0)} capacity slot(s) remaining.`}
+              </div>
+            )}
             <div className="grid grid-cols-1 gap-3">
               {isDetailing ? (
                 <div className="grid grid-cols-2 gap-3">
-                  {['08:00', '10:30', '13:00', '15:30', '18:00'].map((time) => (
+                  {availableDetailingTimes.map((time) => (
                     <button
                       key={time}
+                      disabled={!selection.date || selectedDateUnavailable || availabilityLoading}
                       onClick={() => {
                         setSelection((prev) => ({ ...prev, time, timeWindow: '' }));
                         nextStep();
                       }}
                       className={cn(
-                        'p-4 text-sm font-bold frost-card-light hover:border-teal transition-all',
+                        'p-4 text-sm font-bold frost-card-light transition-all disabled:cursor-not-allowed disabled:opacity-40',
                         selection.time === time && 'border-teal bg-teal/5',
+                        selection.date && !selectedDateUnavailable && 'hover:border-teal',
                       )}
                     >
                       {time}
@@ -390,20 +514,18 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ initialServiceId, onCo
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {[
-                    { id: 'morning', label: 'Morning', window: '08:00 - 12:00' },
-                    { id: 'afternoon', label: 'Afternoon', window: '12:00 - 16:00' },
-                    { id: 'evening', label: 'Evening', window: '16:00 - 20:00' },
-                  ].map((item) => (
+                  {availableTimeWindows.map((item) => (
                     <button
                       key={item.id}
+                      disabled={!selection.date || selectedDateUnavailable || availabilityLoading}
                       onClick={() => {
                         setSelection((prev) => ({ ...prev, timeWindow: item.id, time: '' }));
                         nextStep();
                       }}
                       className={cn(
-                        'w-full p-6 flex items-center justify-between frost-card-light hover:border-teal transition-all',
+                        'w-full p-6 flex items-center justify-between frost-card-light transition-all disabled:cursor-not-allowed disabled:opacity-40',
                         selection.timeWindow === item.id && 'border-teal bg-teal/5',
+                        selection.date && !selectedDateUnavailable && 'hover:border-teal',
                       )}
                     >
                       <div className="text-left">
@@ -413,6 +535,16 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ initialServiceId, onCo
                       <Clock size={16} className="text-teal" />
                     </button>
                   ))}
+                </div>
+              )}
+              {!isDetailing && availableTimeWindows.length === 0 && (
+                <div className="rounded-2xl border border-charcoal/10 bg-charcoal/5 p-4 text-sm text-charcoal/55">
+                  No service windows are currently available. Update `settings/availability` from the admin portal.
+                </div>
+              )}
+              {isDetailing && availableDetailingTimes.length === 0 && (
+                <div className="rounded-2xl border border-charcoal/10 bg-charcoal/5 p-4 text-sm text-charcoal/55">
+                  No detailing times are currently available. Update `settings/availability` from the admin portal.
                 </div>
               )}
             </div>

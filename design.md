@@ -33,6 +33,7 @@ Each user type has a dedicated route and dedicated interaction flow.
 - staff login and staff signup are separate
 - admin access is path-only through `/admin`
 - staff operational routes are employee-only in the approved roadmap
+- admin navigation should use real route links, not local view callbacks
 
 This reduces cognitive load and prevents role confusion.
 
@@ -76,6 +77,7 @@ Examples:
 - check-in is blocked away from site
 - check-out is blocked until tasks and after photos are complete
 - admin cannot be self-created from public UI
+- blocked or full service dates are disabled before a booking can be submitted
 
 ### 7. Server Trust Boundary
 
@@ -189,6 +191,7 @@ Backend work now also follows an emulator-first pattern for secure features, wit
 
 - step-based booking
 - validated location selection
+- availability-aware date and slot selection
 - constrained service selection
 - immediate persistence to Firestore
 

@@ -54,6 +54,7 @@ The product is built around one shared operational truth: bookings live in Fires
 - Coverage, revenue, active booking, and activity visibility
 - Before and after photo gallery review
 - Admin booking detail with confirm, cancel, reassign, unassign, and offline payment override controls
+- Availability and capacity controls backed by `settings/availability`
 
 ## Core Business Flows
 
@@ -165,6 +166,7 @@ Roadmap corrections already accepted before implementation:
 - draft legal pages marked for review
 - zero build errors as the baseline acceptance target
 - booking metric semantics to be revisited before server-trigger rollout
+- multi-employee job assignment is now added as a dedicated later phase because the current booking model is still single-assignee
 
 ## Major Upgrades Completed
 
@@ -186,6 +188,8 @@ Roadmap corrections already accepted before implementation:
 - Phase 6 payments integration is now implemented and deployed
 - Phase 7 notifications is now implemented and deployed
 - Phase 8 admin capability completion is now implemented and verified
+- Phase 9 availability and capacity management is now implemented and verified
+- Admin navigation is now being hardened as route-native navigation rather than legacy callback-driven shell controls
 - `react-router-dom` is installed and live
 - [AuthContext.tsx](/Users/davidolumide/Crystalline-Max/src/context/AuthContext.tsx) provides shared auth/profile state
 - [RouteGuard.tsx](/Users/davidolumide/Crystalline-Max/src/components/RouteGuard.tsx) enforces role-based access
@@ -263,6 +267,8 @@ Roadmap corrections already accepted before implementation:
 - Added admin-side booking cancellation with cancellation attribution fields
 - Added admin reassignment and unassignment controls from both dashboard and staff management surfaces
 - Added richer admin booking detail actions for confirmation, payment override, check-in review, and lifecycle control
+- Added `settings/availability` driven capacity management with blocked dates, per-day booking caps, and slot visibility toggles
+- Added a public-safe availability snapshot callable so the booking calendar can disable full dates without exposing booking records
 
 ### Staff Operations Upgrade
 

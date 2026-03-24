@@ -1,16 +1,21 @@
 import React from 'react';
 import type { User as FirebaseUser } from 'firebase/auth';
+import { NavLink } from 'react-router-dom';
 import { Logo } from './Logo';
 import { Menu, X, LogOut, Users, BarChart3, Settings } from 'lucide-react';
-import type { View } from '../types';
 
 interface AdminNavbarProps {
-  onNavigate: (view: View) => void;
   user: FirebaseUser;
   onLogout: () => void;
 }
 
-export const AdminNavbar: React.FC<AdminNavbarProps> = ({ onNavigate, user, onLogout }) => {
+const navItems = [
+  { to: '/admin/dashboard', label: 'Dashboard', icon: BarChart3 },
+  { to: '/admin/staff', label: 'Staff', icon: Users },
+  { to: '/admin/settings', label: 'Settings', icon: Settings },
+] as const;
+
+export const AdminNavbar: React.FC<AdminNavbarProps> = ({ user, onLogout }) => {
   const [isOpen, setIsOpen] = React.useState(false);
 
   return (
@@ -24,15 +29,15 @@ export const AdminNavbar: React.FC<AdminNavbarProps> = ({ onNavigate, user, onLo
           </div>
           
           <div className="hidden md:flex items-center gap-8">
-            <button onClick={() => onNavigate('admin')} className="text-xs font-bold tracking-widest text-white hover:text-teal transition-colors uppercase flex items-center gap-2">
-              <BarChart3 size={14} /> Dashboard
-            </button>
-            <button onClick={() => onNavigate('staff-mgmt')} className="text-xs font-bold tracking-widest text-white hover:text-teal transition-colors uppercase flex items-center gap-2">
-              <Users size={14} /> Staff
-            </button>
-            <button onClick={() => onNavigate('settings')} className="text-xs font-bold tracking-widest text-white hover:text-teal transition-colors uppercase flex items-center gap-2">
-              <Settings size={14} /> Settings
-            </button>
+            {navItems.map((item) => (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                className={({ isActive }) => `text-xs font-bold tracking-widest uppercase flex items-center gap-2 transition-colors ${isActive ? 'text-teal' : 'text-white hover:text-teal'}`}
+              >
+                <item.icon size={14} /> {item.label}
+              </NavLink>
+            ))}
 
             <div className="flex items-center gap-4 pl-4 border-l border-white/10">
               <div className="text-right">
@@ -56,9 +61,16 @@ export const AdminNavbar: React.FC<AdminNavbarProps> = ({ onNavigate, user, onLo
       {/* Mobile Menu */}
       {isOpen && (
         <div className="md:hidden bg-charcoal border-b border-teal/20 p-4 flex flex-col gap-4">
-          <button onClick={() => { onNavigate('admin'); setIsOpen(false); }} className="text-xs font-bold tracking-widest text-white text-left uppercase">Dashboard</button>
-          <button onClick={() => { onNavigate('staff-mgmt'); setIsOpen(false); }} className="text-xs font-bold tracking-widest text-white text-left uppercase">Staff Management</button>
-          <button onClick={() => { onNavigate('settings'); setIsOpen(false); }} className="text-xs font-bold tracking-widest text-white text-left uppercase">Settings</button>
+          {navItems.map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              onClick={() => setIsOpen(false)}
+              className={({ isActive }) => `text-xs font-bold tracking-widest text-left uppercase ${isActive ? 'text-teal' : 'text-white'}`}
+            >
+              {item.label}
+            </NavLink>
+          ))}
           <button onClick={() => { onLogout(); setIsOpen(false); }} className="text-xs font-bold tracking-widest text-red-500 text-left uppercase">Logout</button>
         </div>
       )}
