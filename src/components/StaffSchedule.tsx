@@ -4,7 +4,7 @@ import { motion } from 'motion/react';
 import { collection, onSnapshot, query, where } from 'firebase/firestore';
 import { auth, db } from '../firebase';
 import { cn } from '@/src/lib/utils';
-import { formatSchedule, getStatusLabel, sortBookingsBySchedule } from '../lib/bookings';
+import { formatSchedule, getStatusLabel, getTaskProgressPercent, sortBookingsBySchedule } from '../lib/bookings';
 import type { BookingRecord, View } from '../types';
 
 interface StaffScheduleProps {
@@ -80,6 +80,15 @@ export const StaffSchedule: React.FC<StaffScheduleProps> = ({ onNavigate }) => {
                       <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-[10px] text-white/40 uppercase tracking-widest font-bold">
                         <span className="flex items-center gap-1"><MapPin size={12} className="text-teal/40" /> {item.postcode}</span>
                         <span className="flex items-center gap-1"><Clock size={12} className="text-teal/40" /> {formatSchedule(item)}</span>
+                      </div>
+                      <div className="mt-4 max-w-sm">
+                        <div className="mb-2 flex items-center justify-between text-[9px] font-bold uppercase tracking-widest text-white/55">
+                          <span>Job progress</span>
+                          <span>{getTaskProgressPercent(item)}%</span>
+                        </div>
+                        <div className="h-2 rounded-full bg-white/8 overflow-hidden">
+                          <div className="h-full bg-teal rounded-full transition-all" style={{ width: `${getTaskProgressPercent(item)}%` }} />
+                        </div>
                       </div>
                     </div>
                   </div>

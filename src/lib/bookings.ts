@@ -1,5 +1,5 @@
 import { CAR_ADDONS, HOME_ADDONS, SERVICES } from '../constants';
-import type { BookingRecord, BookingStatus, StaffTask } from '../types';
+import type { BookingPhoto, BookingRecord, BookingStatus, StaffTask } from '../types';
 
 const SERVICE_TASKS: Record<string, StaffTask[]> = {
   'car-full': [
@@ -45,8 +45,79 @@ export function getAddonLabel(serviceId: string, addonId: string) {
   return addons.find((addon) => addon.id === addonId)?.label ?? addonId;
 }
 
-export function getBookingTasks(serviceId: string) {
-  return SERVICE_TASKS[serviceId] ?? [];
+export function getBookingTasks(serviceId: string, addons: string[] = []) {
+  const serviceTasks = SERVICE_TASKS[serviceId] ?? [];
+  const addonTasks = addons.map<StaffTask>((addonId) => ({
+    id: `addon-${addonId}`,
+    title: getAddonLabel(serviceId, addonId),
+    category: 'Add-on',
+    priority: 'medium',
+  }));
+
+  return [...serviceTasks, ...addonTasks];
+}
+
+export function getCompletedTaskIds(booking: Pick<BookingRecord, 'completedTaskIds'> | null) {
+  return booking?.completedTaskIds ?? [];
+}
+
+export function getTaskProgressPercent(booking: Pick<BookingRecord, 'serviceId' | 'addons' | 'completedTaskIds' | 'taskProgressPercent'>) {
+  if (typeof booking.taskProgressPercent === 'number' && Number.isFinite(booking.taskProgressPercent)) {
+    return booking.taskProgressPercent;
+  }
+
+  const tasks = getBookingTasks(booking.serviceId, booking.addons);
+  if (tasks.length === 0) return 0;
+
+  const completed = new Set(getCompletedTaskIds(booking));
+  return Math.round((tasks.filter((task) => completed.has(task.id)).length / tasks.length) * 100);
+}
+
+export function hasJobStarted(booking: Pick<BookingRecord, 'status' | 'beforePhotos' | 'beforePhotoUrl' | 'beforePhotoPath' | 'startedAt'>) {
+  return booking.status === 'in_progress' || getBeforePhotos(booking).length > 0 || Boolean(booking.startedAt);
+}
+
+export function hasJobCompleted(booking: Pick<BookingRecord, 'status' | 'afterPhotos' | 'afterPhotoUrl' | 'afterPhotoPath' | 'completedAt'>) {
+  return booking.status === 'completed' || getAfterPhotos(booking).length > 0 || Boolean(booking.completedAt);
+}
+
+export function getBeforePhotos(booking: Pick<BookingRecord, 'beforePhotos' | 'beforePhotoUrl' | 'beforePhotoPath' | 'startedAt'> | null): BookingPhoto[] {
+  if (!booking) return [];
+  if (Array.isArray(booking.beforePhotos) && booking.beforePhotos.length > 0) {
+    return booking.beforePhotos;
+  }
+  if (booking.beforePhotoUrl) {
+    return [{
+      url: booking.beforePhotoUrl,
+      path: booking.beforePhotoPath || '',
+      uploadedAt: booking.startedAt || '',
+    }];
+  }
+  return [];
+}
+
+export function getAfterPhotos(booking: Pick<BookingRecord, 'afterPhotos' | 'afterPhotoUrl' | 'afterPhotoPath' | 'completedAt'> | null): BookingPhoto[] {
+  if (!booking) return [];
+  if (Array.isArray(booking.afterPhotos) && booking.afterPhotos.length > 0) {
+    return booking.afterPhotos;
+  }
+  if (booking.afterPhotoUrl) {
+    return [{
+      url: booking.afterPhotoUrl,
+      path: booking.afterPhotoPath || '',
+      uploadedAt: booking.completedAt || '',
+    }];
+  }
+  return [];
+}
+
+export function getPrimaryBeforePhotoUrl(booking: Pick<BookingRecord, 'beforePhotos' | 'beforePhotoUrl' | 'beforePhotoPath' | 'startedAt'> | null) {
+  return getBeforePhotos(booking)[0]?.url || null;
+}
+
+export function getPrimaryAfterPhotoUrl(booking: Pick<BookingRecord, 'afterPhotos' | 'afterPhotoUrl' | 'afterPhotoPath' | 'completedAt'> | null) {
+  const photos = getAfterPhotos(booking);
+  return photos[photos.length - 1]?.url || null;
 }
 
 export function bookingDateValue(booking: Pick<BookingRecord, 'date' | 'time' | 'timeWindow'>) {

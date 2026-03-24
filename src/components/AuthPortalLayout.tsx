@@ -29,7 +29,7 @@ export const AuthPortalLayout: React.FC<AuthPortalLayoutProps> = ({
         <button
           type="button"
           onClick={onBack}
-          className="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-white/50 hover:text-teal transition-colors mb-8"
+          className="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-white/72 hover:text-teal transition-colors mb-8"
         >
           <ArrowLeft size={14} /> {backLabel}
         </button>
@@ -46,7 +46,7 @@ export const AuthPortalLayout: React.FC<AuthPortalLayoutProps> = ({
             <h1 className="text-4xl md:text-5xl text-white font-display uppercase tracking-wider leading-tight mb-6">
               {title}
             </h1>
-            <p className="text-white/45 text-sm leading-relaxed max-w-md">
+            <p className="text-white/72 text-sm leading-relaxed max-w-md">
               {description}
             </p>
 
@@ -64,7 +64,7 @@ export const AuthPortalLayout: React.FC<AuthPortalLayoutProps> = ({
             className="dark-card p-8 md:p-10 border-white/5"
           >
             {error && (
-              <div className="mb-6 flex items-center gap-3 rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-4 text-xs font-bold uppercase tracking-widest text-red-400">
+              <div className="mb-6 flex items-center gap-3 rounded-2xl border border-red-500/25 bg-red-500/12 px-4 py-4 text-xs font-bold uppercase tracking-widest text-red-300">
                 <AlertCircle size={16} /> {error}
               </div>
             )}

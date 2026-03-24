@@ -2,8 +2,9 @@ import React from 'react';
 import { Calendar, ChevronRight, Clock, MapPin, Repeat, User } from 'lucide-react';
 import { collection, onSnapshot, query, where } from 'firebase/firestore';
 import { db } from '../firebase';
-import { formatSchedule, getStatusLabel, isUpcomingBooking, sortBookingsByCreatedAt, sortBookingsBySchedule } from '../lib/bookings';
-import type { AppUserData, BookingRecord, View } from '../types';
+import { formatSchedule, getAfterPhotos, getBeforePhotos, getPrimaryAfterPhotoUrl, getPrimaryBeforePhotoUrl, getStatusLabel, getTaskProgressPercent, hasJobCompleted, hasJobStarted, isUpcomingBooking, sortBookingsByCreatedAt, sortBookingsBySchedule } from '../lib/bookings';
+import { PhotoGalleryOverlay } from './PhotoGalleryOverlay';
+import type { AppUserData, BookingPhoto, BookingRecord, View } from '../types';
 
 interface CustomerDashboardProps {
   onNavigate: (view: View) => void;
@@ -14,6 +15,7 @@ interface CustomerDashboardProps {
 export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate, user, userData }) => {
   const [bookings, setBookings] = React.useState<BookingRecord[]>([]);
   const [loading, setLoading] = React.useState(true);
+  const [galleryState, setGalleryState] = React.useState<{ title: string; photos: BookingPhoto[] } | null>(null);
 
   React.useEffect(() => {
     if (!user) return;
@@ -34,11 +36,22 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
   }, [user]);
 
   const scheduled = sortBookingsBySchedule(bookings);
-  const upcoming = scheduled.find((booking) => isUpcomingBooking(booking)) ?? null;
+  const upcoming = scheduled.find((booking) => booking.status === 'in_progress') ??
+    scheduled.find((booking) => isUpcomingBooking(booking)) ??
+    null;
   const pastBookings = bookings.filter((booking) => booking.id !== upcoming?.id).slice(0, 5);
+  const beforePhotos = upcoming ? getBeforePhotos(upcoming) : [];
+  const afterPhotos = upcoming ? getAfterPhotos(upcoming) : [];
 
   return (
     <div className="min-h-screen bg-silver/10 pt-24 pb-12">
+      {galleryState && (
+        <PhotoGalleryOverlay
+          title={galleryState.title}
+          photos={galleryState.photos}
+          onClose={() => setGalleryState(null)}
+        />
+      )}
       <div className="max-w-4xl mx-auto px-4">
         <header className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-6 mb-12">
           <div>
@@ -82,6 +95,53 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
                       <Clock size={16} className="text-teal" /> {getStatusLabel(upcoming.status)}
                     </div>
                   </div>
+                  {(hasJobStarted(upcoming) || upcoming.status === 'confirmed') && (
+                    <div className="mt-6">
+                      <div className="mb-2 flex items-center justify-between text-[10px] font-bold uppercase tracking-widest text-white/65">
+                        <span>Live progress</span>
+                        <span>{getTaskProgressPercent(upcoming)}%</span>
+                      </div>
+                      <div className="h-2 rounded-full bg-white/10 overflow-hidden">
+                        <div className="h-full bg-teal rounded-full transition-all" style={{ width: `${getTaskProgressPercent(upcoming)}%` }} />
+                      </div>
+                      <div className="mt-4 grid grid-cols-2 gap-3">
+                        <div className="rounded-xl border border-white/10 bg-white/5 p-3 text-[10px] font-bold uppercase tracking-widest text-white/65">
+                          <p>Before Photo</p>
+                          {getPrimaryBeforePhotoUrl(upcoming) ? (
+                            <>
+                              <img src={getPrimaryBeforePhotoUrl(upcoming)!} alt="Before service" className="mt-3 h-24 w-full rounded-lg object-cover" />
+                              <button
+                                type="button"
+                                onClick={() => setGalleryState({ title: 'Before Photos', photos: beforePhotos })}
+                                className="mt-3 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-white/80 hover:border-teal hover:text-teal transition-colors"
+                              >
+                                View Gallery ({beforePhotos.length})
+                              </button>
+                            </>
+                          ) : (
+                            <p className="mt-3">Pending</p>
+                          )}
+                        </div>
+                        <div className="rounded-xl border border-white/10 bg-white/5 p-3 text-[10px] font-bold uppercase tracking-widest text-white/65">
+                          <p>After Photo</p>
+                          {getPrimaryAfterPhotoUrl(upcoming) && hasJobCompleted(upcoming) ? (
+                            <>
+                              <img src={getPrimaryAfterPhotoUrl(upcoming)!} alt="After service" className="mt-3 h-24 w-full rounded-lg object-cover" />
+                              <button
+                                type="button"
+                                onClick={() => setGalleryState({ title: 'After Photos', photos: afterPhotos })}
+                                className="mt-3 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-white/80 hover:border-teal hover:text-teal transition-colors"
+                              >
+                                View Gallery ({afterPhotos.length})
+                              </button>
+                            </>
+                          ) : (
+                            <p className="mt-3">Pending</p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </>
               ) : (
                 <div className="space-y-4">

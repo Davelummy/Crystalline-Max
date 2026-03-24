@@ -35,7 +35,7 @@ export const StaffSignupPage: React.FC<StaffSignupPageProps> = ({
       onBack={onBack}
       backLabel="Back to Portals"
       aside={(
-        <div className="space-y-4 text-[10px] uppercase tracking-widest font-bold text-white/35">
+        <div className="space-y-4 text-[10px] uppercase tracking-widest font-bold text-white/68">
           <div className="flex items-center gap-3">
             <BadgeCheck size={14} className="text-teal" />
             Employee ID required
@@ -49,11 +49,11 @@ export const StaffSignupPage: React.FC<StaffSignupPageProps> = ({
     >
       <form onSubmit={handleSubmit} className="space-y-5">
         <div>
-          <label className="block text-[10px] font-bold uppercase tracking-widest text-white/40 mb-2">
+          <label className="block text-[10px] font-bold uppercase tracking-widest text-white/68 mb-2">
             Employee ID
           </label>
           <div className="relative">
-            <BadgeCheck className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={16} />
+            <BadgeCheck className="absolute left-4 top-1/2 -translate-y-1/2 text-white/45" size={16} />
             <input
               type="text"
               value={employeeId}
@@ -67,11 +67,11 @@ export const StaffSignupPage: React.FC<StaffSignupPageProps> = ({
         </div>
 
         <div>
-          <label className="block text-[10px] font-bold uppercase tracking-widest text-white/40 mb-2">
+          <label className="block text-[10px] font-bold uppercase tracking-widest text-white/68 mb-2">
             Company Email
           </label>
           <div className="relative">
-            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={16} />
+            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-white/45" size={16} />
             <input
               type="email"
               value={email}
@@ -85,11 +85,11 @@ export const StaffSignupPage: React.FC<StaffSignupPageProps> = ({
         </div>
 
         <div>
-          <label className="block text-[10px] font-bold uppercase tracking-widest text-white/40 mb-2">
+          <label className="block text-[10px] font-bold uppercase tracking-widest text-white/68 mb-2">
             Password
           </label>
           <div className="relative">
-            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={16} />
+            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-white/45" size={16} />
             <input
               type="password"
               value={password}

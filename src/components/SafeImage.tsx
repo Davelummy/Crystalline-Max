@@ -12,7 +12,7 @@ export const SafeImage: React.FC<SafeImageProps> = ({
   alt, 
   className, 
   containerClassName,
-  fallbackSrc = "https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&q=80&w=800",
+  fallbackSrc,
   ...props 
 }) => {
   const [isLoading, setIsLoading] = useState(true);
@@ -35,7 +35,7 @@ export const SafeImage: React.FC<SafeImageProps> = ({
         </div>
       )}
       
-      {error ? (
+      {error || !src ? (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-charcoal/90 text-white/20 gap-2 p-4 text-center">
           <ImageOff size={32} />
           <span className="text-[10px] uppercase tracking-widest font-bold">Image Unavailable</span>

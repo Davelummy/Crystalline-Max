@@ -22,6 +22,7 @@ import { PublicNavbar } from './components/PublicNavbar';
 import { Services } from './components/Services';
 import { StaffNavbar } from './components/StaffNavbar';
 import { StaffLoginPage } from './components/StaffLoginPage';
+import { StaffNotifications } from './components/StaffNotifications';
 import { StaffOnboarding } from './components/StaffOnboarding';
 import { StaffSchedule } from './components/StaffSchedule';
 import { StaffSignupPage } from './components/StaffSignupPage';
@@ -34,6 +35,7 @@ import {
   createCompanyUser,
   getAuthErrorMessage,
   getSavedLoginTarget,
+  hasSavedLoginTarget,
   isCompanyEmail,
   normalizeEmployeeId,
   signInWithCompanyEmail,
@@ -59,7 +61,7 @@ function AccessMessage({
       <div className="max-w-md text-center">
         <AlertCircle className="mx-auto mb-4 text-red-500" size={48} />
         <h2 className="text-xl font-display uppercase mb-4">{title}</h2>
-        <p className="text-charcoal/40 text-sm mb-8">{body}</p>
+        <p className="text-white/72 text-sm mb-8">{body}</p>
         <button onClick={onAction} className="btn-primary">{actionLabel}</button>
       </div>
     </div>
@@ -68,7 +70,12 @@ function AccessMessage({
 
 export default function App() {
   const [portal, setPortal] = React.useState<Portal>('public');
-  const [currentView, setCurrentView] = React.useState<View>('landing');
+  const [pathname, setPathname] = React.useState(() => (
+    typeof window === 'undefined' ? '/' : window.location.pathname
+  ));
+  const [currentView, setCurrentView] = React.useState<View>(() => (
+    typeof window !== 'undefined' && window.location.pathname === '/admin' ? 'admin-login' : 'landing'
+  ));
   const [preSelectedService, setPreSelectedService] = React.useState<string | null>(null);
   const [user, setUser] = React.useState<User | null>(null);
   const [userData, setUserData] = React.useState<AppUserData | null>(null);
@@ -77,6 +84,18 @@ export default function App() {
   const [loading, setLoading] = React.useState(true);
   const [isLoggingIn, setIsLoggingIn] = React.useState(false);
   const [authError, setAuthError] = React.useState<string | null>(null);
+  const isAdminPath = pathname === '/admin';
+
+  const publicViews = React.useMemo<View[]>(() => [
+    'landing',
+    'booking',
+    'estimator',
+    'selection',
+    'customer-login',
+    'staff-login',
+    'staff-signup',
+    'admin-login',
+  ], []);
 
   const buildCompanyDisplayName = React.useCallback((email: string) => {
     const localPart = email.split('@')[0] || 'staff';
@@ -93,16 +112,36 @@ export default function App() {
     setCurrentView('selection');
   }, []);
 
+  const replacePath = React.useCallback((nextPath: '/' | '/admin') => {
+    if (typeof window === 'undefined') return;
+    if (window.location.pathname !== nextPath) {
+      window.history.replaceState({}, '', nextPath);
+    }
+    setPathname(nextPath);
+  }, []);
+
   const goToPublicView = React.useCallback((view: Extract<View, 'selection' | 'customer-login' | 'staff-login' | 'staff-signup' | 'admin-login' | 'landing' | 'booking' | 'estimator'>) => {
     setAuthError(null);
     setPortal('public');
     setCurrentView(view);
   }, []);
 
-  const rejectPortalLogin = React.useCallback(async (message: string) => {
+  const getLoginViewForTarget = React.useCallback((target: Exclude<Portal, 'public'>): Extract<View, 'customer-login' | 'staff-login' | 'admin-login'> => {
+    if (target === 'staff') return 'staff-login';
+    if (target === 'admin') return 'admin-login';
+    return 'customer-login';
+  }, []);
+
+  const resetToLoginView = React.useCallback((target: Exclude<Portal, 'public'>, message: string) => {
+    setAuthError(message);
+    setPortal('public');
+    setCurrentView(getLoginViewForTarget(target));
+  }, [getLoginViewForTarget]);
+
+  const rejectPortalLogin = React.useCallback(async (target: Exclude<Portal, 'public'>, message: string) => {
     await signOut(auth).catch(() => undefined);
-    resetToSelection(message);
-  }, [resetToSelection]);
+    resetToLoginView(target, message);
+  }, [resetToLoginView]);
 
   const completePortalLogin = React.useCallback(async (nextUser: User, targetPortal: Exclude<Portal, 'public'>) => {
     const userSnapshot = await getDoc(doc(db, 'users', nextUser.uid));
@@ -115,6 +154,7 @@ export default function App() {
       }
 
       await rejectPortalLogin(
+        targetPortal,
         targetPortal === 'staff'
           ? 'No staff profile was found for this account. Use Create Staff Account with your employee ID first.'
           : 'Admin access must be provisioned manually in Firebase Authentication and Firestore.',
@@ -132,7 +172,7 @@ export default function App() {
 
     if (data.role === 'employee') {
       if (targetPortal === 'admin') {
-        await rejectPortalLogin('Only Firestore users with the role admin can enter the admin portal.');
+        await rejectPortalLogin('admin', 'Only Firestore users with the role admin can enter the admin portal.');
         return false;
       }
 
@@ -142,7 +182,7 @@ export default function App() {
     }
 
     if (targetPortal !== 'customer') {
-      await rejectPortalLogin('This account does not have access to the selected workforce portal.');
+      await rejectPortalLogin(targetPortal, 'This account does not have access to the selected workforce portal.');
       return false;
     }
 
@@ -157,7 +197,45 @@ export default function App() {
   };
 
   React.useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+
+    const syncPathname = () => setPathname(window.location.pathname);
+    window.addEventListener('popstate', syncPathname);
+
+    return () => {
+      window.removeEventListener('popstate', syncPathname);
+    };
+  }, []);
+
+  React.useEffect(() => {
+    if (portal === 'admin' || (portal === 'public' && currentView === 'admin-login')) {
+      replacePath('/admin');
+      return;
+    }
+
+    replacePath('/');
+  }, [currentView, portal, replacePath]);
+
+  React.useEffect(() => {
+    if (portal !== 'public') return;
+
+    if (isAdminPath && currentView !== 'admin-login') {
+      setCurrentView('admin-login');
+      return;
+    }
+
+    if (!isAdminPath && currentView === 'admin-login') {
+      setCurrentView('landing');
+    }
+  }, [currentView, isAdminPath, portal]);
+
+  React.useEffect(() => {
     let active = true;
+    const loginTargetView = hasSavedLoginTarget() ? getLoginViewForTarget(getSavedLoginTarget()) : null;
+
+    if (loginTargetView) {
+      setCurrentView(loginTargetView);
+    }
 
     getRedirectResult(auth)
       .then(async (result) => {
@@ -169,13 +247,16 @@ export default function App() {
         if (!active) return;
         console.error('Redirect login failed:', error);
         setAuthError(getAuthErrorMessage(error));
+        if (loginTargetView) {
+          setCurrentView(loginTargetView);
+        }
         setIsLoggingIn(false);
       });
 
     return () => {
       active = false;
     };
-  }, [completePortalLogin]);
+  }, [completePortalLogin, getLoginViewForTarget]);
 
   React.useEffect(() => {
     let unsubscribeUserDoc: (() => void) | null = null;
@@ -193,9 +274,22 @@ export default function App() {
         setUserRole(null);
         setIsOnboarded(false);
         setPortal('public');
-        setCurrentView('landing');
+        setCurrentView((currentView) => (
+          publicViews.includes(currentView)
+            ? currentView
+            : window.location.pathname === '/admin'
+              ? 'admin-login'
+              : 'landing'
+        ));
         setLoading(false);
         return;
+      }
+
+      setLoading(true);
+
+      if (!isAdminPath && hasSavedLoginTarget() && getSavedLoginTarget() === 'customer') {
+        setPortal('customer');
+        setCurrentView('customer');
       }
 
       unsubscribeUserDoc = onSnapshot(doc(db, 'users', nextUser.uid), (snapshot) => {
@@ -222,10 +316,26 @@ export default function App() {
       unsubscribeAuth();
       if (unsubscribeUserDoc) unsubscribeUserDoc();
     };
-  }, []);
+  }, [isAdminPath, publicViews]);
 
   React.useEffect(() => {
     if (loading || !user || portal !== 'public') return;
+
+    const hasCustomerLoginIntent =
+      currentView === 'customer-login' ||
+      (hasSavedLoginTarget() && getSavedLoginTarget() === 'customer');
+
+    if (isAdminPath) {
+      if (userRole === 'admin') {
+        setPortal('admin');
+        setCurrentView('admin');
+        return;
+      }
+
+      setAuthError('Only manually provisioned admin accounts can access the admin portal.');
+      void signOut(auth).catch(() => undefined);
+      return;
+    }
 
     if (userRole === 'admin') {
       setPortal('admin');
@@ -240,16 +350,18 @@ export default function App() {
     }
 
     if (userRole === 'client') {
+      clearLoginTarget();
       setPortal('customer');
       setCurrentView('customer');
       return;
     }
 
-    if (!userData && !isCompanyEmail(user.email || '')) {
+    if (!userData && (hasCustomerLoginIntent || !isCompanyEmail(user.email || ''))) {
+      clearLoginTarget();
       setPortal('customer');
       setCurrentView('customer');
     }
-  }, [loading, portal, user, userData, userRole]);
+  }, [currentView, isAdminPath, loading, portal, user, userData, userRole]);
 
   const handleCustomerLogin = async () => {
     if (isLoggingIn) return;
@@ -316,9 +428,33 @@ export default function App() {
     }
 
     let createdUser: User | null = null;
+    let onboardingUser: User | null = null;
     let staffProfileCreated = false;
 
     try {
+      try {
+        const credential = await createCompanyUser(normalizedEmail, password);
+        createdUser = credential.user;
+        onboardingUser = credential.user;
+      } catch (error) {
+        const code = typeof error === 'object' && error && 'code' in error
+          ? String((error as { code: unknown }).code)
+          : '';
+
+        if (code !== 'auth/email-already-in-use') {
+          throw error;
+        }
+
+        const credential = await signInWithCompanyEmail(normalizedEmail, password);
+        onboardingUser = credential.user;
+      }
+
+      if (!onboardingUser) {
+        throw new Error('Staff account provisioning could not start.');
+      }
+
+      await onboardingUser.getIdToken(true);
+
       const inviteSnapshot = await getDoc(doc(db, 'employeeInvites', normalizedEmployeeId));
 
       if (!inviteSnapshot.exists()) {
@@ -336,15 +472,19 @@ export default function App() {
         throw new Error(`This employee ID is reserved for ${reservedEmail}. Use that company email or ask the boss to update the invite.`);
       }
 
-      const credential = await createCompanyUser(normalizedEmail, password);
-      createdUser = credential.user;
-
-      const userRef = doc(db, 'users', createdUser.uid);
+      const userRef = doc(db, 'users', onboardingUser.uid);
       const inviteRef = doc(db, 'employeeInvites', normalizedEmployeeId);
+      const existingUserSnapshot = await getDoc(userRef);
+
+      if (existingUserSnapshot.exists()) {
+        await completePortalLogin(onboardingUser, 'staff');
+        return;
+      }
+
       const batch = writeBatch(db);
 
       batch.set(userRef, {
-        uid: createdUser.uid,
+        uid: onboardingUser.uid,
         email: normalizedEmail,
         displayName: invite.displayName || buildCompanyDisplayName(normalizedEmail),
         role: 'employee',
@@ -359,7 +499,7 @@ export default function App() {
 
       batch.update(inviteRef, {
         claimed: true,
-        claimedByUid: createdUser.uid,
+        claimedByUid: onboardingUser.uid,
         claimedByEmail: normalizedEmail,
         claimedAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
@@ -367,7 +507,7 @@ export default function App() {
 
       await batch.commit();
       staffProfileCreated = true;
-      await completePortalLogin(createdUser, 'staff');
+      await completePortalLogin(onboardingUser, 'staff');
     } catch (error) {
       console.error('Staff signup failed:', error);
 
@@ -378,9 +518,7 @@ export default function App() {
       }
 
       const message = error instanceof Error ? error.message : getAuthErrorMessage(error);
-      setAuthError(message);
-      setPortal('public');
-      setCurrentView('selection');
+      resetToLoginView('staff', message);
     } finally {
       setIsLoggingIn(false);
     }
@@ -410,24 +548,36 @@ export default function App() {
     }
   };
 
-  const handleLogout = async () => {
+  const handleLogout = async (nextView: View = 'landing') => {
     await signOut(auth);
     setAuthError(null);
     setPortal('public');
-    setCurrentView('landing');
+    setCurrentView(nextView);
     setPreSelectedService(null);
   };
 
-  const renderPublicPortal = () => (
-    <>
-      <PublicNavbar
-        onNavigate={(view) => {
-          setCurrentView(view);
-          if (view !== 'booking') setPreSelectedService(null);
-        }}
-      />
-      <main>
-        {currentView === 'landing' ? (
+  const renderPublicPortal = () => {
+    if (currentView === 'admin-login') {
+      return (
+        <AdminLoginPage
+          onBack={() => goToPublicView('landing')}
+          onLogin={handleAdminLogin}
+          isLoggingIn={isLoggingIn}
+          error={authError}
+        />
+      );
+    }
+
+    return (
+      <>
+        <PublicNavbar
+          onNavigate={(view) => {
+            setCurrentView(view);
+            if (view !== 'booking') setPreSelectedService(null);
+          }}
+        />
+        <main>
+          {currentView === 'landing' ? (
           <>
             <Hero
               onBookNow={() => setCurrentView('booking')}
@@ -461,7 +611,6 @@ export default function App() {
           <PortalSelection
             onSelectCustomer={() => goToPublicView('customer-login')}
             onSelectStaff={() => goToPublicView('staff-login')}
-            onSelectAdmin={() => goToPublicView('admin-login')}
           />
         ) : currentView === 'customer-login' ? (
           <CustomerLoginPage
@@ -486,13 +635,6 @@ export default function App() {
             isLoggingIn={isLoggingIn}
             error={authError}
           />
-        ) : currentView === 'admin-login' ? (
-          <AdminLoginPage
-            onBack={() => goToPublicView('selection')}
-            onLogin={handleAdminLogin}
-            isLoggingIn={isLoggingIn}
-            error={authError}
-          />
         ) : (
           <Hero
             onBookNow={() => setCurrentView('booking')}
@@ -502,15 +644,16 @@ export default function App() {
             }}
           />
         )}
-      </main>
-    </>
-  );
+        </main>
+      </>
+    );
+  };
 
   const renderAuthenticatedPortal = () => {
     if (!user) return renderPublicPortal();
 
     if (!userData) {
-      if (!isCompanyEmail(user.email || '')) {
+      if (portal === 'customer') {
         return <CustomerOnboarding onComplete={() => setIsOnboarded(true)} />;
       }
 
@@ -520,7 +663,7 @@ export default function App() {
           body="Staff and admin users must have the correct Firestore profile before they can use these portals."
           actionLabel="Return to Portal Selection"
           onAction={() => {
-            void handleLogout().then(() => setCurrentView('selection'));
+            void handleLogout('selection');
           }}
         />
       );
@@ -539,7 +682,7 @@ export default function App() {
           body="You do not have administrative privileges."
           actionLabel="Return to Portal Selection"
           onAction={() => {
-            void handleLogout().then(() => setCurrentView('selection'));
+            void handleLogout('selection');
           }}
         />
       );
@@ -560,20 +703,15 @@ export default function App() {
 
     return (
       <>
-        {portal === 'customer' && <CustomerNavbar onNavigate={setCurrentView} user={user} onLogout={handleLogout} />}
+        {portal === 'customer' && <CustomerNavbar onNavigate={setCurrentView} user={user} onLogout={() => void handleLogout('landing')} />}
         {portal === 'staff' && (
           <StaffNavbar
             onNavigate={setCurrentView}
             user={user}
-            onLogout={handleLogout}
-            onSwitchPortal={(nextPortal) => {
-              setPortal(nextPortal);
-              setCurrentView(nextPortal === 'admin' ? 'admin' : nextPortal === 'staff' ? 'schedule' : 'customer');
-            }}
-            userRole={userRole}
+            onLogout={() => void handleLogout('landing')}
           />
         )}
-        {portal === 'admin' && <AdminNavbar onNavigate={setCurrentView} user={user} onLogout={handleLogout} />}
+        {portal === 'admin' && <AdminNavbar onNavigate={setCurrentView} user={user} onLogout={() => void handleLogout('admin-login')} />}
 
         <main>
           {portal === 'customer' && (
@@ -598,7 +736,8 @@ export default function App() {
             currentView === 'checkin' ? <EmployeeCheckIn /> :
             currentView === 'schedule' ? <StaffSchedule onNavigate={setCurrentView} /> :
             currentView === 'tasks' ? <StaffTasks onNavigate={setCurrentView} /> :
-            <div className="pt-32 text-center uppercase tracking-widest text-xs text-white/40">
+            currentView === 'notifications' ? <StaffNotifications onNavigate={setCurrentView} /> :
+            <div className="pt-32 text-center uppercase tracking-widest text-xs text-white/65">
               {currentView} module coming soon
             </div>
           )}
@@ -607,7 +746,7 @@ export default function App() {
             currentView === 'admin' ? <AdminDashboard /> :
             currentView === 'staff-mgmt' ? <AdminStaffManagement /> :
             currentView === 'settings' ? <AdminSettings /> :
-            <div className="pt-32 text-center uppercase tracking-widest text-xs text-white/40">
+            <div className="pt-32 text-center uppercase tracking-widest text-xs text-white/65">
               {currentView} module coming soon
             </div>
           )}
@@ -655,23 +794,23 @@ export default function App() {
           <div className="grid md:grid-cols-4 gap-12">
             <div className="col-span-2">
               <h4 className="text-2xl mb-6">CRYSTALLINE MAX LTD</h4>
-              <p className="text-white/40 text-sm max-w-sm leading-relaxed">
+              <p className="text-white/68 text-sm max-w-sm leading-relaxed">
                 Premium mobile car detailing and residential/commercial cleaning services based in Manchester.
                 Precision in every detail, excellence in every clean.
               </p>
             </div>
             <div>
               <h5 className="text-xs font-bold uppercase tracking-widest mb-6 text-teal">Contact</h5>
-              <p className="text-sm text-white/60">info@crystallinemax.co.uk</p>
-              <p className="text-sm text-white/60">+44 (0) 161 123 4567</p>
+              <p className="text-sm text-white/75">info@crystallinemax.co.uk</p>
+              <p className="text-sm text-white/75">+44 (0) 161 123 4567</p>
             </div>
             <div>
               <h5 className="text-xs font-bold uppercase tracking-widest mb-6 text-teal">Location</h5>
-              <p className="text-sm text-white/60">Manchester Hub</p>
-              <p className="text-sm text-white/60">Salford, M5 4WT</p>
+              <p className="text-sm text-white/75">Manchester Hub</p>
+              <p className="text-sm text-white/75">Salford, M5 4WT</p>
             </div>
           </div>
-          <div className="mt-20 pt-8 border-t border-white/5 flex justify-between items-center text-[10px] font-bold uppercase tracking-widest text-white/20">
+          <div className="mt-20 flex flex-col gap-4 border-t border-white/5 pt-8 text-[10px] font-bold uppercase tracking-widest text-white/45 md:flex-row md:items-center md:justify-between">
             <p>© 2026 CRYSTALLINE MAX LTD. ALL RIGHTS RESERVED.</p>
             <div className="flex gap-8">
               <a href="#" className="hover:text-teal transition-colors">Privacy</a>

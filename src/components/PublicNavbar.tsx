@@ -48,7 +48,7 @@ export const PublicNavbar: React.FC<PublicNavbarProps> = ({ onNavigate }) => {
           <button onClick={() => { onNavigate('landing'); setIsOpen(false); }} className="text-xs font-bold tracking-widest text-white text-left uppercase">Home</button>
           <button onClick={() => { onNavigate('landing'); setIsOpen(false); }} className="text-xs font-bold tracking-widest text-white text-left uppercase">Services</button>
           <button onClick={() => { onNavigate('estimator'); setIsOpen(false); }} className="text-xs font-bold tracking-widest text-white text-left uppercase">Estimator</button>
-          <button onClick={() => { onNavigate('selection'); setIsOpen(false); }} className="text-xs font-bold tracking-widest text-white text-left uppercase">Portal</button>
+          <button onClick={() => { onNavigate('selection'); setIsOpen(false); }} className="text-xs font-bold tracking-widest text-white text-left uppercase">Portals</button>
         </div>
       )}
     </nav>

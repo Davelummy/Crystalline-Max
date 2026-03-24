@@ -2,7 +2,7 @@ import React from 'react';
 import { ArrowLeft, CreditCard, ReceiptText } from 'lucide-react';
 import { collection, onSnapshot, query, where } from 'firebase/firestore';
 import { db } from '../firebase';
-import { formatSchedule, getStatusLabel, sortBookingsByCreatedAt } from '../lib/bookings';
+import { formatSchedule, getStatusLabel, getTaskProgressPercent, sortBookingsByCreatedAt } from '../lib/bookings';
 import type { BookingRecord } from '../types';
 
 interface CustomerBillingProps {
@@ -58,6 +58,7 @@ export const CustomerBilling: React.FC<CustomerBillingProps> = ({ user, onBack }
                   <p className="font-bold uppercase">{booking.serviceLabel}</p>
                   <p className="text-[10px] text-charcoal/40 uppercase tracking-widest">{formatSchedule(booking)}</p>
                   <p className="text-[10px] text-charcoal/40 uppercase tracking-widest mt-1">{getStatusLabel(booking.status)}</p>
+                  <p className="text-[10px] text-charcoal/40 uppercase tracking-widest mt-1">Live progress: {getTaskProgressPercent(booking)}%</p>
                 </div>
               </div>
               <div className="text-left sm:text-right">

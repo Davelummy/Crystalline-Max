@@ -1,17 +1,31 @@
 import React from 'react';
 import { Logo } from './Logo';
-import { Menu, X, LogOut, Clock, Calendar, ClipboardList, User, ShieldCheck } from 'lucide-react';
+import { Menu, X, LogOut, Clock, Calendar, ClipboardList, Bell } from 'lucide-react';
+import { collection, onSnapshot, query, where } from 'firebase/firestore';
+import { db } from '../firebase';
+import type { BookingRecord, View } from '../types';
 
 interface StaffNavbarProps {
-  onNavigate: (view: any) => void;
-  user: any;
+  onNavigate: (view: View) => void;
+  user: { uid: string; displayName?: string | null };
   onLogout: () => void;
-  onSwitchPortal?: (portal: any) => void;
-  userRole?: string | null;
 }
 
-export const StaffNavbar: React.FC<StaffNavbarProps> = ({ onNavigate, user, onLogout, onSwitchPortal, userRole }) => {
+export const StaffNavbar: React.FC<StaffNavbarProps> = ({ onNavigate, user, onLogout }) => {
   const [isOpen, setIsOpen] = React.useState(false);
+  const [unreadCount, setUnreadCount] = React.useState(0);
+
+  React.useEffect(() => {
+    const notificationsQuery = query(collection(db, 'bookings'), where('assignedStaffId', '==', user.uid));
+    const unsubscribe = onSnapshot(notificationsQuery, (snapshot) => {
+      const records = snapshot.docs.map((entry) => entry.data() as BookingRecord);
+      setUnreadCount(
+        records.filter((booking) => !booking.staffAcknowledgedAt && !['completed', 'cancelled'].includes(booking.status)).length,
+      );
+    });
+
+    return () => unsubscribe();
+  }, [user.uid]);
 
   return (
     <nav className="glass-nav border-white/5 shadow-2xl">
@@ -33,15 +47,15 @@ export const StaffNavbar: React.FC<StaffNavbarProps> = ({ onNavigate, user, onLo
             <button onClick={() => onNavigate('tasks')} className="text-xs font-bold tracking-widest text-white hover:text-teal transition-colors uppercase flex items-center gap-2">
               <ClipboardList size={14} /> Tasks
             </button>
-
-            {userRole === 'admin' && onSwitchPortal && (
-              <button 
-                onClick={() => onSwitchPortal('admin')} 
-                className="text-xs font-bold tracking-widest text-teal hover:text-white transition-colors uppercase flex items-center gap-2 px-3 py-1 border border-teal/30 rounded-lg hover:bg-teal/10"
-              >
-                <ShieldCheck size={14} /> Admin Portal
-              </button>
-            )}
+            <button onClick={() => onNavigate('notifications')} className="text-xs font-bold tracking-widest text-white hover:text-teal transition-colors uppercase flex items-center gap-2">
+              <Bell size={14} />
+              Alerts
+              {unreadCount > 0 && (
+                <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-teal px-1.5 py-0.5 text-[9px] text-charcoal">
+                  {unreadCount}
+                </span>
+              )}
+            </button>
 
             <div className="flex items-center gap-4 pl-4 border-l border-white/10">
               <div className="text-right">
@@ -68,6 +82,7 @@ export const StaffNavbar: React.FC<StaffNavbarProps> = ({ onNavigate, user, onLo
           <button onClick={() => { onNavigate('checkin'); setIsOpen(false); }} className="text-xs font-bold tracking-widest text-white text-left uppercase">Check In</button>
           <button onClick={() => { onNavigate('schedule'); setIsOpen(false); }} className="text-xs font-bold tracking-widest text-white text-left uppercase">Schedule</button>
           <button onClick={() => { onNavigate('tasks'); setIsOpen(false); }} className="text-xs font-bold tracking-widest text-white text-left uppercase">Tasks</button>
+          <button onClick={() => { onNavigate('notifications'); setIsOpen(false); }} className="text-xs font-bold tracking-widest text-white text-left uppercase">Alerts {unreadCount > 0 ? `(${unreadCount})` : ''}</button>
           <button onClick={() => { onLogout(); setIsOpen(false); }} className="text-xs font-bold tracking-widest text-red-500 text-left uppercase">Logout</button>
         </div>
       )}

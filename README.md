@@ -1,43 +1,211 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
-
 # Crystalline Max
 
-Crystalline Max is a Vite + React + Firebase app for a mobile detailing and cleaning business. It includes:
+Crystalline Max is a premium service operations platform for a mobile detailing and cleaning business. It combines a branded public site with three synchronized product surfaces:
 
-- Public marketing pages and service estimator
-- Customer onboarding, bookings, and billing history
-- Staff check-in, schedule, and task views
-- Admin dashboard, staff assignment, and system settings
+- Customer portal
+- Staff portal
+- Admin portal
 
-## Run Locally
+The platform runs on React, Vite, TypeScript, Firebase Authentication, Firestore, and Firebase Storage. The booking record is the operational source of truth, so customer progress, staff execution, and admin oversight all stay synchronized in real time.
 
-**Prerequisites:** Node.js 20+, a Firebase project, and Google Auth enabled in Firebase Authentication.
+## Core Capabilities
 
-1. Install dependencies:
-   `npm install`
-2. Copy `.env.example` to `.env.local` and set your Firebase values.
-3. Start the app:
-   `npm run dev`
-4. Deploy the Firestore rules:
-   `firebase deploy --only firestore:rules`
-5. Optionally deploy Storage rules:
-   `firebase deploy --only storage`
+### Public Experience
+
+- Service-focused landing experience
+- Portal selection for customer and staff
+- Dedicated `/admin` access path for admin
+
+### Customer Experience
+
+- Google sign-in
+- Customer onboarding and profile editing
+- Live booking creation
+- Verified service location selection on a map
+- Booking history and billing visibility
+- Live progress updates during a job
+- Before and after photo evidence, including multi-image gallery viewing
+
+### Staff Experience
+
+- Company email/password login
+- New staff signup using employee ID
+- Staff onboarding
+- Assigned job schedule
+- New job alerts
+- On-site check-in and check-out
+- Task completion workflow
+- Add-ons converted into execution tasks
+- Multi-image before and after photo uploads
+- Completion state synced to customer and admin
+
+### Admin Experience
+
+- Manual admin provisioning only
+- Dedicated `/admin` login
+- Employee ID issuance and reservation
+- Staff assignment and workforce control
+- Live dashboard for bookings, check-ins, staff activity, and progress
+- Before and after photo review with gallery overlay
+
+## Product Rules
+
+- Customers create bookings using a verified map-selected address
+- Staff accounts require a valid employee ID and company email
+- Admin accounts are manually provisioned in Firebase Auth and Firestore
+- Staff check-in is blocked unless the device is near the assigned booking location
+- Staff check-out is blocked unless:
+  - the device is near the assigned booking location
+  - all tasks are completed
+  - after photos are uploaded
+  - the booking is marked complete
+
+## Realtime Sync Model
+
+The customer, staff, and admin interfaces are synchronized through Firestore listeners. When staff update progress, upload evidence, complete tasks, or close a job, that state is reflected across the other portals from the same booking document.
+
+Primary collections:
+
+- `users`
+- `bookings`
+- `employeeInvites`
+- `checkins`
+- `settings`
+
+## Authentication Model
+
+### Customer
+
+- Firebase Google sign-in
+- Firestore role: `client`
+
+### Staff
+
+- Firebase email/password
+- Must use `@crystallinemax.co.uk`
+- Firestore role: `employee`
+- First account creation requires a valid employee invite
+
+### Admin
+
+- Firebase email/password
+- Must use `@crystallinemax.co.uk`
+- Firestore role: `admin`
+- Must be provisioned manually before login
+
+## Local Development
+
+### Prerequisites
+
+- Node.js 20+
+- Firebase CLI
+- A Firebase project with Authentication, Firestore, and Storage enabled
+
+### Setup
+
+1. Install Node 20:
+   ```bash
+   nvm use
+   ```
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Copy env values:
+   ```bash
+   cp .env.example .env.local
+   ```
+4. Fill `.env.local` with your Firebase web app values.
+5. Start the app:
+   ```bash
+   npm run dev
+   ```
+6. Deploy rules:
+   ```bash
+   firebase deploy --only firestore:rules
+   ```
+7. Optionally deploy storage rules:
+   ```bash
+   firebase deploy --only storage
+   ```
+
+## Firebase Configuration
+
+The app initializes Firebase from `VITE_FIREBASE_*` environment variables only.
+
+Expected values:
+
+- `VITE_FIREBASE_API_KEY`
+- `VITE_FIREBASE_AUTH_DOMAIN`
+- `VITE_FIREBASE_PROJECT_ID`
+- `VITE_FIREBASE_STORAGE_BUCKET`
+- `VITE_FIREBASE_MESSAGING_SENDER_ID`
+- `VITE_FIREBASE_APP_ID`
+- `VITE_FIREBASE_DATABASE_ID`
+
+No local Firebase app credentials should be committed.
 
 ## Switching To Another Firebase Project
 
-Yes. The app can be pointed at a different Firebase project by changing the `VITE_FIREBASE_*` values in `.env.local`.
+To point the repo at another Firebase project:
 
-- `VITE_FIREBASE_PROJECT_ID`, `VITE_FIREBASE_DATABASE_ID`: Firestore project and database
-- `VITE_FIREBASE_STORAGE_BUCKET`: Storage bucket
-- `VITE_FIREBASE_AUTH_DOMAIN`, `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_APP_ID`, `VITE_FIREBASE_MESSAGING_SENDER_ID`: Auth/app connection details
- 
-The app now initializes Firebase from local `VITE_FIREBASE_*` environment variables only. No environment-specific Firebase app config file is committed.
+1. Create or select the Firebase project
+2. Create a web app in that project
+3. Copy the new SDK config into `.env.local`
+4. Update the CLI target if needed:
+   ```bash
+   firebase use --add
+   ```
+5. Deploy rules:
+   ```bash
+   firebase deploy --only firestore:rules,storage
+   ```
 
-## Local Test Notes
+## Important Operational Setup
 
-- Customer accounts can self-onboard after Google sign-in.
-- Staff and admin roles should be provisioned in Firestore by setting the user document `role` to `employee` or `admin`.
-- Admin settings are stored in `settings/general`.
-- The repo now includes `firebase.json`, `firestore.indexes.json`, and `storage.rules` for CLI deploys.
+### Admin Provisioning
+
+1. Create the admin user in Firebase Authentication
+2. Create a matching Firestore document in `users/{uid}`
+3. Set:
+   - `uid`
+   - `email`
+   - `role: "admin"`
+   - `displayName`
+
+### Staff Provisioning
+
+1. Admin logs in
+2. Admin issues an employee ID in Staff Management
+3. Staff creates account from the staff signup page
+4. The signup flow claims the invite and creates the employee Firestore user record
+
+## Important Source Files
+
+- [handoff.md](/Users/davidolumide/Crystalline-Max/handoff.md)
+- [design.md](/Users/davidolumide/Crystalline-Max/design.md)
+- [src/App.tsx](/Users/davidolumide/Crystalline-Max/src/App.tsx)
+- [src/types.ts](/Users/davidolumide/Crystalline-Max/src/types.ts)
+- [src/lib/auth.ts](/Users/davidolumide/Crystalline-Max/src/lib/auth.ts)
+- [src/lib/bookings.ts](/Users/davidolumide/Crystalline-Max/src/lib/bookings.ts)
+- [src/components/BookingFlow.tsx](/Users/davidolumide/Crystalline-Max/src/components/BookingFlow.tsx)
+- [src/components/EmployeeCheckIn.tsx](/Users/davidolumide/Crystalline-Max/src/components/EmployeeCheckIn.tsx)
+- [firestore.rules](/Users/davidolumide/Crystalline-Max/firestore.rules)
+
+## Verification
+
+Last verified successfully:
+
+```bash
+npm run lint
+npm run build
+firebase deploy --only firestore:rules
+```
+
+## Documentation Maintenance Rule
+
+When features, architecture, auth logic, booking flow, data model, or design behavior changes, update these files in the same workstream:
+
+- `README.md`
+- `handoff.md`
+- `design.md`

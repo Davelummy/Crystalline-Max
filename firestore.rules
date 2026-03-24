@@ -158,8 +158,25 @@ service cloud.firestore {
         'createdAt'
       ];
       let allowedFields = requiredFields.concat([
+        'locationLabel',
+        'locationLat',
+        'locationLng',
+        'locationVerified',
         'assignedStaffId',
         'assignedStaffName',
+        'assignedAt',
+        'staffAcknowledgedAt',
+        'completedTaskIds',
+        'taskProgressPercent',
+        'startedAt',
+        'completedAt',
+        'lastProgressAt',
+        'beforePhotoUrl',
+        'beforePhotoPath',
+        'afterPhotoUrl',
+        'afterPhotoPath',
+        'beforePhotos',
+        'afterPhotos',
         'updatedAt'
       ]);
 
@@ -174,21 +191,60 @@ service cloud.firestore {
              data.address is string &&
              data.city is string &&
              data.postcode is string &&
+             (!('locationLabel' in data) || data.locationLabel is string) &&
+             (!('locationLat' in data) || data.locationLat is number) &&
+             (!('locationLng' in data) || data.locationLng is number) &&
+             (!('locationVerified' in data) || data.locationVerified is bool) &&
              data.date is string &&
              data.time is string &&
              data.timeWindow is string &&
              data.total is number &&
              data.status in ['pending', 'confirmed', 'in_progress', 'completed', 'cancelled'] &&
              data.paymentStatus in ['pending', 'paid', 'not_required'] &&
+             (!('completedTaskIds' in data) || data.completedTaskIds is list) &&
+             (!('taskProgressPercent' in data) || data.taskProgressPercent is number) &&
              (data.createdAt is timestamp || data.createdAt is string) &&
+             (!('assignedStaffId' in data) || data.assignedStaffId == null || data.assignedStaffId is string) &&
+             (!('assignedStaffName' in data) || data.assignedStaffName == null || data.assignedStaffName is string) &&
+             (!('assignedAt' in data) || data.assignedAt == null || data.assignedAt is timestamp || data.assignedAt is string) &&
+             (!('staffAcknowledgedAt' in data) || data.staffAcknowledgedAt == null || data.staffAcknowledgedAt is timestamp || data.staffAcknowledgedAt is string) &&
+             (!('startedAt' in data) || data.startedAt == null || data.startedAt is timestamp || data.startedAt is string) &&
+             (!('completedAt' in data) || data.completedAt == null || data.completedAt is timestamp || data.completedAt is string) &&
+             (!('lastProgressAt' in data) || data.lastProgressAt == null || data.lastProgressAt is timestamp || data.lastProgressAt is string) &&
+             (!('beforePhotoUrl' in data) || data.beforePhotoUrl == null || data.beforePhotoUrl is string) &&
+             (!('beforePhotoPath' in data) || data.beforePhotoPath == null || data.beforePhotoPath is string) &&
+             (!('afterPhotoUrl' in data) || data.afterPhotoUrl == null || data.afterPhotoUrl is string) &&
+             (!('afterPhotoPath' in data) || data.afterPhotoPath == null || data.afterPhotoPath is string) &&
+             (!('beforePhotos' in data) || data.beforePhotos is list) &&
+             (!('afterPhotos' in data) || data.afterPhotos is list) &&
              (!('updatedAt' in data) || data.updatedAt is timestamp || data.updatedAt is string);
     }
 
     function isValidCheckIn(data) {
       return data.keys().hasAll(['employeeUid', 'type', 'timestamp']) &&
+             data.keys().hasOnly([
+               'employeeUid',
+               'employeeName',
+               'type',
+               'timestamp',
+               'location',
+               'bookingId',
+               'bookingAddress',
+               'distanceMeters'
+             ]) &&
              data.employeeUid == request.auth.uid &&
              data.type in ['in', 'out'] &&
-             data.timestamp is timestamp;
+             data.timestamp is timestamp &&
+             (!('employeeName' in data) || data.employeeName is string) &&
+             (!('bookingId' in data) || data.bookingId == null || data.bookingId is string) &&
+             (!('bookingAddress' in data) || data.bookingAddress == null || data.bookingAddress is string) &&
+             (!('distanceMeters' in data) || data.distanceMeters == null || data.distanceMeters is number) &&
+             (!('location' in data) || (
+               data.location is map &&
+               data.location.keys().hasOnly(['latitude', 'longitude']) &&
+               data.location.latitude is number &&
+               data.location.longitude is number
+             ));
     }
 
     match /users/{userId} {
@@ -240,7 +296,9 @@ service cloud.firestore {
       allow create: if isAuthenticated() &&
                     isValidBooking(request.resource.data) &&
                     request.resource.data.userId == request.auth.uid &&
-                    request.resource.data.customerEmail == request.auth.token.email;
+                    request.resource.data.customerEmail == request.auth.token.email &&
+                    ('locationVerified' in request.resource.data) &&
+                    request.resource.data.locationVerified == true;
       allow update: if (
         isAuthenticated() &&
         resource.data.userId == request.auth.uid &&
@@ -248,7 +306,11 @@ service cloud.firestore {
         request.resource.data.status == 'cancelled' &&
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt'])
       ) || (
+        isAdmin() &&
+        isValidBooking(request.resource.data)
+      ) || (
         isEmployee() &&
+        resource.data.assignedStaffId == request.auth.uid &&
         isValidBooking(request.resource.data)
       );
     }

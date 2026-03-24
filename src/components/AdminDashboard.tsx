@@ -3,14 +3,16 @@ import { Activity, AlertCircle, Calendar as CalendarIcon, Clock, MapPin, Play, U
 import { motion } from 'motion/react';
 import { collection, onSnapshot, orderBy, query, where } from 'firebase/firestore';
 import { db } from '../firebase';
-import { formatSchedule, getStatusLabel, sortBookingsByCreatedAt, sortBookingsBySchedule } from '../lib/bookings';
-import type { AppUserData, BookingRecord } from '../types';
+import { formatSchedule, getAfterPhotos, getBeforePhotos, getPrimaryAfterPhotoUrl, getPrimaryBeforePhotoUrl, getStatusLabel, getTaskProgressPercent, sortBookingsByCreatedAt, sortBookingsBySchedule } from '../lib/bookings';
+import { PhotoGalleryOverlay } from './PhotoGalleryOverlay';
+import type { AppUserData, BookingPhoto, BookingRecord } from '../types';
 
 export const AdminDashboard: React.FC = () => {
   const [checkins, setCheckins] = React.useState<any[]>([]);
   const [employees, setEmployees] = React.useState<AppUserData[]>([]);
   const [bookings, setBookings] = React.useState<BookingRecord[]>([]);
   const [loading, setLoading] = React.useState(true);
+  const [galleryState, setGalleryState] = React.useState<{ title: string; photos: BookingPhoto[] } | null>(null);
 
   React.useEffect(() => {
     const checkinsQuery = query(collection(db, 'checkins'), orderBy('timestamp', 'desc'));
@@ -62,6 +64,13 @@ export const AdminDashboard: React.FC = () => {
 
   return (
     <div className="pt-32 pb-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+      {galleryState && (
+        <PhotoGalleryOverlay
+          title={galleryState.title}
+          photos={galleryState.photos}
+          onClose={() => setGalleryState(null)}
+        />
+      )}
       <div className="mb-12 flex flex-col sm:flex-row sm:justify-between sm:items-end gap-6">
         <div>
           <h1 className="text-4xl mb-4 font-display uppercase tracking-wider">Admin Control</h1>
@@ -147,6 +156,51 @@ export const AdminDashboard: React.FC = () => {
                     <span className="flex items-center gap-2"><CalendarIcon size={10} /> {formatSchedule(booking)}</span>
                     <span className="flex items-center gap-2"><MapPin size={10} /> {booking.postcode}</span>
                     <span className="flex items-center gap-2"><Users size={10} /> {booking.assignedStaffName || 'Unassigned'}</span>
+                  </div>
+                  <div className="mt-4">
+                    <div className="mb-2 flex items-center justify-between text-[8px] font-bold uppercase tracking-widest text-white/45">
+                      <span>Progress</span>
+                      <span>{getTaskProgressPercent(booking)}%</span>
+                    </div>
+                    <div className="h-2 rounded-full bg-white/8 overflow-hidden">
+                      <div className="h-full bg-teal rounded-full transition-all" style={{ width: `${getTaskProgressPercent(booking)}%` }} />
+                    </div>
+                  </div>
+                  <div className="mt-4 grid grid-cols-2 gap-2 text-[8px] font-bold uppercase tracking-widest">
+                    <div className="rounded-lg border border-white/10 bg-white/5 px-2 py-2 text-white/55">
+                      <p>Before</p>
+                      {getPrimaryBeforePhotoUrl(booking) ? (
+                        <>
+                          <img src={getPrimaryBeforePhotoUrl(booking)!} alt="Before service" className="mt-2 h-16 w-full rounded object-cover" />
+                          <button
+                            type="button"
+                            onClick={() => setGalleryState({ title: `${booking.customerName} Before Photos`, photos: getBeforePhotos(booking) })}
+                            className="mt-2 w-full rounded border border-white/10 bg-white/5 px-2 py-2 text-[8px] font-bold uppercase tracking-widest text-white/85 hover:border-teal hover:text-teal transition-colors"
+                          >
+                            View ({getBeforePhotos(booking).length})
+                          </button>
+                        </>
+                      ) : (
+                        <p className="mt-2">Pending</p>
+                      )}
+                    </div>
+                    <div className="rounded-lg border border-white/10 bg-white/5 px-2 py-2 text-white/55">
+                      <p>After</p>
+                      {getPrimaryAfterPhotoUrl(booking) ? (
+                        <>
+                          <img src={getPrimaryAfterPhotoUrl(booking)!} alt="After service" className="mt-2 h-16 w-full rounded object-cover" />
+                          <button
+                            type="button"
+                            onClick={() => setGalleryState({ title: `${booking.customerName} After Photos`, photos: getAfterPhotos(booking) })}
+                            className="mt-2 w-full rounded border border-white/10 bg-white/5 px-2 py-2 text-[8px] font-bold uppercase tracking-widest text-white/85 hover:border-teal hover:text-teal transition-colors"
+                          >
+                            View ({getAfterPhotos(booking).length})
+                          </button>
+                        </>
+                      ) : (
+                        <p className="mt-2">Pending</p>
+                      )}
+                    </div>
                   </div>
                 </div>
               )) : (

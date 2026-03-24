@@ -3,12 +3,57 @@ import { db, auth } from '../firebase';
 import { collection, addDoc, serverTimestamp, query, where, onSnapshot } from 'firebase/firestore';
 import { motion, AnimatePresence } from 'motion/react';
 import { LogIn, LogOut, MapPin, CheckCircle2, AlertCircle, Clock } from 'lucide-react';
+import { formatSchedule, getAfterPhotos, getTaskProgressPercent, sortBookingsBySchedule } from '../lib/bookings';
+import type { BookingRecord } from '../types';
+
+const CHECKIN_RADIUS_METERS = 200;
+
+function toRadians(value: number) {
+  return (value * Math.PI) / 180;
+}
+
+function getDistanceMeters(
+  originLat: number,
+  originLng: number,
+  targetLat: number,
+  targetLng: number,
+) {
+  const earthRadius = 6371000;
+  const dLat = toRadians(targetLat - originLat);
+  const dLng = toRadians(targetLng - originLng);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRadians(originLat)) *
+      Math.cos(toRadians(targetLat)) *
+      Math.sin(dLng / 2) ** 2;
+
+  return Math.round(earthRadius * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))));
+}
+
+function getTodayDateString() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function getActiveAssignment(bookings: BookingRecord[]) {
+  const openBookings = sortBookingsBySchedule(
+    bookings.filter((booking) => !['completed', 'cancelled'].includes(booking.status)),
+  );
+
+  return (
+    openBookings.find((booking) => booking.status === 'in_progress') ??
+    openBookings.find((booking) => booking.date === getTodayDateString()) ??
+    null
+  );
+}
 
 export const EmployeeCheckIn: React.FC = () => {
   const [status, setStatus] = React.useState<'in' | 'out' | 'unknown'>('unknown');
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [lastAction, setLastAction] = React.useState<any>(null);
+  const [assignedBookings, setAssignedBookings] = React.useState<BookingRecord[]>([]);
+  const [assignmentLoading, setAssignmentLoading] = React.useState(true);
+  const [distanceFromSite, setDistanceFromSite] = React.useState<number | null>(null);
 
   React.useEffect(() => {
     if (!auth.currentUser) return;
@@ -42,6 +87,32 @@ export const EmployeeCheckIn: React.FC = () => {
     return () => unsubscribe();
   }, []);
 
+  React.useEffect(() => {
+    if (!auth.currentUser) return;
+
+    const bookingsQuery = query(collection(db, 'bookings'), where('assignedStaffId', '==', auth.currentUser.uid));
+    const unsubscribe = onSnapshot(bookingsQuery, (snapshot) => {
+      const records = snapshot.docs.map((entry) => ({
+        id: entry.id,
+        ...(entry.data() as Omit<BookingRecord, 'id'>),
+      }));
+      setAssignedBookings(records);
+      setAssignmentLoading(false);
+    }, () => {
+      setAssignmentLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  const assignment = React.useMemo(() => {
+    if (status === 'in' && lastAction?.bookingId) {
+      return assignedBookings.find((booking) => booking.id === lastAction.bookingId) ?? getActiveAssignment(assignedBookings);
+    }
+
+    return getActiveAssignment(assignedBookings);
+  }, [assignedBookings, lastAction, status]);
+
   const handleAction = async (type: 'in' | 'out') => {
     if (!auth.currentUser) return;
     setLoading(true);
@@ -49,16 +120,73 @@ export const EmployeeCheckIn: React.FC = () => {
 
     try {
       let location = null;
+      let matchedBookingId: string | null = null;
+      let matchedBookingAddress: string | null = null;
+      let matchedDistanceMeters: number | null = null;
+
+      if (type === 'in' || type === 'out') {
+        if (!assignment) {
+          throw new Error(`No active booking is assigned for ${type === 'in' ? 'check-in' : 'check-out'}.`);
+        }
+
+        if (assignment.locationLat == null || assignment.locationLng == null) {
+          throw new Error('This assignment has no verified map location. Ask admin to confirm the booking address.');
+        }
+      }
+
       try {
         const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
-          navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 });
+          navigator.geolocation.getCurrentPosition(resolve, reject, {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0,
+          });
         });
         location = {
           latitude: pos.coords.latitude,
-          longitude: pos.coords.longitude
+          longitude: pos.coords.longitude,
         };
-      } catch (e) {
-        console.warn("Location access denied or timed out");
+      } catch {
+        if (type === 'in' || type === 'out') {
+          throw new Error(`Location access is required to check ${type === 'in' ? 'in' : 'out'} on site.`);
+        }
+        console.warn('Location access denied or timed out');
+      }
+
+      if (location && assignment?.locationLat != null && assignment?.locationLng != null) {
+        matchedDistanceMeters = getDistanceMeters(
+          location.latitude,
+          location.longitude,
+          assignment.locationLat,
+          assignment.locationLng,
+        );
+        setDistanceFromSite(matchedDistanceMeters);
+
+        if (matchedDistanceMeters > CHECKIN_RADIUS_METERS) {
+          throw new Error(
+            `You must be within ${CHECKIN_RADIUS_METERS}m of the assigned service location to check ${type === 'in' ? 'in' : 'out'}. Current distance: ${matchedDistanceMeters}m.`,
+          );
+        }
+
+        matchedBookingId = assignment.id;
+        matchedBookingAddress = assignment.locationLabel || assignment.address || assignment.postcode;
+      }
+
+      if (type === 'out' && assignment) {
+        const progress = getTaskProgressPercent(assignment);
+        const afterPhotos = getAfterPhotos(assignment);
+
+        if (progress < 100) {
+          throw new Error('Complete every task item before checking out.');
+        }
+
+        if (afterPhotos.length === 0) {
+          throw new Error('Upload the end-of-job photos before checking out.');
+        }
+
+        if (assignment.status !== 'completed') {
+          throw new Error('Mark the job complete in the Tasks view before checking out.');
+        }
       }
 
       await addDoc(collection(db, 'checkins'), {
@@ -66,18 +194,21 @@ export const EmployeeCheckIn: React.FC = () => {
         employeeName: auth.currentUser.displayName || auth.currentUser.email,
         type,
         timestamp: serverTimestamp(),
-        location
+        location,
+        bookingId: matchedBookingId,
+        bookingAddress: matchedBookingAddress,
+        distanceMeters: matchedDistanceMeters,
       });
 
     } catch (err) {
-      console.error("Check-in error:", err);
-      setError("Permission denied or server error. Ensure you are logged in as an employee.");
+      console.error('Check-in error:', err);
+      setError(err instanceof Error ? err.message : 'Permission denied or server error. Ensure you are logged in as an employee.');
     } finally {
       setLoading(false);
     }
   };
 
-  if (loading && status === 'unknown') return <div className="pt-32 text-center">Syncing...</div>;
+  if ((loading && status === 'unknown') || assignmentLoading) return <div className="pt-32 text-center">Syncing...</div>;
 
   return (
     <div className="pt-32 pb-20 px-4 sm:px-6 lg:px-8 max-w-lg mx-auto">
@@ -105,12 +236,46 @@ export const EmployeeCheckIn: React.FC = () => {
           </p>
         </div>
 
+        <div className="mb-8 rounded-2xl border border-white/10 bg-white/5 p-5 text-left">
+          <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-white/45">Active assignment</p>
+          {assignment ? (
+            <div className="mt-4 space-y-3">
+              <div>
+                <p className="text-sm font-bold uppercase tracking-widest text-white">{assignment.customerName}</p>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-teal">{assignment.serviceLabel}</p>
+              </div>
+              <div className="space-y-2 text-[10px] font-bold uppercase tracking-widest text-white/60">
+                <p>{formatSchedule(assignment)}</p>
+                <p className="flex items-start gap-2">
+                  <MapPin size={12} className="mt-0.5 text-teal" />
+                  <span>{assignment.locationLabel || assignment.address || assignment.postcode}</span>
+                </p>
+              </div>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-white/40">
+                On-site check-in and check-out are allowed only within {CHECKIN_RADIUS_METERS}m of this location.
+              </p>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-white/40">
+                Check-out also requires every task item completed and the job marked complete.
+              </p>
+              {distanceFromSite != null && (
+                <p className={`text-[10px] font-bold uppercase tracking-widest ${distanceFromSite <= CHECKIN_RADIUS_METERS ? 'text-teal' : 'text-red-500'}`}>
+                  Last measured distance: {distanceFromSite}m
+                </p>
+              )}
+            </div>
+          ) : (
+            <p className="mt-4 text-[10px] font-bold uppercase tracking-widest text-white/45">
+              No active assignment found for today. Check-in stays disabled until an admin assigns a live job.
+            </p>
+          )}
+        </div>
+
         <div className="grid grid-cols-2 gap-4">
           <button 
             onClick={() => handleAction('in')}
-            disabled={status === 'in' || loading}
+            disabled={status === 'in' || loading || !assignment}
             className={`flex flex-col items-center gap-3 p-6 rounded-xl border transition-all ${
-              status === 'in' 
+              status === 'in' || !assignment
                 ? 'bg-teal/5 border-teal/20 opacity-50 cursor-not-allowed' 
                 : 'bg-white/5 border-white/10 hover:border-teal hover:bg-teal/10'
             }`}
@@ -121,9 +286,9 @@ export const EmployeeCheckIn: React.FC = () => {
 
           <button 
             onClick={() => handleAction('out')}
-            disabled={status === 'out' || loading}
+            disabled={status === 'out' || loading || !assignment}
             className={`flex flex-col items-center gap-3 p-6 rounded-xl border transition-all ${
-              status === 'out' 
+              status === 'out' || !assignment
                 ? 'bg-red-500/5 border-red-500/20 opacity-50 cursor-not-allowed' 
                 : 'bg-white/5 border-white/10 hover:border-red-500 hover:bg-red-500/10'
             }`}
@@ -161,6 +326,11 @@ export const EmployeeCheckIn: React.FC = () => {
                 {lastAction.timestamp?.toDate ? lastAction.timestamp.toDate().toLocaleString() : 'Just now'}
               </span>
             </div>
+            {lastAction.bookingAddress && (
+              <p className="mt-3 text-[10px] text-white/40 uppercase tracking-widest">
+                Site: {lastAction.bookingAddress}
+              </p>
+            )}
           </div>
         )}
       </motion.div>

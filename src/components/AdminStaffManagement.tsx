@@ -80,6 +80,8 @@ export const AdminStaffManagement: React.FC = () => {
       assignedStaffId: staffMember?.uid || null,
       assignedStaffName: staffMember?.displayName || staffMember?.email || null,
       status: staffMember ? 'confirmed' : 'pending',
+      assignedAt: staffMember ? serverTimestamp() : null,
+      staffAcknowledgedAt: null,
       updatedAt: serverTimestamp(),
     });
   };

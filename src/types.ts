@@ -18,6 +18,7 @@ export type View =
   | 'staff-login'
   | 'staff-signup'
   | 'admin-login'
+  | 'notifications'
   | 'profile';
 
 export type UserRole = 'client' | 'employee' | 'admin';
@@ -30,6 +31,12 @@ export type BookingStatus =
   | 'cancelled';
 
 export type PaymentStatus = 'pending' | 'paid' | 'not_required';
+
+export interface BookingPhoto {
+  url: string;
+  path: string;
+  uploadedAt: unknown;
+}
 
 export interface AppUserData {
   uid: string;
@@ -73,6 +80,10 @@ export interface BookingRecord {
   address: string;
   city: string;
   postcode: string;
+  locationLabel?: string;
+  locationLat?: number;
+  locationLng?: number;
+  locationVerified?: boolean;
   date: string;
   time: string;
   timeWindow: string;
@@ -81,6 +92,19 @@ export interface BookingRecord {
   paymentStatus: PaymentStatus;
   assignedStaffId?: string | null;
   assignedStaffName?: string | null;
+  assignedAt?: unknown;
+  staffAcknowledgedAt?: unknown | null;
+  completedTaskIds?: string[];
+  taskProgressPercent?: number;
+  startedAt?: unknown | null;
+  completedAt?: unknown | null;
+  lastProgressAt?: unknown | null;
+  beforePhotoUrl?: string | null;
+  beforePhotoPath?: string | null;
+  afterPhotoUrl?: string | null;
+  afterPhotoPath?: string | null;
+  beforePhotos?: BookingPhoto[];
+  afterPhotos?: BookingPhoto[];
   createdAt?: unknown;
   updatedAt?: unknown;
 }
@@ -90,4 +114,14 @@ export interface StaffTask {
   title: string;
   category: string;
   priority: 'low' | 'medium' | 'high';
+}
+
+export interface BookingLocationSelection {
+  address: string;
+  city: string;
+  postcode: string;
+  locationLabel: string;
+  locationLat: number;
+  locationLng: number;
+  locationVerified: boolean;
 }

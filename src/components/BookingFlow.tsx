@@ -5,9 +5,10 @@ import { collection, addDoc, doc, getDoc, increment, serverTimestamp, setDoc, up
 import { getAuthErrorMessage, signInWithGoogle } from '../lib/auth';
 import { cn } from '@/src/lib/utils';
 import { auth, db } from '../firebase';
+import { MapLocationPicker } from './MapLocationPicker';
 import { CAR_ADDONS, HOME_ADDONS, SERVICES } from '../constants';
 import { getAddonLabel, getServiceById } from '../lib/bookings';
-import type { AppUserData } from '../types';
+import type { AppUserData, BookingLocationSelection } from '../types';
 
 const steps = [
   { id: 1, title: 'Service' },
@@ -29,6 +30,10 @@ interface BookingSelection {
   address: string;
   city: string;
   postcode: string;
+  locationLabel: string;
+  locationLat: number | null;
+  locationLng: number | null;
+  locationVerified: boolean;
   date: string;
   time: string;
   timeWindow: string;
@@ -48,6 +53,10 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ initialServiceId, onCo
     address: '',
     city: 'Manchester',
     postcode: '',
+    locationLabel: '',
+    locationLat: null,
+    locationLng: null,
+    locationVerified: false,
     time: '',
     timeWindow: '',
     date: new Date().toISOString().split('T')[0],
@@ -117,6 +126,26 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ initialServiceId, onCo
     }));
   };
 
+  const selectedLocation = React.useMemo<BookingLocationSelection | null>(() => {
+    if (
+      selection.locationLat == null ||
+      selection.locationLng == null ||
+      !selection.locationVerified
+    ) {
+      return null;
+    }
+
+    return {
+      address: selection.address,
+      city: selection.city,
+      postcode: selection.postcode,
+      locationLabel: selection.locationLabel,
+      locationLat: selection.locationLat,
+      locationLng: selection.locationLng,
+      locationVerified: selection.locationVerified,
+    };
+  }, [selection]);
+
   const handleSocialLogin = async () => {
     setAuthLoading(true);
     setError(null);
@@ -169,6 +198,10 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ initialServiceId, onCo
         address: selection.address,
         city: selection.city,
         postcode: selection.postcode,
+        locationLabel: selection.locationLabel,
+        locationLat: selection.locationLat,
+        locationLng: selection.locationLng,
+        locationVerified: selection.locationVerified,
         date: selection.date,
         time: selection.time,
         timeWindow: selection.timeWindow,
@@ -177,6 +210,19 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ initialServiceId, onCo
         paymentStatus: 'pending',
         assignedStaffId: null,
         assignedStaffName: null,
+        assignedAt: null,
+        staffAcknowledgedAt: null,
+        completedTaskIds: [],
+        taskProgressPercent: 0,
+        startedAt: null,
+        completedAt: null,
+        lastProgressAt: null,
+        beforePhotoUrl: null,
+        beforePhotoPath: null,
+        afterPhotoUrl: null,
+        afterPhotoPath: null,
+        beforePhotos: [],
+        afterPhotos: [],
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
@@ -299,35 +345,18 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ initialServiceId, onCo
         return (
           <div className="space-y-6">
             <h3 className="text-2xl mb-6 font-display uppercase">Service Location</h3>
-            <div className="relative">
-              <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-teal" size={20} />
-              <input
-                type="text"
-                placeholder="Street address"
-                className="input-field-light pl-12"
-                value={selection.address}
-                onChange={(event) => setSelection((prev) => ({ ...prev, address: event.target.value }))}
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <input
-                type="text"
-                placeholder="City"
-                className="input-field-light"
-                value={selection.city}
-                onChange={(event) => setSelection((prev) => ({ ...prev, city: event.target.value }))}
-              />
-              <input
-                type="text"
-                placeholder="Postcode"
-                className="input-field-light"
-                value={selection.postcode}
-                onChange={(event) => setSelection((prev) => ({ ...prev, postcode: event.target.value }))}
-              />
-            </div>
+            <MapLocationPicker
+              value={selectedLocation}
+              onChange={(location) => {
+                setSelection((prev) => ({
+                  ...prev,
+                  ...location,
+                }));
+              }}
+            />
             <button
               onClick={nextStep}
-              disabled={!selection.address || !selection.city || !selection.postcode}
+              disabled={!selectedLocation}
               className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed"
             >
               CONFIRM LOCATION
@@ -431,7 +460,7 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ initialServiceId, onCo
               </div>
               <div className="flex justify-between text-xs">
                 <span className="text-charcoal/60 uppercase tracking-widest">Location</span>
-                <span className="font-bold uppercase text-right">{selection.postcode}</span>
+                <span className="font-bold uppercase text-right">{selection.locationLabel || selection.postcode}</span>
               </div>
               {selection.addons.length > 0 && (
                 <div className="space-y-2">

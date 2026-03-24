@@ -11,6 +11,15 @@ import type { Portal } from '../types';
 const LOGIN_TARGET_KEY = 'crystalline-max-login-target';
 export const COMPANY_EMAIL_DOMAIN = '@crystallinemax.co.uk';
 
+function readLoginTargetStorage() {
+  if (typeof window === 'undefined') return null;
+
+  return (
+    window.sessionStorage.getItem(LOGIN_TARGET_KEY) ||
+    window.localStorage.getItem(LOGIN_TARGET_KEY)
+  );
+}
+
 export function createGoogleProvider() {
   const provider = new GoogleAuthProvider();
   provider.setCustomParameters({ prompt: 'select_account' });
@@ -18,28 +27,33 @@ export function createGoogleProvider() {
 }
 
 export function getSavedLoginTarget(): Exclude<Portal, 'public'> {
-  const saved = window.sessionStorage.getItem(LOGIN_TARGET_KEY);
+  const saved = readLoginTargetStorage();
   if (saved === 'staff' || saved === 'admin' || saved === 'customer') {
     return saved;
   }
   return 'customer';
 }
 
+export function hasSavedLoginTarget() {
+  return readLoginTargetStorage() != null;
+}
+
 export function saveLoginTarget(portal: Exclude<Portal, 'public'>) {
   window.sessionStorage.setItem(LOGIN_TARGET_KEY, portal);
+  window.localStorage.setItem(LOGIN_TARGET_KEY, portal);
 }
 
 export function clearLoginTarget() {
   window.sessionStorage.removeItem(LOGIN_TARGET_KEY);
+  window.localStorage.removeItem(LOGIN_TARGET_KEY);
 }
 
 export function shouldUseRedirectAuth() {
   if (typeof navigator === 'undefined') return false;
 
   const userAgent = navigator.userAgent || '';
-  const mobileBrowser = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
   const inAppBrowser = /FBAN|FBAV|Instagram|Line|TikTok|wv\)|WebView/i.test(userAgent);
-  return mobileBrowser || inAppBrowser;
+  return inAppBrowser;
 }
 
 export async function signInWithGoogle(targetPortal: Exclude<Portal, 'public'>) {
@@ -51,8 +65,21 @@ export async function signInWithGoogle(targetPortal: Exclude<Portal, 'public'>) 
     return null;
   }
 
-  const result = await signInWithPopup(auth, provider);
-  return result;
+  try {
+    const result = await signInWithPopup(auth, provider);
+    return result;
+  } catch (error) {
+    const code = typeof error === 'object' && error && 'code' in error
+      ? String((error as { code: unknown }).code)
+      : '';
+
+    if (code === 'auth/popup-blocked' || code === 'auth/operation-not-supported-in-this-environment') {
+      await signInWithRedirect(auth, provider);
+      return null;
+    }
+
+    throw error;
+  }
 }
 
 export async function signInWithCompanyEmail(email: string, password: string) {

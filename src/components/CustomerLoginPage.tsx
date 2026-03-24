@@ -24,7 +24,7 @@ export const CustomerLoginPage: React.FC<CustomerLoginPageProps> = ({
       onBack={onBack}
       backLabel="Back to Portals"
       aside={(
-        <div className="space-y-4 text-[10px] uppercase tracking-widest font-bold text-white/35">
+        <div className="space-y-4 text-[10px] uppercase tracking-widest font-bold text-white/68">
           <div className="flex items-center gap-3">
             <ShieldCheck size={14} className="text-teal" />
             Secure Google sign-in
@@ -39,7 +39,7 @@ export const CustomerLoginPage: React.FC<CustomerLoginPageProps> = ({
       <div className="space-y-6">
         <div>
           <h2 className="text-lg font-display uppercase tracking-widest text-white mb-3">Continue With Google</h2>
-          <p className="text-sm text-white/45 leading-relaxed">
+          <p className="text-sm text-white/68 leading-relaxed">
             Use the Google account you want attached to your customer bookings.
           </p>
         </div>
