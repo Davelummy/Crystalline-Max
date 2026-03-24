@@ -183,6 +183,7 @@ Roadmap corrections already accepted before implementation:
 - Phase 4 data integrity and storage security hardening is now complete and verified
 - Phase 5 server-side check-in enforcement is now complete and verified
 - Phase 6 payments integration is now implemented and deployed
+- Phase 7 notifications is now implemented and deployed
 - `react-router-dom` is installed and live
 - [AuthContext.tsx](/Users/davidolumide/Crystalline-Max/src/context/AuthContext.tsx) provides shared auth/profile state
 - [RouteGuard.tsx](/Users/davidolumide/Crystalline-Max/src/components/RouteGuard.tsx) enforces role-based access
@@ -204,6 +205,8 @@ Roadmap corrections already accepted before implementation:
   - `onBookingCountDecrement`
   - `createCheckoutSession`
   - `stripeWebhook`
+  - `onBookingUpdated`
+  - `sendJobReminders`
 - Emulator smoke verification confirmed the booking-count triggers increment on booking create and decrement on cancellation
 - Emulator smoke verification confirmed `validateCheckin` enforces:
   - distance gate
@@ -292,8 +295,19 @@ Roadmap corrections already accepted before implementation:
 - Admin can mark bookings as offline-paid from [src/components/AdminBookingDetail.tsx](/Users/davidolumide/Crystalline-Max/src/components/AdminBookingDetail.tsx)
 - Admin revenue now counts only paid bookings in [src/components/AdminDashboard.tsx](/Users/davidolumide/Crystalline-Max/src/components/AdminDashboard.tsx)
 - Booking schema now includes `adminNote` for manual payment context in [src/types.ts](/Users/davidolumide/Crystalline-Max/src/types.ts)
-- Deployed Stripe webhook URL:
-  - `https://europe-west2-crystalline-max-dolumide-2026.cloudfunctions.net/stripeWebhook`
+- Current deployed Stripe webhook URL:
+  - `https://stripewebhook-aa6far2tqa-nw.a.run.app`
+
+### Notification Upgrade
+
+- Added email notification formatting helpers in [functions/src/lib/notifications.ts](/Users/davidolumide/Crystalline-Max/functions/src/lib/notifications.ts)
+- Added booking transition trigger in [functions/src/index.ts](/Users/davidolumide/Crystalline-Max/functions/src/index.ts):
+  - staff assignment email
+  - customer confirmation email
+  - customer completion email
+- Added scheduled reminder trigger in [functions/src/index.ts](/Users/davidolumide/Crystalline-Max/functions/src/index.ts)
+- Reminder schedule is now locked to `08:00` in `Europe/London`
+- Notification functions are tolerant of placeholder or missing `RESEND_API_KEY` and skip email instead of breaking booking updates
 
 ### UI And Routing Improvements
 

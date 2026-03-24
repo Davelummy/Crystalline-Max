@@ -16,6 +16,7 @@ Current migration status:
 - Phase 4 data integrity and storage security hardening is complete with booking-count triggers, secured media rules, composite indexes, and tighter client write constraints
 - Phase 5 server-side check-in enforcement is complete with a deployed `validateCheckin` callable and client-side check-in writes removed
 - Phase 6 payments integration is implemented and deployed with Stripe-backed checkout session creation, webhook payment confirmation, customer pay-now actions, and admin offline payment override
+- Phase 7 notifications is implemented and deployed with booking update email triggers and a Europe/London scheduled reminder job
 
 ## Approved Roadmap
 
@@ -218,7 +219,23 @@ Required local/remote config:
 
 Deployed webhook endpoint:
 
-- `https://europe-west2-crystalline-max-dolumide-2026.cloudfunctions.net/stripeWebhook`
+- `https://stripewebhook-aa6far2tqa-nw.a.run.app`
+
+## Notifications Setup
+
+Notification logic now exists in deployed Functions for:
+
+- staff assignment emails
+- customer booking confirmation emails
+- customer job completion emails
+- day-before staff reminder emails
+
+The reminder scheduler runs daily at `08:00` in `Europe/London`.
+
+Current dependency:
+
+- `RESEND_API_KEY` must be a real provider key for outbound email to send
+- if that key is still placeholder, the functions log and skip email instead of failing booking updates
 
 ## Firebase Configuration
 

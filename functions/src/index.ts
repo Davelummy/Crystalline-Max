@@ -4,9 +4,19 @@ import { onDocumentCreated, onDocumentUpdated } from 'firebase-functions/v2/fire
 import { HttpsError, onCall, onRequest } from 'firebase-functions/v2/https';
 import { setGlobalOptions } from 'firebase-functions/v2/options';
 import { defineSecret } from 'firebase-functions/params';
+import { onSchedule } from 'firebase-functions/v2/scheduler';
+import { Resend } from 'resend';
 import Stripe from 'stripe';
 import { getAddonLabel, getBookingTasks } from './lib/bookings.js';
 import { getDistanceMeters } from './lib/distance.js';
+import {
+  getCustomerCompletionEmailHtml,
+  getCustomerConfirmationEmailHtml,
+  getNotificationPayload,
+  getScheduleLabel,
+  getStaffAssignmentEmailHtml,
+  getStaffReminderEmailHtml,
+} from './lib/notifications.js';
 
 setGlobalOptions({
   region: 'europe-west2',
@@ -19,6 +29,7 @@ initializeApp();
 const db = getFirestore();
 const stripeSecret = defineSecret('STRIPE_SECRET_KEY');
 const stripeWebhookSecret = defineSecret('STRIPE_WEBHOOK_SECRET');
+const resendApiKey = defineSecret('RESEND_API_KEY');
 
 function getBookingOwnerId(data: unknown) {
   if (!data || typeof data !== 'object' || !('userId' in data) || typeof data.userId !== 'string') {
@@ -88,6 +99,75 @@ function isEmployeeRole(value: unknown) {
 
 function getStripeClient(secret: string) {
   return new Stripe(secret);
+}
+
+function getResendClient(secret: string) {
+  return new Resend(secret);
+}
+
+function isConfiguredSecret(secret: string) {
+  return Boolean(secret) && !secret.includes('placeholder');
+}
+
+function getUkDateString(date: Date) {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Europe/London',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(date);
+}
+
+function addDays(date: Date, days: number) {
+  const next = new Date(date);
+  next.setUTCDate(next.getUTCDate() + days);
+  return next;
+}
+
+function getBookingNotificationInput(
+  bookingId: string,
+  data: Record<string, unknown>,
+) {
+  return {
+    bookingId,
+    serviceLabel: getString(data.serviceLabel) || 'Crystalline Max Service',
+    customerName: getString(data.customerName) || 'Customer',
+    date: getString(data.date) || 'Date pending',
+    time: getString(data.time) || undefined,
+    timeWindow: getString(data.timeWindow) || undefined,
+    locationLabel:
+      getString(data.locationLabel) ||
+      getString(data.address) ||
+      getString(data.postcode) ||
+      undefined,
+    addons: getStringArray(data.addons),
+  };
+}
+
+async function sendEmail(input: {
+  apiKey: string;
+  from: string;
+  to: string;
+  subject: string;
+  html: string;
+}) {
+  if (!isConfiguredSecret(input.apiKey)) {
+    console.log(`Skipping email "${input.subject}" because RESEND_API_KEY is not configured.`);
+    return;
+  }
+
+  const resend = getResendClient(input.apiKey);
+
+  try {
+    await resend.emails.send({
+      from: input.from,
+      to: input.to,
+      subject: input.subject,
+      html: input.html,
+    });
+  } catch (error) {
+    console.error(`Email send failed for "${input.subject}"`, error);
+  }
 }
 
 export const validateCheckin = onCall(async (request) => {
@@ -345,3 +425,126 @@ export const onBookingCountDecrement = onDocumentUpdated('bookings/{bookingId}',
     { merge: true },
   );
 });
+
+export const onBookingUpdated = onDocumentUpdated(
+  { document: 'bookings/{bookingId}', secrets: [resendApiKey] },
+  async (event) => {
+    const before = event.data?.before.data();
+    const after = event.data?.after.data();
+
+    if (!before || !after) {
+      return;
+    }
+
+    const beforeRecord = asRecord(before);
+    const afterRecord = asRecord(after);
+    if (!beforeRecord || !afterRecord) {
+      return;
+    }
+
+    const bookingId = event.params.bookingId;
+    const bookingInput = getBookingNotificationInput(bookingId, afterRecord);
+    const resendKey = resendApiKey.value();
+
+    if (!beforeRecord.assignedStaffId && afterRecord.assignedStaffId) {
+      const staffId = getString(afterRecord.assignedStaffId);
+      if (staffId) {
+        const staffSnapshot = await db.doc(`users/${staffId}`).get();
+        const staff = asRecord(staffSnapshot.data());
+        const staffEmail = getString(staff?.email);
+
+        if (staffEmail) {
+          await sendEmail({
+            apiKey: resendKey,
+            from: 'Crystalline Max Ops <ops@crystallinemax.co.uk>',
+            to: staffEmail,
+            subject: `New job assigned: ${bookingInput.serviceLabel}`,
+            html: getStaffAssignmentEmailHtml(bookingInput),
+          });
+        }
+      }
+    }
+
+    if (beforeRecord.status === 'pending' && afterRecord.status === 'confirmed') {
+      const customerEmail = getString(afterRecord.customerEmail);
+      const total = getNumber(afterRecord.total);
+
+      if (customerEmail) {
+        await sendEmail({
+          apiKey: resendKey,
+          from: 'Crystalline Max Bookings <bookings@crystallinemax.co.uk>',
+          to: customerEmail,
+          subject: 'Your booking is confirmed',
+          html: getCustomerConfirmationEmailHtml({
+            ...bookingInput,
+            total,
+          }),
+        });
+      }
+    }
+
+    if (beforeRecord.status !== 'completed' && afterRecord.status === 'completed') {
+      const customerEmail = getString(afterRecord.customerEmail);
+
+      if (customerEmail) {
+        await sendEmail({
+          apiKey: resendKey,
+          from: 'Crystalline Max Bookings <bookings@crystallinemax.co.uk>',
+          to: customerEmail,
+          subject: 'Your job is complete',
+          html: getCustomerCompletionEmailHtml(bookingInput),
+        });
+      }
+    }
+  },
+);
+
+export const sendJobReminders = onSchedule(
+  { schedule: 'every day 08:00', timeZone: 'Europe/London', secrets: [resendApiKey] },
+  async () => {
+    const tomorrow = getUkDateString(addDays(new Date(), 1));
+    const snapshot = await db
+      .collection('bookings')
+      .where('date', '==', tomorrow)
+      .get();
+
+    const resendKey = resendApiKey.value();
+    const jobs = snapshot.docs
+      .map((docSnapshot) => ({ id: docSnapshot.id, data: asRecord(docSnapshot.data()) }))
+      .filter((entry) => {
+        const status = entry.data?.status;
+        return entry.data && (status === 'confirmed' || status === 'in_progress') && getString(entry.data.assignedStaffId);
+      });
+
+    for (const job of jobs) {
+      const staffId = getString(job.data?.assignedStaffId);
+      if (!staffId || !job.data) {
+        continue;
+      }
+
+      const staffSnapshot = await db.doc(`users/${staffId}`).get();
+      const staff = asRecord(staffSnapshot.data());
+      const staffEmail = getString(staff?.email);
+
+      if (!staffEmail) {
+        continue;
+      }
+
+      const bookingInput = getBookingNotificationInput(job.id, job.data);
+      await sendEmail({
+        apiKey: resendKey,
+        from: 'Crystalline Max Ops <ops@crystallinemax.co.uk>',
+        to: staffEmail,
+        subject: `Reminder: job tomorrow at ${getScheduleLabel(bookingInput)}`,
+        html: getStaffReminderEmailHtml(bookingInput),
+      });
+
+      const payload = getNotificationPayload(bookingInput);
+      console.log('Reminder prepared', {
+        bookingId: job.id,
+        staffId,
+        title: payload.title,
+      });
+    }
+  },
+);

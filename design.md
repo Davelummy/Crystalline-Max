@@ -318,6 +318,26 @@ Pattern:
 
 This preserves the system principle that financially meaningful state transitions should not rely on browser-only success callbacks.
 
+### Operational Notification Pattern
+
+Notifications are event-driven and operationally narrow.
+
+Current implementation:
+
+- booking assignment triggers staff notification
+- booking confirmation triggers customer notification
+- booking completion triggers customer notification
+- scheduled reminder triggers staff notification the day before service
+
+Excluded on purpose:
+
+- account creation mail
+- invite issued mail
+- task completion mail
+- photo upload mail
+
+This follows the product principle that notifications should be useful workflow prompts, not ambient noise.
+
 ## Domain Patterns
 
 ### Single Source Of Truth For Job State
