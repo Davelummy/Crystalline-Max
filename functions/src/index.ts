@@ -1,9 +1,11 @@
 import { initializeApp } from 'firebase-admin/app';
 import { FieldValue, getFirestore } from 'firebase-admin/firestore';
 import { onDocumentCreated, onDocumentUpdated } from 'firebase-functions/v2/firestore';
-import { HttpsError, onCall } from 'firebase-functions/v2/https';
+import { HttpsError, onCall, onRequest } from 'firebase-functions/v2/https';
 import { setGlobalOptions } from 'firebase-functions/v2/options';
-import { getBookingTasks } from './lib/bookings.js';
+import { defineSecret } from 'firebase-functions/params';
+import Stripe from 'stripe';
+import { getAddonLabel, getBookingTasks } from './lib/bookings.js';
 import { getDistanceMeters } from './lib/distance.js';
 
 setGlobalOptions({
@@ -15,6 +17,8 @@ setGlobalOptions({
 initializeApp();
 
 const db = getFirestore();
+const stripeSecret = defineSecret('STRIPE_SECRET_KEY');
+const stripeWebhookSecret = defineSecret('STRIPE_WEBHOOK_SECRET');
 
 function getBookingOwnerId(data: unknown) {
   if (!data || typeof data !== 'object' || !('userId' in data) || typeof data.userId !== 'string') {
@@ -30,6 +34,31 @@ function asRecord(value: unknown) {
 
 function getString(value: unknown) {
   return typeof value === 'string' ? value : null;
+}
+
+function getHeaderString(value: unknown) {
+  if (typeof value === 'string') {
+    return value;
+  }
+
+  if (Array.isArray(value) && typeof value[0] === 'string') {
+    return value[0];
+  }
+
+  return null;
+}
+
+function getOriginFromHeader(value: unknown) {
+  const header = getHeaderString(value);
+  if (!header) {
+    return null;
+  }
+
+  try {
+    return new URL(header).origin;
+  } catch {
+    return header.replace(/\/$/, '');
+  }
 }
 
 function getNumber(value: unknown) {
@@ -55,6 +84,10 @@ function getAfterPhotoCount(data: Record<string, unknown>) {
 
 function isEmployeeRole(value: unknown) {
   return value === 'employee';
+}
+
+function getStripeClient(secret: string) {
+  return new Stripe(secret);
 }
 
 export const validateCheckin = onCall(async (request) => {
@@ -146,6 +179,128 @@ export const validateCheckin = onCall(async (request) => {
   });
 
   return { success: true };
+});
+
+export const createCheckoutSession = onCall({ secrets: [stripeSecret] }, async (request) => {
+  if (!request.auth) {
+    throw new HttpsError('unauthenticated', 'Must be signed in.');
+  }
+
+  const payload = asRecord(request.data);
+  const bookingId = getString(payload?.bookingId);
+
+  if (!bookingId) {
+    throw new HttpsError('invalid-argument', 'bookingId is required.');
+  }
+
+  const bookingSnapshot = await db.doc(`bookings/${bookingId}`).get();
+  if (!bookingSnapshot.exists) {
+    throw new HttpsError('not-found', 'Booking not found.');
+  }
+
+  const booking = asRecord(bookingSnapshot.data());
+  if (!booking) {
+    throw new HttpsError('not-found', 'Booking not found.');
+  }
+
+  if (booking.userId !== request.auth.uid) {
+    throw new HttpsError('permission-denied', 'Not your booking.');
+  }
+
+  if (booking.paymentStatus === 'paid') {
+    throw new HttpsError('already-exists', 'Booking is already paid.');
+  }
+
+  if (booking.paymentStatus === 'not_required') {
+    throw new HttpsError('failed-precondition', 'Booking is marked for offline payment.');
+  }
+
+  const amount = getNumber(booking.total);
+  const serviceLabel = getString(booking.serviceLabel);
+  const customerEmail = getString(booking.customerEmail);
+  const serviceId = getString(booking.serviceId) ?? '';
+  const addons = getStringArray(booking.addons);
+  const origin =
+    getOriginFromHeader(request.rawRequest.headers.origin) ||
+    getOriginFromHeader(request.rawRequest.headers.referer) ||
+    'http://localhost:3000';
+
+  if (amount == null || !serviceLabel || !customerEmail) {
+    throw new HttpsError('failed-precondition', 'Booking is missing payment details.');
+  }
+
+  const addonLabels = addons.map((addonId) => getAddonLabel(serviceId, addonId));
+  const stripe = getStripeClient(stripeSecret.value());
+  const session = await stripe.checkout.sessions.create({
+    mode: 'payment',
+    customer_email: customerEmail,
+    line_items: [
+      {
+        quantity: 1,
+        price_data: {
+          currency: 'gbp',
+          unit_amount: Math.round(amount * 100),
+          product_data: {
+            name: serviceLabel,
+            description: addonLabels.length > 0 ? `Add-ons: ${addonLabels.join(', ')}` : undefined,
+          },
+        },
+      },
+    ],
+    metadata: {
+      bookingId,
+      userId: request.auth.uid,
+    },
+    success_url: `${origin}/customer/bookings/${bookingId}?payment=success`,
+    cancel_url: `${origin}/customer/billing?payment=cancelled`,
+  });
+
+  if (!session.url) {
+    throw new HttpsError('internal', 'Stripe did not return a checkout URL.');
+  }
+
+  return { sessionUrl: session.url };
+});
+
+export const stripeWebhook = onRequest({ secrets: [stripeSecret, stripeWebhookSecret] }, async (request, response) => {
+  const signature = request.headers['stripe-signature'];
+  if (typeof signature !== 'string') {
+    response.status(400).send('Missing Stripe signature.');
+    return;
+  }
+
+  let event: Stripe.Event;
+  const stripe = getStripeClient(stripeSecret.value());
+
+  try {
+    event = stripe.webhooks.constructEvent(request.rawBody, signature, stripeWebhookSecret.value());
+  } catch (error) {
+    response.status(400).send(`Webhook error: ${error instanceof Error ? error.message : 'unknown'}`);
+    return;
+  }
+
+  if (event.type === 'checkout.session.completed') {
+    const session = event.data.object as Stripe.Checkout.Session;
+    const bookingId = getString(session.metadata?.bookingId);
+
+    if (bookingId) {
+      const bookingRef = db.doc(`bookings/${bookingId}`);
+      const bookingSnapshot = await bookingRef.get();
+      const booking = bookingSnapshot.data();
+
+      if (booking && booking.paymentStatus !== 'paid') {
+        await bookingRef.update({
+          paymentStatus: 'paid',
+          paymentSessionId: session.id,
+          paymentAmount: session.amount_total ?? null,
+          paidAt: FieldValue.serverTimestamp(),
+          updatedAt: FieldValue.serverTimestamp(),
+        });
+      }
+    }
+  }
+
+  response.json({ received: true });
 });
 
 export const onBookingCreated = onDocumentCreated('bookings/{bookingId}', async (event) => {

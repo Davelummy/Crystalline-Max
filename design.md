@@ -305,6 +305,19 @@ Pattern now in place:
 
 This keeps operational attendance defensible when disputes or audit questions arise.
 
+### Payment Truth Pattern
+
+Payment state is now server-confirmed rather than UI-asserted.
+
+Pattern:
+
+- customer initiates checkout from the portal
+- Stripe Checkout handles card collection
+- webhook confirmation updates Firestore payment state
+- admin can explicitly mark offline/cash payments as `not_required`
+
+This preserves the system principle that financially meaningful state transitions should not rely on browser-only success callbacks.
+
 ## Domain Patterns
 
 ### Single Source Of Truth For Job State

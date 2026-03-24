@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowLeft, Calendar, Clock, MapPin } from 'lucide-react';
+import { ArrowLeft, Calendar, Clock, CreditCard, MapPin } from 'lucide-react';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '@/firebase';
 import {
@@ -9,6 +9,7 @@ import {
   getStatusLabel,
   getTaskProgressPercent,
 } from '@/lib/bookings';
+import { canPayNow, getPaymentDisplayLabel, startCheckoutSession } from '@/lib/payments';
 import type { BookingPhoto, BookingRecord } from '@/types';
 import { PhotoGalleryOverlay } from './PhotoGalleryOverlay';
 
@@ -22,6 +23,8 @@ export const CustomerBookingDetail: React.FC<CustomerBookingDetailProps> = ({ bo
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [gallery, setGallery] = React.useState<{ title: string; photos: BookingPhoto[] } | null>(null);
+  const [paymentError, setPaymentError] = React.useState<string | null>(null);
+  const [openingCheckout, setOpeningCheckout] = React.useState(false);
 
   React.useEffect(() => {
     const unsubscribe = onSnapshot(
@@ -49,6 +52,30 @@ export const CustomerBookingDetail: React.FC<CustomerBookingDetailProps> = ({ bo
 
   const beforePhotos = getBeforePhotos(booking);
   const afterPhotos = getAfterPhotos(booking);
+  const paymentState = React.useMemo(() => {
+    if (typeof window === 'undefined') {
+      return null;
+    }
+
+    return new URLSearchParams(window.location.search).get('payment');
+  }, []);
+
+  const handlePay = async () => {
+    if (!booking) {
+      return;
+    }
+
+    setOpeningCheckout(true);
+    setPaymentError(null);
+
+    try {
+      await startCheckoutSession(booking.id);
+    } catch (checkoutError) {
+      console.error('Checkout session failed:', checkoutError);
+      setPaymentError(checkoutError instanceof Error ? checkoutError.message : 'Payment session could not be created.');
+      setOpeningCheckout(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-silver/10 pt-32 pb-12">
@@ -75,6 +102,21 @@ export const CustomerBookingDetail: React.FC<CustomerBookingDetailProps> = ({ bo
           <div className="frost-card-light p-8 text-sm text-red-500">{error || 'Booking not found.'}</div>
         ) : (
           <div className="space-y-6">
+            {paymentState === 'success' && (
+              <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-600">
+                Payment completed successfully. The booking record will update as soon as Stripe confirms the session.
+              </div>
+            )}
+            {paymentState === 'cancelled' && (
+              <div className="rounded-2xl border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-700">
+                Payment was cancelled before completion. You can retry from this booking once you are ready.
+              </div>
+            )}
+            {paymentError && (
+              <div className="rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-500">
+                {paymentError}
+              </div>
+            )}
             <div className="dark-card p-8">
               <p className="text-teal text-xs font-bold uppercase tracking-widest">{booking.serviceLabel}</p>
               <h1 className="mt-3 text-3xl font-display uppercase">{booking.customerName}</h1>
@@ -82,6 +124,22 @@ export const CustomerBookingDetail: React.FC<CustomerBookingDetailProps> = ({ bo
                 <p className="flex items-center gap-2"><Calendar size={16} className="text-teal" /> {booking.date}</p>
                 <p className="flex items-center gap-2"><Clock size={16} className="text-teal" /> {formatSchedule(booking)}</p>
                 <p className="flex items-center gap-2"><MapPin size={16} className="text-teal" /> {booking.locationLabel || booking.postcode}</p>
+              </div>
+              <div className="mt-6 flex flex-wrap items-center gap-4 text-sm text-white/70">
+                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 uppercase tracking-widest">
+                  <CreditCard size={14} className="text-teal" />
+                  {getPaymentDisplayLabel(booking)}
+                </span>
+                {canPayNow(booking) && (
+                  <button
+                    type="button"
+                    onClick={() => void handlePay()}
+                    disabled={openingCheckout}
+                    className="rounded-xl bg-teal px-4 py-3 text-[10px] font-bold uppercase tracking-widest text-charcoal transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {openingCheckout ? 'Opening Checkout...' : 'Pay Now'}
+                  </button>
+                )}
               </div>
               <div className="mt-6">
                 <div className="mb-2 flex items-center justify-between text-[10px] font-bold uppercase tracking-widest text-white/55">

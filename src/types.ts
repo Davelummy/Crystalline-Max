@@ -96,6 +96,7 @@ export interface BookingRecord {
   paymentSessionId?: string | null;
   paymentAmount?: number | null;
   paidAt?: unknown | null;
+  adminNote?: string | null;
   assignedStaffId?: string | null;
   assignedStaffName?: string | null;
   assignedAt?: unknown;

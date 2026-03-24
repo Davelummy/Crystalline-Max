@@ -182,6 +182,7 @@ Roadmap corrections already accepted before implementation:
 - Phase 3 Cloud Functions platform setup is now complete and verified
 - Phase 4 data integrity and storage security hardening is now complete and verified
 - Phase 5 server-side check-in enforcement is now complete and verified
+- Phase 6 payments integration is now implemented and deployed
 - `react-router-dom` is installed and live
 - [AuthContext.tsx](/Users/davidolumide/Crystalline-Max/src/context/AuthContext.tsx) provides shared auth/profile state
 - [RouteGuard.tsx](/Users/davidolumide/Crystalline-Max/src/components/RouteGuard.tsx) enforces role-based access
@@ -201,6 +202,8 @@ Roadmap corrections already accepted before implementation:
   - `validateCheckin`
   - `onBookingCreated`
   - `onBookingCountDecrement`
+  - `createCheckoutSession`
+  - `stripeWebhook`
 - Emulator smoke verification confirmed the booking-count triggers increment on booking create and decrement on cancellation
 - Emulator smoke verification confirmed `validateCheckin` enforces:
   - distance gate
@@ -278,6 +281,19 @@ Roadmap corrections already accepted before implementation:
 - Customer billing/history now reads real booking data
 - Admin dashboard now reads live booking, check-in, and workforce state
 - Admin and customer can open multi-photo job records in an uncluttered overlay gallery
+
+### Payment Upgrade
+
+- Added Stripe-backed checkout session creation in [functions/src/index.ts](/Users/davidolumide/Crystalline-Max/functions/src/index.ts)
+- Added Stripe webhook payment confirmation in [functions/src/index.ts](/Users/davidolumide/Crystalline-Max/functions/src/index.ts)
+- Added customer-side pay-now logic in [src/lib/payments.ts](/Users/davidolumide/Crystalline-Max/src/lib/payments.ts)
+- Customer billing can now launch checkout from [src/components/CustomerBilling.tsx](/Users/davidolumide/Crystalline-Max/src/components/CustomerBilling.tsx)
+- Customer booking detail can now launch checkout from [src/components/CustomerBookingDetail.tsx](/Users/davidolumide/Crystalline-Max/src/components/CustomerBookingDetail.tsx)
+- Admin can mark bookings as offline-paid from [src/components/AdminBookingDetail.tsx](/Users/davidolumide/Crystalline-Max/src/components/AdminBookingDetail.tsx)
+- Admin revenue now counts only paid bookings in [src/components/AdminDashboard.tsx](/Users/davidolumide/Crystalline-Max/src/components/AdminDashboard.tsx)
+- Booking schema now includes `adminNote` for manual payment context in [src/types.ts](/Users/davidolumide/Crystalline-Max/src/types.ts)
+- Deployed Stripe webhook URL:
+  - `https://europe-west2-crystalline-max-dolumide-2026.cloudfunctions.net/stripeWebhook`
 
 ### UI And Routing Improvements
 

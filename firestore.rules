@@ -182,6 +182,7 @@ service cloud.firestore {
         'paymentSessionId',
         'paymentAmount',
         'paidAt',
+        'adminNote',
         'updatedAt'
       ]);
 
@@ -209,6 +210,7 @@ service cloud.firestore {
              (!('paymentSessionId' in data) || data.paymentSessionId == null || data.paymentSessionId is string) &&
              (!('paymentAmount' in data) || data.paymentAmount == null || data.paymentAmount is number) &&
              (!('paidAt' in data) || data.paidAt == null || data.paidAt is timestamp || data.paidAt is string) &&
+             (!('adminNote' in data) || data.adminNote == null || data.adminNote is string) &&
              (!('completedTaskIds' in data) || data.completedTaskIds is list) &&
              (!('taskProgressPercent' in data) || data.taskProgressPercent is number) &&
              (data.createdAt is timestamp || data.createdAt is string) &&

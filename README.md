@@ -15,6 +15,7 @@ Current migration status:
 - Phase 3 Cloud Functions platform setup is complete with a TypeScript functions workspace, emulator wiring, shared server utilities, and verified local backend emulators
 - Phase 4 data integrity and storage security hardening is complete with booking-count triggers, secured media rules, composite indexes, and tighter client write constraints
 - Phase 5 server-side check-in enforcement is complete with a deployed `validateCheckin` callable and client-side check-in writes removed
+- Phase 6 payments integration is implemented and deployed with Stripe-backed checkout session creation, webhook payment confirmation, customer pay-now actions, and admin offline payment override
 
 ## Approved Roadmap
 
@@ -184,6 +185,9 @@ Phase 3 baseline currently provides:
 - root scripts for backend compilation and emulator startup
 - deployed Firestore triggers for booking-count increment and cancellation decrement
 - deployed `validateCheckin` callable for server-side geofence and checkout enforcement
+- deployed Stripe payment functions:
+  - `createCheckoutSession`
+  - `stripeWebhook`
 
 Configured emulator ports:
 
@@ -192,6 +196,29 @@ Configured emulator ports:
 - Firestore: `127.0.0.1:8080`
 - Storage: `127.0.0.1:9199`
 - Emulator UI: `127.0.0.1:4000`
+
+## Payment Setup
+
+Stripe is now the online payment provider for Crystalline Max.
+
+Implemented payment behavior:
+
+- customer portal can open Stripe Checkout for payable bookings
+- `stripeWebhook` is the only path that marks a booking `paid`
+- admin can mark a booking `not_required` for cash or offline payments
+- admin revenue now counts only paid bookings
+
+Required local/remote config:
+
+- `.env.local`
+  - `VITE_STRIPE_PUBLISHABLE_KEY`
+- Firebase Functions secrets
+  - `STRIPE_SECRET_KEY`
+  - `STRIPE_WEBHOOK_SECRET`
+
+Deployed webhook endpoint:
+
+- `https://europe-west2-crystalline-max-dolumide-2026.cloudfunctions.net/stripeWebhook`
 
 ## Firebase Configuration
 

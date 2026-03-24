@@ -46,7 +46,9 @@ export const AdminDashboard: React.FC = () => {
     bookings.filter((booking) => !['completed', 'cancelled'].includes(booking.status)),
   ).slice(0, 5);
   const pendingCount = bookings.filter((booking) => booking.status === 'pending').length;
-  const revenue = bookings.reduce((sum, booking) => sum + booking.total, 0);
+  const revenue = bookings
+    .filter((booking) => booking.paymentStatus === 'paid')
+    .reduce((sum, booking) => sum + (booking.paymentAmount != null ? booking.paymentAmount / 100 : booking.total), 0);
 
   const areaCoverage: Array<[string, number]> = (Object.entries(
     bookings.reduce<Record<string, number>>((counts, booking) => {

@@ -1,6 +1,6 @@
 import React from 'react';
 import { ArrowLeft, Calendar, Clock, MapPin, Users } from 'lucide-react';
-import { doc, onSnapshot, query, collection, where } from 'firebase/firestore';
+import { collection, doc, onSnapshot, query, serverTimestamp, updateDoc, where } from 'firebase/firestore';
 import { db } from '@/firebase';
 import {
   formatSchedule,
@@ -25,6 +25,7 @@ export const AdminBookingDetail: React.FC<AdminBookingDetailProps> = ({ bookingI
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [gallery, setGallery] = React.useState<{ title: string; photos: BookingPhoto[] } | null>(null);
+  const [paymentBusy, setPaymentBusy] = React.useState(false);
 
   React.useEffect(() => {
     const unsubscribeBooking = onSnapshot(
@@ -70,6 +71,28 @@ export const AdminBookingDetail: React.FC<AdminBookingDetailProps> = ({ bookingI
   const tasks = booking ? getBookingTasks(booking.serviceId, booking.addons) : [];
   const completed = new Set(getCompletedTaskIds(booking));
 
+  const handleMarkOfflinePayment = async () => {
+    if (!booking) {
+      return;
+    }
+
+    setPaymentBusy(true);
+    setError(null);
+
+    try {
+      await updateDoc(doc(db, 'bookings', booking.id), {
+        paymentStatus: 'not_required',
+        adminNote: 'Payment collected offline',
+        updatedAt: serverTimestamp(),
+      });
+    } catch (paymentError) {
+      console.error('Offline payment override failed:', paymentError);
+      setError('Payment override could not be saved.');
+    } finally {
+      setPaymentBusy(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-charcoal px-4 pb-20 pt-32 text-white">
       {gallery && (
@@ -112,6 +135,26 @@ export const AdminBookingDetail: React.FC<AdminBookingDetailProps> = ({ bookingI
                   <p className="mt-2 text-lg font-bold uppercase">{getStatusLabel(booking.status)}</p>
                   <p className="mt-4 text-[10px] font-bold uppercase tracking-widest text-white/50">Payment</p>
                   <p className="mt-2 text-lg font-bold uppercase">{booking.paymentStatus}</p>
+                  {booking.paymentStatus === 'paid' && booking.paymentAmount != null && (
+                    <p className="mt-2 text-[10px] font-bold uppercase tracking-widest text-white/55">
+                      Stripe amount: £{(booking.paymentAmount / 100).toFixed(2)}
+                    </p>
+                  )}
+                  {booking.paymentStatus === 'not_required' && booking.adminNote && (
+                    <p className="mt-2 text-[10px] font-bold uppercase tracking-widest text-white/55">
+                      {booking.adminNote}
+                    </p>
+                  )}
+                  {booking.paymentStatus === 'pending' && (
+                    <button
+                      type="button"
+                      onClick={() => void handleMarkOfflinePayment()}
+                      disabled={paymentBusy}
+                      className="mt-4 w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-[10px] font-bold uppercase tracking-widest text-white transition-colors hover:border-teal hover:text-teal disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {paymentBusy ? 'Saving...' : 'Mark Cash / Offline'}
+                    </button>
+                  )}
                   <p className="mt-4 text-[10px] font-bold uppercase tracking-widest text-white/50">Progress</p>
                   <p className="mt-2 text-lg font-bold uppercase">{getTaskProgressPercent(booking)}%</p>
                 </div>
