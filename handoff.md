@@ -174,6 +174,15 @@ Roadmap corrections already accepted before implementation:
 - Removed committed environment-specific Firebase app config from version control
 - Repository now avoids tracking local Firebase credentials
 
+### Current Migration Checkpoint
+
+- Phase 1 foundation cleanup is complete and verified
+- `react-router-dom` has been added
+- Auth state extraction has started with [AuthContext.tsx](/Users/davidolumide/Crystalline-Max/src/context/AuthContext.tsx)
+- Route guard scaffolding has been added in [RouteGuard.tsx](/Users/davidolumide/Crystalline-Max/src/components/RouteGuard.tsx)
+- [main.tsx](/Users/davidolumide/Crystalline-Max/src/main.tsx) now wraps the app in `AuthProvider`
+- Full route replacement of the `App.tsx` state machine is still in progress
+
 ### Authentication Refactor
 
 - Replaced shared/mixed auth entry with dedicated flows:

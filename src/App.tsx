@@ -1,7 +1,7 @@
 import React from 'react';
 import { AlertCircle } from 'lucide-react';
-import { deleteUser, getRedirectResult, onAuthStateChanged, signOut, type User } from 'firebase/auth';
-import { doc, getDoc, onSnapshot, serverTimestamp, setDoc, writeBatch } from 'firebase/firestore';
+import { deleteUser, getRedirectResult, signOut, type User } from 'firebase/auth';
+import { doc, getDoc, serverTimestamp, setDoc, writeBatch } from 'firebase/firestore';
 import { AdminDashboard } from './components/AdminDashboard';
 import { AdminLoginPage } from './components/AdminLoginPage';
 import { AdminNavbar } from './components/AdminNavbar';
@@ -31,6 +31,7 @@ import { StaffTasks } from './components/StaffTasks';
 import { Testimonials } from './components/Testimonials';
 import { TermsPage } from './components/TermsPage';
 import { UserProfileEdit } from './components/UserProfileEdit';
+import { useAuth } from './context/AuthContext';
 import {
   clearLoginTarget,
   COMPANY_EMAIL_DOMAIN,
@@ -87,18 +88,15 @@ export default function App() {
             : 'landing'
   ));
   const [preSelectedService, setPreSelectedService] = React.useState<string | null>(null);
-  const [user, setUser] = React.useState<User | null>(null);
-  const [userData, setUserData] = React.useState<AppUserData | null>(null);
-  const [userRole, setUserRole] = React.useState<AppUserData['role'] | null>(null);
-  const [isOnboarded, setIsOnboarded] = React.useState(false);
-  const [loading, setLoading] = React.useState(true);
   const [isLoggingIn, setIsLoggingIn] = React.useState(false);
   const [authError, setAuthError] = React.useState<string | null>(null);
+  const { user, userData, userRole, loading } = useAuth();
   const isAdminPath = pathname === '/admin';
   const isPrivacyPath = pathname === '/privacy';
   const isTermsPath = pathname === '/terms';
   const footerPhone = '+44 161 524 7812';
   const footerAddressLine = '18 Birchfields Road, Manchester, M13 0ZE';
+  const isOnboarded = Boolean(userData?.onboarded);
 
   const publicViews = React.useMemo<View[]>(() => [
     'landing',
@@ -303,68 +301,29 @@ export default function App() {
   }, [completePortalLogin, getLoginViewForTarget]);
 
   React.useEffect(() => {
-    let unsubscribeUserDoc: (() => void) | null = null;
+    if (loading) return;
 
-    const unsubscribeAuth = onAuthStateChanged(auth, (nextUser) => {
-      setUser(nextUser);
+    if (!user) {
+      setPortal('public');
+      setCurrentView((view) => (
+        publicViews.includes(view)
+          ? view
+          : window.location.pathname === '/admin'
+            ? 'admin-login'
+            : window.location.pathname === '/privacy'
+              ? 'privacy'
+              : window.location.pathname === '/terms'
+                ? 'terms'
+                : 'landing'
+      ));
+      return;
+    }
 
-      if (unsubscribeUserDoc) {
-        unsubscribeUserDoc();
-        unsubscribeUserDoc = null;
-      }
-
-      if (!nextUser) {
-        setUserData(null);
-        setUserRole(null);
-        setIsOnboarded(false);
-        setPortal('public');
-        setCurrentView((currentView) => (
-          publicViews.includes(currentView)
-            ? currentView
-            : window.location.pathname === '/admin'
-              ? 'admin-login'
-              : window.location.pathname === '/privacy'
-                ? 'privacy'
-                : window.location.pathname === '/terms'
-                  ? 'terms'
-              : 'landing'
-        ));
-        setLoading(false);
-        return;
-      }
-
-      setLoading(true);
-
-      if (!isAdminPath && hasSavedLoginTarget() && getSavedLoginTarget() === 'customer') {
-        setPortal('customer');
-        setCurrentView('customer');
-      }
-
-      unsubscribeUserDoc = onSnapshot(doc(db, 'users', nextUser.uid), (snapshot) => {
-        if (!snapshot.exists()) {
-          setUserData(null);
-          setUserRole(null);
-          setIsOnboarded(false);
-          setLoading(false);
-          return;
-        }
-
-        const data = snapshot.data() as AppUserData;
-        setUserData(data);
-        setUserRole(data.role);
-        setIsOnboarded(Boolean(data.onboarded));
-        setLoading(false);
-      }, (error) => {
-        console.error('Error listening to user data:', error);
-        setLoading(false);
-      });
-    });
-
-    return () => {
-      unsubscribeAuth();
-      if (unsubscribeUserDoc) unsubscribeUserDoc();
-    };
-  }, [isAdminPath, publicViews]);
+    if (!isAdminPath && hasSavedLoginTarget() && getSavedLoginTarget() === 'customer') {
+      setPortal('customer');
+      setCurrentView('customer');
+    }
+  }, [isAdminPath, loading, publicViews, user]);
 
   React.useEffect(() => {
     if (loading || !user || portal !== 'public') return;
@@ -706,7 +665,7 @@ export default function App() {
 
     if (!userData) {
       if (portal === 'customer') {
-        return <CustomerOnboarding onComplete={() => setIsOnboarded(true)} />;
+        return <CustomerOnboarding onComplete={() => undefined} />;
       }
 
       return (
@@ -722,9 +681,9 @@ export default function App() {
     }
 
     if (!isOnboarded) {
-      if (userRole === 'client') return <CustomerOnboarding onComplete={() => setIsOnboarded(true)} />;
-      if (userRole === 'employee') return <StaffOnboarding onComplete={() => setIsOnboarded(true)} />;
-      if (userRole === 'admin') return <AdminOnboarding onComplete={() => setIsOnboarded(true)} />;
+      if (userRole === 'client') return <CustomerOnboarding onComplete={() => undefined} />;
+      if (userRole === 'employee') return <StaffOnboarding onComplete={() => undefined} />;
+      if (userRole === 'admin') return <AdminOnboarding onComplete={() => undefined} />;
     }
 
     if (portal === 'admin' && userRole !== 'admin') {

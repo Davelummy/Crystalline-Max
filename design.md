@@ -152,6 +152,8 @@ Applied to:
 
 This keeps the three interfaces synchronized without manual refresh patterns.
 
+Auth state is now being centralized through a shared provider so route-level access control and portal decisions can move away from local app-shell state and toward explicit guarded routes.
+
 ## Form And Flow Patterns
 
 ### Customer Booking Pattern

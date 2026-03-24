@@ -8,6 +8,11 @@ Crystalline Max is a premium service operations platform for a mobile detailing 
 
 The platform runs on React, Vite, TypeScript, Firebase Authentication, Firestore, and Firebase Storage. The booking record is the operational source of truth, so customer progress, staff execution, and admin oversight all stay synchronized in real time.
 
+Current migration status:
+
+- Phase 1 foundation cleanup is complete
+- Phase 2 router migration has started with `react-router-dom`, `AuthProvider`, and `RouteGuard` scaffolding now present in the codebase
+
 ## Approved Roadmap
 
 The approved execution roadmap for the next implementation cycle is in [implementation-brief.md](/Users/davidolumide/Crystalline-Max/implementation-brief.md).
