@@ -35,6 +35,7 @@ Key approved constraints from that brief:
 - Service-focused landing experience
 - Portal selection for customer and staff
 - Dedicated `/admin` access path for admin
+- Footer and static contact details currently use Manchester placeholder business details until final publishing data is supplied
 
 ### Customer Experience
 

@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ArrowRight, Shield, Clock, MapPin, ChevronLeft, ChevronRight } from 'lucide-react';
-import { cn } from '@/src/lib/utils';
+import { cn } from '@/lib/utils';
 import { SafeImage } from './SafeImage';
 import carAfter from '../assets/images/car-after.jpg';
 import carBefore from '../assets/images/car-before.jpg';

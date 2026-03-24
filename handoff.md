@@ -233,6 +233,7 @@ Roadmap corrections already accepted before implementation:
 - Responsive layout improved for laptop and mobile portal flows
 - Text contrast adjusted where readability was poor
 - Broken or unavailable imagery was replaced with bundled, niche-appropriate assets without replacing the site with placeholder blocks
+- Public footer contact details now use temporary Manchester placeholder business data pending final real-world replacement before launch
 
 ## Current Firebase Project
 

@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { ChevronRight, Check, Clock, LogIn, MapPin, Sparkles } from 'lucide-react';
 import { collection, addDoc, doc, getDoc, increment, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore';
 import { getAuthErrorMessage, signInWithGoogle } from '../lib/auth';
-import { cn } from '@/src/lib/utils';
+import { cn } from '@/lib/utils';
 import { auth, db } from '../firebase';
 import { MapLocationPicker } from './MapLocationPicker';
 import { CAR_ADDONS, HOME_ADDONS, SERVICES } from '../constants';

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ImageOff, Loader2 } from 'lucide-react';
-import { cn } from '../lib/utils';
+import { cn } from '@/lib/utils';
 
 interface SafeImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
   fallbackSrc?: string;

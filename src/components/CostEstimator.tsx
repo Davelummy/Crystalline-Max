@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'motion/react';
 import { Check, Calculator } from 'lucide-react';
-import { cn } from '@/src/lib/utils';
+import { cn } from '@/lib/utils';
 import { SERVICES, CAR_ADDONS, HOME_ADDONS } from '../constants';
 
 interface CostEstimatorProps {

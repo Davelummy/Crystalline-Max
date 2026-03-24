@@ -1,11 +1,13 @@
 import React from 'react';
+import type { User as FirebaseUser } from 'firebase/auth';
 import { Logo } from './Logo';
 import { Menu, X, LogIn, LogOut, User, ShieldCheck, Clock } from 'lucide-react';
+import type { UserRole, View } from '../types';
 
 interface NavbarProps {
-  onNavigate?: (view: any) => void;
-  user?: any;
-  userRole?: string | null;
+  onNavigate?: (view: View) => void;
+  user?: FirebaseUser | null;
+  userRole?: UserRole | null;
   onLogin?: () => void;
   onLogout?: () => void;
 }

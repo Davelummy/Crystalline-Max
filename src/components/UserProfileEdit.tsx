@@ -1,11 +1,12 @@
 import React from 'react';
+import type { User as FirebaseUser } from 'firebase/auth';
 import { User, Phone, MapPin, Save, ArrowLeft, CheckCircle2, AlertCircle } from 'lucide-react';
 import { db } from '../firebase';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface UserProfileEditProps {
-  user: any;
+  user: FirebaseUser;
   onBack: () => void;
 }
 

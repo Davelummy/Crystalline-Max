@@ -187,6 +187,8 @@ The UI follows a high-contrast premium operations look:
 - restrained accent use
 - uppercase labeling for system/status language
 
+Supporting business details shown in the interface may use temporary placeholder operational data during development, but production content must be replaced with final verified business information before launch.
+
 ### Contrast And Readability
 
 Text contrast is intentionally corrected where backgrounds are dark or layered.

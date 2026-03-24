@@ -62,6 +62,7 @@ service cloud.firestore {
         'displayName',
         'employeeId',
         'bookingCount',
+        'fcmToken',
         'phoneNumber',
         'address',
         'city',
@@ -80,6 +81,7 @@ service cloud.firestore {
              data.role in ['admin', 'employee', 'client'] &&
              (!('displayName' in data) || data.displayName == null || data.displayName is string) &&
              (!('employeeId' in data) || data.employeeId is string) &&
+             (!('fcmToken' in data) || data.fcmToken == null || data.fcmToken is string) &&
              (!('phoneNumber' in data) || data.phoneNumber is string) &&
              (!('address' in data) || data.address is string) &&
              (!('city' in data) || data.city is string) &&
@@ -177,6 +179,9 @@ service cloud.firestore {
         'afterPhotoPath',
         'beforePhotos',
         'afterPhotos',
+        'paymentSessionId',
+        'paymentAmount',
+        'paidAt',
         'updatedAt'
       ]);
 
@@ -201,6 +206,9 @@ service cloud.firestore {
              data.total is number &&
              data.status in ['pending', 'confirmed', 'in_progress', 'completed', 'cancelled'] &&
              data.paymentStatus in ['pending', 'paid', 'not_required'] &&
+             (!('paymentSessionId' in data) || data.paymentSessionId == null || data.paymentSessionId is string) &&
+             (!('paymentAmount' in data) || data.paymentAmount == null || data.paymentAmount is number) &&
+             (!('paidAt' in data) || data.paidAt == null || data.paidAt is timestamp || data.paidAt is string) &&
              (!('completedTaskIds' in data) || data.completedTaskIds is list) &&
              (!('taskProgressPercent' in data) || data.taskProgressPercent is number) &&
              (data.createdAt is timestamp || data.createdAt is string) &&
@@ -230,7 +238,8 @@ service cloud.firestore {
                'location',
                'bookingId',
                'bookingAddress',
-               'distanceMeters'
+               'distanceMeters',
+               'serverValidated'
              ]) &&
              data.employeeUid == request.auth.uid &&
              data.type in ['in', 'out'] &&
@@ -239,6 +248,7 @@ service cloud.firestore {
              (!('bookingId' in data) || data.bookingId == null || data.bookingId is string) &&
              (!('bookingAddress' in data) || data.bookingAddress == null || data.bookingAddress is string) &&
              (!('distanceMeters' in data) || data.distanceMeters == null || data.distanceMeters is number) &&
+             (!('serverValidated' in data) || data.serverValidated is bool) &&
              (!('location' in data) || (
                data.location is map &&
                data.location.keys().hasOnly(['latitude', 'longitude']) &&

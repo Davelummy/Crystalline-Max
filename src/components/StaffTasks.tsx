@@ -4,7 +4,7 @@ import { motion } from 'motion/react';
 import { collection, doc, onSnapshot, query, serverTimestamp, updateDoc, where } from 'firebase/firestore';
 import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 import { auth, db, storage } from '../firebase';
-import { cn } from '@/src/lib/utils';
+import { cn } from '@/lib/utils';
 import {
   formatSchedule,
   getAfterPhotos,

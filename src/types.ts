@@ -19,7 +19,9 @@ export type View =
   | 'staff-signup'
   | 'admin-login'
   | 'notifications'
-  | 'profile';
+  | 'profile'
+  | 'privacy'
+  | 'terms';
 
 export type UserRole = 'client' | 'employee' | 'admin';
 
@@ -45,6 +47,7 @@ export interface AppUserData {
   role: UserRole;
   employeeId?: string;
   bookingCount?: number;
+  fcmToken?: string | null;
   phoneNumber?: string;
   address?: string;
   city?: string;
@@ -90,6 +93,9 @@ export interface BookingRecord {
   total: number;
   status: BookingStatus;
   paymentStatus: PaymentStatus;
+  paymentSessionId?: string | null;
+  paymentAmount?: number | null;
+  paidAt?: unknown | null;
   assignedStaffId?: string | null;
   assignedStaffName?: string | null;
   assignedAt?: unknown;
@@ -124,4 +130,17 @@ export interface BookingLocationSelection {
   locationLat: number;
   locationLng: number;
   locationVerified: boolean;
+}
+
+export interface CheckIn {
+  id: string;
+  employeeUid: string;
+  employeeName?: string | null;
+  type: 'in' | 'out';
+  timestamp: unknown;
+  location?: { latitude: number; longitude: number } | null;
+  bookingId?: string | null;
+  bookingAddress?: string | null;
+  distanceMeters?: number | null;
+  serverValidated?: boolean;
 }

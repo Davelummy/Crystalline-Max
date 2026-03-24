@@ -1,10 +1,12 @@
 import React from 'react';
+import type { User as FirebaseUser } from 'firebase/auth';
 import { Logo } from './Logo';
-import { Menu, X, LogOut, ShieldCheck, Users, BarChart3, Settings } from 'lucide-react';
+import { Menu, X, LogOut, Users, BarChart3, Settings } from 'lucide-react';
+import type { View } from '../types';
 
 interface AdminNavbarProps {
-  onNavigate: (view: any) => void;
-  user: any;
+  onNavigate: (view: View) => void;
+  user: FirebaseUser;
   onLogout: () => void;
 }
 

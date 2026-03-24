@@ -1,6 +1,6 @@
 import React from 'react';
 import { Logo } from './Logo';
-import { cn } from '@/src/lib/utils';
+import { cn } from '@/lib/utils';
 
 export const BrandBoard: React.FC = () => {
   return (

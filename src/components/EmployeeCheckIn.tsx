@@ -4,7 +4,7 @@ import { collection, addDoc, serverTimestamp, query, where, onSnapshot } from 'f
 import { motion, AnimatePresence } from 'motion/react';
 import { LogIn, LogOut, MapPin, CheckCircle2, AlertCircle, Clock } from 'lucide-react';
 import { formatSchedule, getAfterPhotos, getTaskProgressPercent, sortBookingsBySchedule } from '../lib/bookings';
-import type { BookingRecord } from '../types';
+import type { BookingRecord, CheckIn } from '../types';
 
 const CHECKIN_RADIUS_METERS = 200;
 
@@ -50,7 +50,7 @@ export const EmployeeCheckIn: React.FC = () => {
   const [status, setStatus] = React.useState<'in' | 'out' | 'unknown'>('unknown');
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
-  const [lastAction, setLastAction] = React.useState<any>(null);
+  const [lastAction, setLastAction] = React.useState<CheckIn | null>(null);
   const [assignedBookings, setAssignedBookings] = React.useState<BookingRecord[]>([]);
   const [assignmentLoading, setAssignmentLoading] = React.useState(true);
   const [distanceFromSite, setDistanceFromSite] = React.useState<number | null>(null);
@@ -66,10 +66,14 @@ export const EmployeeCheckIn: React.FC = () => {
     const unsubscribe = onSnapshot(q, (snapshot) => {
       if (!snapshot.empty) {
         const last = snapshot.docs
-          .map((entry) => entry.data())
+          .map((entry) => ({ id: entry.id, ...(entry.data() as Omit<CheckIn, 'id'>) }))
           .sort((left, right) => {
-            const leftValue = left.timestamp?.toDate ? left.timestamp.toDate().getTime() : 0;
-            const rightValue = right.timestamp?.toDate ? right.timestamp.toDate().getTime() : 0;
+            const leftValue = typeof left.timestamp === 'object' && left.timestamp && 'toDate' in left.timestamp && typeof left.timestamp.toDate === 'function'
+              ? left.timestamp.toDate().getTime()
+              : 0;
+            const rightValue = typeof right.timestamp === 'object' && right.timestamp && 'toDate' in right.timestamp && typeof right.timestamp.toDate === 'function'
+              ? right.timestamp.toDate().getTime()
+              : 0;
             return rightValue - leftValue;
           })[0];
         setLastAction(last);

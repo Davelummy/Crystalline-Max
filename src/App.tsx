@@ -18,6 +18,7 @@ import { CustomerOnboarding } from './components/CustomerOnboarding';
 import { EmployeeCheckIn } from './components/EmployeeCheckIn';
 import { Hero } from './components/Hero';
 import { PortalSelection } from './components/PortalSelection';
+import { PrivacyPage } from './components/PrivacyPage';
 import { PublicNavbar } from './components/PublicNavbar';
 import { Services } from './components/Services';
 import { StaffNavbar } from './components/StaffNavbar';
@@ -28,6 +29,7 @@ import { StaffSchedule } from './components/StaffSchedule';
 import { StaffSignupPage } from './components/StaffSignupPage';
 import { StaffTasks } from './components/StaffTasks';
 import { Testimonials } from './components/Testimonials';
+import { TermsPage } from './components/TermsPage';
 import { UserProfileEdit } from './components/UserProfileEdit';
 import {
   clearLoginTarget,
@@ -41,7 +43,7 @@ import {
   signInWithCompanyEmail,
   signInWithGoogle,
 } from './lib/auth';
-import { cn } from './lib/utils';
+import { cn } from '@/lib/utils';
 import { auth, db } from './firebase';
 import type { AppUserData, EmployeeInvite, Portal, View } from './types';
 
@@ -74,7 +76,15 @@ export default function App() {
     typeof window === 'undefined' ? '/' : window.location.pathname
   ));
   const [currentView, setCurrentView] = React.useState<View>(() => (
-    typeof window !== 'undefined' && window.location.pathname === '/admin' ? 'admin-login' : 'landing'
+    typeof window === 'undefined'
+      ? 'landing'
+      : window.location.pathname === '/admin'
+        ? 'admin-login'
+        : window.location.pathname === '/privacy'
+          ? 'privacy'
+          : window.location.pathname === '/terms'
+            ? 'terms'
+            : 'landing'
   ));
   const [preSelectedService, setPreSelectedService] = React.useState<string | null>(null);
   const [user, setUser] = React.useState<User | null>(null);
@@ -85,6 +95,10 @@ export default function App() {
   const [isLoggingIn, setIsLoggingIn] = React.useState(false);
   const [authError, setAuthError] = React.useState<string | null>(null);
   const isAdminPath = pathname === '/admin';
+  const isPrivacyPath = pathname === '/privacy';
+  const isTermsPath = pathname === '/terms';
+  const footerPhone = '+44 161 524 7812';
+  const footerAddressLine = '18 Birchfields Road, Manchester, M13 0ZE';
 
   const publicViews = React.useMemo<View[]>(() => [
     'landing',
@@ -95,6 +109,8 @@ export default function App() {
     'staff-login',
     'staff-signup',
     'admin-login',
+    'privacy',
+    'terms',
   ], []);
 
   const buildCompanyDisplayName = React.useCallback((email: string) => {
@@ -112,7 +128,7 @@ export default function App() {
     setCurrentView('selection');
   }, []);
 
-  const replacePath = React.useCallback((nextPath: '/' | '/admin') => {
+  const replacePath = React.useCallback((nextPath: '/' | '/admin' | '/privacy' | '/terms') => {
     if (typeof window === 'undefined') return;
     if (window.location.pathname !== nextPath) {
       window.history.replaceState({}, '', nextPath);
@@ -120,7 +136,7 @@ export default function App() {
     setPathname(nextPath);
   }, []);
 
-  const goToPublicView = React.useCallback((view: Extract<View, 'selection' | 'customer-login' | 'staff-login' | 'staff-signup' | 'admin-login' | 'landing' | 'booking' | 'estimator'>) => {
+  const goToPublicView = React.useCallback((view: Extract<View, 'selection' | 'customer-login' | 'staff-login' | 'staff-signup' | 'admin-login' | 'landing' | 'booking' | 'estimator' | 'privacy' | 'terms'>) => {
     setAuthError(null);
     setPortal('public');
     setCurrentView(view);
@@ -213,6 +229,16 @@ export default function App() {
       return;
     }
 
+    if (portal === 'public' && currentView === 'privacy') {
+      replacePath('/privacy');
+      return;
+    }
+
+    if (portal === 'public' && currentView === 'terms') {
+      replacePath('/terms');
+      return;
+    }
+
     replacePath('/');
   }, [currentView, portal, replacePath]);
 
@@ -224,10 +250,28 @@ export default function App() {
       return;
     }
 
+    if (isPrivacyPath && currentView !== 'privacy') {
+      setCurrentView('privacy');
+      return;
+    }
+
+    if (isTermsPath && currentView !== 'terms') {
+      setCurrentView('terms');
+      return;
+    }
+
     if (!isAdminPath && currentView === 'admin-login') {
       setCurrentView('landing');
     }
-  }, [currentView, isAdminPath, portal]);
+
+    if (!isPrivacyPath && currentView === 'privacy') {
+      setCurrentView('landing');
+    }
+
+    if (!isTermsPath && currentView === 'terms') {
+      setCurrentView('landing');
+    }
+  }, [currentView, isAdminPath, isPrivacyPath, isTermsPath, portal]);
 
   React.useEffect(() => {
     let active = true;
@@ -279,6 +323,10 @@ export default function App() {
             ? currentView
             : window.location.pathname === '/admin'
               ? 'admin-login'
+              : window.location.pathname === '/privacy'
+                ? 'privacy'
+                : window.location.pathname === '/terms'
+                  ? 'terms'
               : 'landing'
         ));
         setLoading(false);
@@ -635,6 +683,10 @@ export default function App() {
             isLoggingIn={isLoggingIn}
             error={authError}
           />
+        ) : currentView === 'privacy' ? (
+          <PrivacyPage onBack={() => goToPublicView('landing')} />
+        ) : currentView === 'terms' ? (
+          <TermsPage onBack={() => goToPublicView('landing')} />
         ) : (
           <Hero
             onBookNow={() => setCurrentView('booking')}
@@ -802,19 +854,19 @@ export default function App() {
             <div>
               <h5 className="text-xs font-bold uppercase tracking-widest mb-6 text-teal">Contact</h5>
               <p className="text-sm text-white/75">info@crystallinemax.co.uk</p>
-              <p className="text-sm text-white/75">+44 (0) 161 123 4567</p>
+              <p className="text-sm text-white/75">{footerPhone}</p>
             </div>
             <div>
               <h5 className="text-xs font-bold uppercase tracking-widest mb-6 text-teal">Location</h5>
               <p className="text-sm text-white/75">Manchester Hub</p>
-              <p className="text-sm text-white/75">Salford, M5 4WT</p>
+              <p className="text-sm text-white/75">{footerAddressLine}</p>
             </div>
           </div>
           <div className="mt-20 flex flex-col gap-4 border-t border-white/5 pt-8 text-[10px] font-bold uppercase tracking-widest text-white/45 md:flex-row md:items-center md:justify-between">
             <p>© 2026 CRYSTALLINE MAX LTD. ALL RIGHTS RESERVED.</p>
             <div className="flex gap-8">
-              <a href="#" className="hover:text-teal transition-colors">Privacy</a>
-              <a href="#" className="hover:text-teal transition-colors">Terms</a>
+              <button type="button" onClick={() => goToPublicView('privacy')} className="hover:text-teal transition-colors">Privacy</button>
+              <button type="button" onClick={() => goToPublicView('terms')} className="hover:text-teal transition-colors">Terms</button>
             </div>
           </div>
         </div>

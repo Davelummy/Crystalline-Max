@@ -5,10 +5,10 @@ import { collection, onSnapshot, orderBy, query, where } from 'firebase/firestor
 import { db } from '../firebase';
 import { formatSchedule, getAfterPhotos, getBeforePhotos, getPrimaryAfterPhotoUrl, getPrimaryBeforePhotoUrl, getStatusLabel, getTaskProgressPercent, sortBookingsByCreatedAt, sortBookingsBySchedule } from '../lib/bookings';
 import { PhotoGalleryOverlay } from './PhotoGalleryOverlay';
-import type { AppUserData, BookingPhoto, BookingRecord } from '../types';
+import type { AppUserData, BookingPhoto, BookingRecord, CheckIn } from '../types';
 
 export const AdminDashboard: React.FC = () => {
-  const [checkins, setCheckins] = React.useState<any[]>([]);
+  const [checkins, setCheckins] = React.useState<CheckIn[]>([]);
   const [employees, setEmployees] = React.useState<AppUserData[]>([]);
   const [bookings, setBookings] = React.useState<BookingRecord[]>([]);
   const [loading, setLoading] = React.useState(true);
@@ -20,7 +20,7 @@ export const AdminDashboard: React.FC = () => {
     const bookingsQuery = query(collection(db, 'bookings'));
 
     const unsubCheckins = onSnapshot(checkinsQuery, (snapshot) => {
-      setCheckins(snapshot.docs.map((entry) => ({ id: entry.id, ...entry.data() })));
+      setCheckins(snapshot.docs.map((entry) => ({ id: entry.id, ...(entry.data() as Omit<CheckIn, 'id'>) })));
     });
     const unsubEmployees = onSnapshot(employeesQuery, (snapshot) => {
       setEmployees(snapshot.docs.map((entry) => entry.data() as AppUserData));

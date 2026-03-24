@@ -2,7 +2,7 @@ import React from 'react';
 import { AlertCircle, Bell, Database, Globe, Palette, Save, Settings, Shield } from 'lucide-react';
 import { doc, onSnapshot, serverTimestamp, setDoc } from 'firebase/firestore';
 import { db } from '../firebase';
-import { cn } from '@/src/lib/utils';
+import { cn } from '@/lib/utils';
 
 const sections = [
   { id: 'general', label: 'General', icon: Settings },
@@ -25,8 +25,8 @@ interface GeneralSettings {
 
 const defaultSettings: GeneralSettings = {
   businessName: 'Crystalline Max',
-  supportEmail: 'support@crystallinemax.com',
-  supportPhone: '+44 161 123 4567',
+  supportEmail: 'support@crystallinemax.co.uk',
+  supportPhone: '+44 161 524 7812',
   serviceRegion: 'Greater Manchester',
   maintenanceMode: false,
   requireTwoFactor: true,

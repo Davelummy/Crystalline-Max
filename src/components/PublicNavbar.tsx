@@ -1,9 +1,10 @@
 import React from 'react';
 import { Logo } from './Logo';
 import { Menu, X, User } from 'lucide-react';
+import type { View } from '../types';
 
 interface PublicNavbarProps {
-  onNavigate: (view: any) => void;
+  onNavigate: (view: View) => void;
 }
 
 export const PublicNavbar: React.FC<PublicNavbarProps> = ({ onNavigate }) => {

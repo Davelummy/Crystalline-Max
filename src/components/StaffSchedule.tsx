@@ -3,7 +3,7 @@ import { Calendar as CalendarIcon, CheckCircle2, ChevronRight, Clock, MapPin } f
 import { motion } from 'motion/react';
 import { collection, onSnapshot, query, where } from 'firebase/firestore';
 import { auth, db } from '../firebase';
-import { cn } from '@/src/lib/utils';
+import { cn } from '@/lib/utils';
 import { formatSchedule, getStatusLabel, getTaskProgressPercent, sortBookingsBySchedule } from '../lib/bookings';
 import type { BookingRecord, View } from '../types';
 
