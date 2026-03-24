@@ -189,6 +189,7 @@ Roadmap corrections already accepted before implementation:
 - Phase 7 notifications is now implemented and deployed
 - Phase 8 admin capability completion is now implemented and verified
 - Phase 9 availability and capacity management is now implemented and verified
+- Phase 10 legal and policy drafting is now implemented and verified
 - Admin navigation is now being hardened as route-native navigation rather than legacy callback-driven shell controls
 - `react-router-dom` is installed and live
 - [AuthContext.tsx](/Users/davidolumide/Crystalline-Max/src/context/AuthContext.tsx) provides shared auth/profile state

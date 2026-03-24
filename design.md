@@ -104,6 +104,16 @@ Current application of that rule:
 
 This keeps loyalty and discount behavior tied to one authoritative write path instead of multiple browsers.
 
+### 9. Policy Content Must Reflect Real Product Behavior
+
+Legal and policy pages are not treated as filler copy. They should reflect the actual platform behavior already present in the product.
+
+Current examples:
+
+- privacy content mentions verified map locations, photo evidence, check-in data, Firebase, Stripe, and Resend
+- terms content covers booking confirmation, cancellation, payment handling, photo evidence, and England and Wales jurisdiction
+- both pages remain explicitly marked as draft pending final business/legal review until real-world business identity details are confirmed
+
 ## Interface Patterns
 
 ## Portal Model

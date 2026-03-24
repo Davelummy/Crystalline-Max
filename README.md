@@ -19,6 +19,7 @@ Current migration status:
 - Phase 7 notifications is implemented and deployed with booking update email triggers and a Europe/London scheduled reminder job
 - Phase 8 admin capability completion is implemented with booking confirm/cancel flows, reassignment controls, and richer admin booking detail actions
 - Phase 9 availability and capacity management is implemented with admin-managed blocked dates, booking-capacity controls, and a disabled-date customer calendar
+- Phase 10 legal and policy drafting is implemented with UK-oriented draft privacy and terms pages aligned to the current platform behavior
 
 ## Approved Roadmap
 
