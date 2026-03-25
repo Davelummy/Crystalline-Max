@@ -9,6 +9,7 @@ import homeAfter from '../assets/images/home-after.jpg';
 import homeBefore from '../assets/images/home-before.jpg';
 import officeAfter from '../assets/images/office-after.jpg';
 import officeBefore from '../assets/images/office-before.jpg';
+import { useGeneralSettings } from '@/lib/generalSettings';
 
 const slides = [
   {
@@ -53,6 +54,7 @@ interface HeroProps {
 
 export const Hero: React.FC<HeroProps> = ({ onBookNow, onViewServices }) => {
   const [currentSlide, setCurrentSlide] = React.useState(0);
+  const { settings } = useGeneralSettings();
 
   const nextSlide = () => setCurrentSlide((prev) => (prev + 1) % slides.length);
   const prevSlide = () => setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
@@ -98,7 +100,7 @@ export const Hero: React.FC<HeroProps> = ({ onBookNow, onViewServices }) => {
                   <Clock size={14} className="text-teal" /> 24/7 BOOKING
                 </div>
                 <div className="flex items-center gap-2">
-                  <MapPin size={14} className="text-teal" /> MANCHESTER BASED
+                  <MapPin size={14} className="text-teal" /> {settings.serviceRegion.toUpperCase()}
                 </div>
               </div>
             </motion.div>

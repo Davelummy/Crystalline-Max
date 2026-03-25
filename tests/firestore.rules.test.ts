@@ -188,14 +188,26 @@ describe('Firestore rules', () => {
     expect(snapshot.exists()).toBe(true);
   });
 
-  it('rejects unauthenticated reads', async () => {
+  it('allows public read access to settings/general only', async () => {
     await testEnv.withSecurityRulesDisabled(async (context) => {
       await setDoc(doc(context.firestore(), 'settings/general'), {
         businessName: 'Crystalline Max',
       });
+      await setDoc(doc(context.firestore(), 'settings/availability'), {
+        maxBookingsPerDay: 4,
+        blockedDates: [],
+        availableDetailingTimes: ['08:00'],
+        availableTimeWindows: ['morning'],
+      });
     });
 
     const anonymousDb = testEnv.unauthenticatedContext().firestore();
-    await assertFails(getDoc(doc(anonymousDb, 'settings/general')));
+    await assertSucceeds(getDoc(doc(anonymousDb, 'settings/general')));
+    await assertFails(getDoc(doc(anonymousDb, 'settings/availability')));
+  });
+
+  it('rejects other unauthenticated reads', async () => {
+    const anonymousDb = testEnv.unauthenticatedContext().firestore();
+    await assertFails(getDoc(doc(anonymousDb, 'users/client-1')));
   });
 });

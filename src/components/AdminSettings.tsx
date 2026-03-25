@@ -11,50 +11,47 @@ import {
   isoToDate,
   normalizeAvailabilitySettings,
 } from '@/lib/availability';
+import {
+  DEFAULT_GENERAL_SETTINGS,
+  normalizeGeneralSettings,
+  type GeneralSettings,
+} from '@/lib/generalSettings';
 import { cn } from '@/lib/utils';
 import type { AvailabilitySettings } from '@/types';
 
-interface GeneralSettings {
-  businessName: string;
-  supportEmail: string;
-  supportPhone: string;
-  serviceRegion: string;
-  maintenanceMode: boolean;
-  requireTwoFactor: boolean;
-  publicRegistration: boolean;
-}
-
-const defaultSettings: GeneralSettings = {
-  businessName: 'Crystalline Max',
-  supportEmail: 'support@crystallinemax.co.uk',
-  supportPhone: '+44 161 524 7812',
-  serviceRegion: 'Greater Manchester',
-  maintenanceMode: false,
-  requireTwoFactor: true,
-  publicRegistration: true,
-};
-
 export const AdminSettings: React.FC = () => {
-  const [settings, setSettings] = React.useState<GeneralSettings>(defaultSettings);
+  const [settings, setSettings] = React.useState<GeneralSettings>(DEFAULT_GENERAL_SETTINGS);
   const [availability, setAvailability] = React.useState<AvailabilitySettings>(DEFAULT_AVAILABILITY_SETTINGS);
   const [saving, setSaving] = React.useState(false);
   const [status, setStatus] = React.useState<string | null>(null);
+  const [statusTone, setStatusTone] = React.useState<'success' | 'error' | null>(null);
 
   React.useEffect(() => {
-    const unsubscribeGeneral = onSnapshot(doc(db, 'settings', 'general'), (snapshot) => {
-      if (snapshot.exists()) {
-        setSettings({
-          ...defaultSettings,
-          ...(snapshot.data() as Partial<GeneralSettings>),
-        });
-      }
-    });
+    const unsubscribeGeneral = onSnapshot(
+      doc(db, 'settings', 'general'),
+      (snapshot) => {
+        setSettings(normalizeGeneralSettings(snapshot.exists() ? (snapshot.data() as Partial<GeneralSettings>) : null));
+      },
+      (error) => {
+        console.error('Failed to load general settings:', error);
+        setStatusTone('error');
+        setStatus('General settings could not be loaded.');
+      },
+    );
 
-    const unsubscribeAvailability = onSnapshot(doc(db, 'settings', 'availability'), (snapshot) => {
-      if (snapshot.exists()) {
-        setAvailability(normalizeAvailabilitySettings(snapshot.data() as Partial<AvailabilitySettings>));
-      }
-    });
+    const unsubscribeAvailability = onSnapshot(
+      doc(db, 'settings', 'availability'),
+      (snapshot) => {
+        if (snapshot.exists()) {
+          setAvailability(normalizeAvailabilitySettings(snapshot.data() as Partial<AvailabilitySettings>));
+        }
+      },
+      (error) => {
+        console.error('Failed to load availability settings:', error);
+        setStatusTone('error');
+        setStatus('Availability settings could not be loaded.');
+      },
+    );
 
     return () => {
       unsubscribeGeneral();
@@ -90,11 +87,12 @@ export const AdminSettings: React.FC = () => {
   const handleSave = async () => {
     setSaving(true);
     setStatus(null);
+    setStatusTone(null);
 
     try {
       await Promise.all([
         setDoc(doc(db, 'settings', 'general'), {
-          ...settings,
+          ...normalizeGeneralSettings(settings),
           updatedAt: serverTimestamp(),
         }, { merge: true }),
         setDoc(doc(db, 'settings', 'availability'), {
@@ -102,9 +100,11 @@ export const AdminSettings: React.FC = () => {
           updatedAt: serverTimestamp(),
         }, { merge: true }),
       ]);
+      setStatusTone('success');
       setStatus('General settings and availability saved.');
     } catch (error) {
       console.error('Failed to save settings:', error);
+      setStatusTone('error');
       setStatus('Settings could not be saved.');
     } finally {
       setSaving(false);
@@ -339,7 +339,16 @@ export const AdminSettings: React.FC = () => {
             </div>
 
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div className="text-[10px] uppercase tracking-widest text-white/30">
+              <div
+                className={cn(
+                  'text-[10px] uppercase tracking-widest',
+                  statusTone === 'error'
+                    ? 'text-red-300'
+                    : statusTone === 'success'
+                      ? 'text-emerald-300'
+                      : 'text-white/30',
+                )}
+              >
                 {status || 'General settings and availability are saved together.'}
               </div>
               <button

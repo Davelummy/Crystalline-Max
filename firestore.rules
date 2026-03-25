@@ -352,7 +352,7 @@ service cloud.firestore {
     }
 
     match /settings/{settingId} {
-      allow read: if isAuthenticated();
+      allow read: if settingId == 'general' || isAuthenticated();
       allow write: if isAdmin();
     }
 

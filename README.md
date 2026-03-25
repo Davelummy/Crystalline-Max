@@ -53,6 +53,7 @@ Key approved constraints from that brief:
 - Portal selection for customer and staff
 - Dedicated `/admin` access path for admin
 - Footer and static contact details currently use Manchester placeholder business details until final publishing data is supplied
+- Public footer contact details and service-region copy now read from `settings/general`, so admin changes affect the live public surface
 
 ### Customer Experience
 
@@ -90,6 +91,7 @@ Key approved constraints from that brief:
 - Booking detail actions for confirmation, cancellation, reassignment, unassignment, and offline payment override
 - Route-native admin navigation across dashboard, staff, and settings surfaces
 - Team assignment from admin booking detail, with backward-compatible single-assignee support for older bookings
+- Admin settings now drive the public business name, support contact, and service-region presentation instead of writing to an unused document
 
 ## Product Rules
 

@@ -56,6 +56,7 @@ The platform favors real Firestore-backed state over static UI theater.
 - task progress is computed from actual checklist state
 - notifications derive from actual assignments
 - image evidence is stored and rendered from Storage-backed data
+- admin settings must drive live UI output rather than persisting unused configuration
 
 ### 5. Verification Over Freeform Input
 

@@ -62,10 +62,8 @@ import {
   signInWithCompanyEmail,
   signInWithGoogle,
 } from './lib/auth';
+import { useGeneralSettings } from './lib/generalSettings';
 import type { AppUserData, EmployeeInvite, UserRole, View } from './types';
-
-const FOOTER_PHONE = '+44 161 524 7812';
-const FOOTER_ADDRESS_LINE = '18 Birchfields Road, Manchester, M13 0ZE';
 
 function AccessMessage({
   title,
@@ -117,27 +115,28 @@ function isSafeDestination(pathname: string | undefined, prefix: '/customer' | '
 
 function PublicFooter() {
   const navigate = useNavigate();
+  const { settings } = useGeneralSettings();
 
   return (
     <footer className="bg-black py-20 text-white border-t border-white/5">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid md:grid-cols-4 gap-12">
           <div className="col-span-2">
-            <h4 className="text-2xl mb-6">CRYSTALLINE MAX LTD</h4>
+            <h4 className="text-2xl mb-6 uppercase">{settings.businessName}</h4>
             <p className="text-white/68 text-sm max-w-sm leading-relaxed">
-              Premium mobile car detailing and residential/commercial cleaning services based in Manchester.
+              Premium mobile car detailing and residential/commercial cleaning services based in {settings.serviceRegion}.
               Precision in every detail, excellence in every clean.
             </p>
           </div>
           <div>
             <h5 className="text-xs font-bold uppercase tracking-widest mb-6 text-teal">Contact</h5>
-            <p className="text-sm text-white/75">info@crystallinemax.co.uk</p>
-            <p className="text-sm text-white/75">{FOOTER_PHONE}</p>
+            <p className="text-sm text-white/75">{settings.supportEmail}</p>
+            <p className="text-sm text-white/75">{settings.supportPhone}</p>
           </div>
           <div>
             <h5 className="text-xs font-bold uppercase tracking-widest mb-6 text-teal">Location</h5>
-            <p className="text-sm text-white/75">Manchester Hub</p>
-            <p className="text-sm text-white/75">{FOOTER_ADDRESS_LINE}</p>
+            <p className="text-sm text-white/75">{settings.serviceRegion}</p>
+            <p className="text-sm text-white/75">Managed from the admin settings workspace.</p>
           </div>
         </div>
         <div className="mt-20 flex flex-col gap-4 border-t border-white/5 pt-8 text-[10px] font-bold uppercase tracking-widest text-white/45 md:flex-row md:items-center md:justify-between">

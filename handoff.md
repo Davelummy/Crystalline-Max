@@ -19,6 +19,7 @@ The product is built around one shared operational truth: bookings live in Fires
 - Portal selection for customer and staff access
 - Dedicated `/admin` entry path for admin access only
 - Responsive public navigation and portal routing
+- Public footer business/contact details now read from `settings/general`
 
 ### Customer Portal
 
@@ -55,6 +56,7 @@ The product is built around one shared operational truth: bookings live in Fires
 - Before and after photo gallery review
 - Admin booking detail with confirm, cancel, reassign, unassign, and offline payment override controls
 - Availability and capacity controls backed by `settings/availability`
+- General configuration in `settings/general` now drives public business/contact output instead of acting as dead config
 
 ## Core Business Flows
 
@@ -178,6 +180,7 @@ Roadmap corrections already accepted before implementation:
 - Added `.nvmrc` for Node 20
 - Removed committed environment-specific Firebase app config from version control
 - Repository now avoids tracking local Firebase credentials
+- Firestore now allows public read access to `settings/general` only, so public brand/contact copy can stay live without exposing protected operational settings
 
 ### Current Migration Checkpoint
 
