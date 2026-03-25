@@ -173,6 +173,7 @@ Roadmap corrections already accepted before implementation:
 ### Firebase And Environment Hardening
 
 - Firebase app initialization moved to env-driven config in [src/firebase.ts](/Users/davidolumide/Crystalline-Max/src/firebase.ts)
+- Firebase App Check bootstrap is now wired behind `VITE_RECAPTCHA_SITE_KEY` in [src/firebase.ts](/Users/davidolumide/Crystalline-Max/src/firebase.ts)
 - Added `.firebaserc`, `firebase.json`, `firestore.indexes.json`, and `storage.rules`
 - Added `.nvmrc` for Node 20
 - Removed committed environment-specific Firebase app config from version control
@@ -191,6 +192,8 @@ Roadmap corrections already accepted before implementation:
 - Phase 9 availability and capacity management is now implemented and verified
 - Phase 10 legal and policy drafting is now implemented and verified
 - Phase 11 multi-employee job assignment is now implemented and verified
+- Phase 12 testing and CI is now implemented in-repo with unit tests, Firestore rules tests, Playwright smoke scaffolding, and a GitHub Actions workflow
+- Phase 13 pre-launch hardening is now partially implemented with App Check bootstrap hooks and bounded photo-upload validation, with remaining production-console tasks still pending
 - Admin navigation is now being hardened as route-native navigation rather than legacy callback-driven shell controls
 - `react-router-dom` is installed and live
 - [AuthContext.tsx](/Users/davidolumide/Crystalline-Max/src/context/AuthContext.tsx) provides shared auth/profile state
@@ -283,6 +286,7 @@ Roadmap corrections already accepted before implementation:
   - explicit upload success state
   - live checklist updates
   - end-of-job completion rules
+- Added upload-time file validation in [src/components/StaffTasks.tsx](/Users/davidolumide/Crystalline-Max/src/components/StaffTasks.tsx) for supported formats, `10MB` size caps, and a `10`-photo limit per evidence phase
 - Reworked `EmployeeCheckIn` with geofenced site validation and check-out gating
 
 ### Server-Enforced Check-In Upgrade
@@ -389,11 +393,26 @@ Local Firestore and Storage emulator use also requires Java/OpenJDK on the machi
 
 ## Verification Status
 
-Latest local verification completed successfully:
+Latest repo-backed verification completed successfully:
 
 - `npm run lint`
 - `npm run build`
-- `firebase deploy --only firestore:rules`
+- `npm run test`
+
+Phase 12 verification currently available in this repo:
+
+- Firestore rules tests are checked in at [tests/firestore.rules.test.ts](/Users/davidolumide/Crystalline-Max/tests/firestore.rules.test.ts)
+- Playwright smoke coverage is checked in at [tests/e2e/public-smoke.spec.ts](/Users/davidolumide/Crystalline-Max/tests/e2e/public-smoke.spec.ts)
+- CI is checked in at [.github/workflows/ci.yml](/Users/davidolumide/Crystalline-Max/.github/workflows/ci.yml)
+- Emulator-backed rules tests and Playwright route boot still require a machine that allows localhost listeners
+
+## Remaining Launch Tasks
+
+- tighten Firebase Authentication authorized domains for production
+- restrict browser API keys in Google Cloud Console
+- add the Stripe Apple Pay domain association file on the production domain
+- install and verify Sentry with a real DSN
+- run final E2E and production smoke tests from an unrestricted machine
 
 ## Documentation Rule Going Forward
 

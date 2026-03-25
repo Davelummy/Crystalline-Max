@@ -21,6 +21,8 @@ Current migration status:
 - Phase 9 availability and capacity management is implemented with admin-managed blocked dates, booking-capacity controls, and a disabled-date customer calendar
 - Phase 10 legal and policy drafting is implemented with UK-oriented draft privacy and terms pages aligned to the current platform behavior
 - Phase 11 multi-employee job assignment is implemented with team-assignment booking fields, staff-side backward-compatible reads, and admin team assignment controls
+- Phase 12 testing and CI is implemented in-repo with Vitest unit coverage, Firestore rules tests, Playwright smoke scaffolding, and a GitHub Actions verification workflow
+- Phase 13 pre-launch hardening is underway with Firebase App Check bootstrap hooks, bounded photo-upload validation, and launch-only environment placeholders for reCAPTCHA and Sentry
 
 ## Approved Roadmap
 
@@ -262,6 +264,8 @@ Expected values:
 - `VITE_FIREBASE_MESSAGING_SENDER_ID`
 - `VITE_FIREBASE_APP_ID`
 - `VITE_FIREBASE_DATABASE_ID`
+- `VITE_RECAPTCHA_SITE_KEY`
+- `VITE_SENTRY_DSN`
 
 No local Firebase app credentials should be committed.
 
@@ -326,6 +330,38 @@ firebase deploy --only firestore:indexes,storage
 firebase deploy --only functions
 firebase emulators:exec --only auth,firestore,functions,storage
 ```
+
+Test and CI commands now checked into the repo:
+
+```bash
+npm run test
+npm run test:emulator
+npm run test:e2e
+```
+
+Current Phase 12 state:
+
+- `npm run test` passes
+- Firestore rules tests pass when the machine allows emulator ports
+- Playwright smoke scaffolding is checked in, but route-level execution requires a machine that allows localhost listeners
+- CI is defined in [.github/workflows/ci.yml](/Users/davidolumide/Crystalline-Max/.github/workflows/ci.yml)
+
+## Launch Hardening
+
+Implemented in code:
+
+- Firebase App Check bootstrap behind `VITE_RECAPTCHA_SITE_KEY`
+- photo upload validation for JPEG, PNG, WebP, HEIC, and HEIF evidence
+- per-file upload size cap of `10MB`
+- per-phase upload cap of `10` photos for before and after job evidence
+
+Still required before production launch:
+
+- tighten Firebase Authentication authorized domains for the production project
+- restrict browser API keys in Google Cloud Console
+- add the Stripe Apple Pay domain association file on the production HTTPS domain
+- install and verify real Sentry reporting with `VITE_SENTRY_DSN`
+- run final E2E and production smoke tests from a machine that permits localhost/server ports
 
 ## Documentation Maintenance Rule
 

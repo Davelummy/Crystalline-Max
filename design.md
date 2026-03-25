@@ -78,6 +78,8 @@ Examples:
 - check-out is blocked until tasks and after photos are complete
 - admin cannot be self-created from public UI
 - blocked or full service dates are disabled before a booking can be submitted
+- unsupported or oversized image evidence is rejected before upload begins
+- image evidence is capped per phase so a single job cannot accumulate unbounded uploads from the UI
 
 ### 7. Server Trust Boundary
 
@@ -91,6 +93,16 @@ Current baseline now in the repo:
 - server-enforced staff check-in/check-out validation via callable function
 
 This follows the product rule that payments, geofence validation, and notification dispatch should not depend solely on mutable client state.
+
+### 7.1. Launch Security Hooks
+
+Launch-only security controls are wired behind environment variables instead of branching the product into separate code paths.
+
+Current application:
+
+- Firebase App Check initializes only when `VITE_RECAPTCHA_SITE_KEY` is present
+- third-party monitoring and launch credentials are expected to stay env-driven
+- production console restrictions are treated as part of release engineering, not optional cleanup
 
 ### 8. Derived Data Must Be Server-Owned
 
@@ -123,6 +135,17 @@ Current application:
 - booking assignment now supports both legacy single-assignee fields and new multi-assignee team fields
 - staff-facing queries read both shapes during the transition
 - admin writes still preserve a primary assignee field for compatibility while the team-assignment model becomes the new source of truth
+
+### 11. Verification Layers
+
+The platform now uses layered verification instead of relying on one manual click-through.
+
+Current layers:
+
+- Vitest for pure shared client logic
+- Firebase rules tests for security-sensitive Firestore behavior
+- Playwright smoke coverage for route-level UI boot
+- CI enforcement on lint, unit tests, rules tests, and build
 
 ## Interface Patterns
 

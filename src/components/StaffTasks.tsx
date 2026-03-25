@@ -24,6 +24,16 @@ interface StaffTasksProps {
 
 type PhotoPhase = 'before' | 'after';
 
+const MAX_FILE_SIZE_MB = 10;
+const MAX_PHOTOS_PER_PHASE = 10;
+const ACCEPTED_IMAGE_TYPES = new Set([
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/heic',
+  'image/heif',
+]);
+
 function getFileExtension(file: File) {
   const extension = file.name.split('.').pop();
   return extension ? extension.toLowerCase() : 'jpg';
@@ -31,6 +41,29 @@ function getFileExtension(file: File) {
 
 function buildPhotoSummary(phase: PhotoPhase, count: number) {
   return `${count} ${phase} photo${count === 1 ? '' : 's'} uploaded successfully.`;
+}
+
+function isSupportedImageFile(file: File) {
+  const normalizedName = file.name.toLowerCase();
+  return ACCEPTED_IMAGE_TYPES.has(file.type) || normalizedName.endsWith('.heic') || normalizedName.endsWith('.heif');
+}
+
+function validateSelectedFiles(files: File[], existingPhotoCount: number, phase: PhotoPhase) {
+  if (existingPhotoCount + files.length > MAX_PHOTOS_PER_PHASE) {
+    return `Maximum ${MAX_PHOTOS_PER_PHASE} ${phase} photos allowed per job.`;
+  }
+
+  for (const file of files) {
+    if (!isSupportedImageFile(file)) {
+      return `${file.name} is not a supported image format. Use JPEG, PNG, WebP, or HEIC.`;
+    }
+
+    if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
+      return `${file.name} exceeds ${MAX_FILE_SIZE_MB}MB. Compress it before uploading.`;
+    }
+  }
+
+  return null;
 }
 
 export const StaffTasks: React.FC<StaffTasksProps> = ({ onNavigate }) => {
@@ -64,6 +97,40 @@ export const StaffTasks: React.FC<StaffTasksProps> = ({ onNavigate }) => {
   const progress = booking ? getTaskProgressPercent(booking) : 0;
   const canEditTasks = beforePhotos.length > 0 && booking?.status !== 'completed';
 
+  const handleFileSelection = (phase: PhotoPhase, fileList: FileList | null) => {
+    const files = Array.from(fileList || []);
+    const existingPhotoCount = phase === 'before' ? beforePhotos.length : afterPhotos.length;
+
+    setError(null);
+    setSuccess(null);
+
+    if (files.length === 0) {
+      if (phase === 'before') {
+        setBeforeFiles([]);
+      } else {
+        setAfterFiles([]);
+      }
+      return;
+    }
+
+    const validationError = validateSelectedFiles(files, existingPhotoCount, phase);
+    if (validationError) {
+      setError(validationError);
+      if (phase === 'before') {
+        setBeforeFiles([]);
+      } else {
+        setAfterFiles([]);
+      }
+      return;
+    }
+
+    if (phase === 'before') {
+      setBeforeFiles(files);
+    } else {
+      setAfterFiles(files);
+    }
+  };
+
   const uploadPhotos = async (phase: PhotoPhase) => {
     if (!booking || !auth.currentUser) return;
 
@@ -79,6 +146,12 @@ export const StaffTasks: React.FC<StaffTasksProps> = ({ onNavigate }) => {
 
     try {
       const existingPhotos = phase === 'before' ? beforePhotos : afterPhotos;
+      const validationError = validateSelectedFiles(files, existingPhotos.length, phase);
+      if (validationError) {
+        setError(validationError);
+        return;
+      }
+
       const uploadedPhotos: BookingPhoto[] = [];
 
       for (const file of files) {
@@ -327,13 +400,15 @@ export const StaffTasks: React.FC<StaffTasksProps> = ({ onNavigate }) => {
                   <p className="text-[10px] font-bold uppercase tracking-widest text-white/60 mb-3">Add commencement photos</p>
                   <input
                     type="file"
-                    accept="image/*"
+                    accept="image/*,.heic,.heif"
                     multiple
-                    onChange={(event) => setBeforeFiles(Array.from(event.target.files || []))}
+                    onChange={(event) => handleFileSelection('before', event.target.files)}
                     className="input-field bg-white/5 border-white/10 text-white file:mr-4 file:rounded-lg file:border-0 file:bg-teal file:px-3 file:py-2 file:text-[10px] file:font-bold file:text-charcoal"
                   />
                   <p className="mt-3 text-[10px] font-bold uppercase tracking-widest text-white/45">
-                    {beforeFiles.length > 0 ? `${beforeFiles.length} file(s) selected` : 'Select multiple photos if needed'}
+                    {beforeFiles.length > 0
+                      ? `${beforeFiles.length} file(s) selected`
+                      : `Up to ${MAX_PHOTOS_PER_PHASE} photos, ${MAX_FILE_SIZE_MB}MB each`}
                   </p>
                   <button
                     type="button"
@@ -351,13 +426,15 @@ export const StaffTasks: React.FC<StaffTasksProps> = ({ onNavigate }) => {
                   <p className="text-[10px] font-bold uppercase tracking-widest text-white/60 mb-3">Add completion photos</p>
                   <input
                     type="file"
-                    accept="image/*"
+                    accept="image/*,.heic,.heif"
                     multiple
-                    onChange={(event) => setAfterFiles(Array.from(event.target.files || []))}
+                    onChange={(event) => handleFileSelection('after', event.target.files)}
                     className="input-field bg-white/5 border-white/10 text-white file:mr-4 file:rounded-lg file:border-0 file:bg-teal file:px-3 file:py-2 file:text-[10px] file:font-bold file:text-charcoal"
                   />
                   <p className="mt-3 text-[10px] font-bold uppercase tracking-widest text-white/45">
-                    {afterFiles.length > 0 ? `${afterFiles.length} file(s) selected` : 'Select multiple photos if needed'}
+                    {afterFiles.length > 0
+                      ? `${afterFiles.length} file(s) selected`
+                      : `Up to ${MAX_PHOTOS_PER_PHASE} photos, ${MAX_FILE_SIZE_MB}MB each`}
                   </p>
                   <button
                     type="button"

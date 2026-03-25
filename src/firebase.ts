@@ -1,4 +1,5 @@
 import { initializeApp } from 'firebase/app';
+import { initializeAppCheck, ReCaptchaV3Provider } from 'firebase/app-check';
 import { browserLocalPersistence, getAuth, setPersistence } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getFunctions } from 'firebase/functions';
@@ -33,10 +34,25 @@ const resolvedConfig = {
 const firestoreDatabaseId = env.VITE_FIREBASE_DATABASE_ID || '(default)';
 
 const app = initializeApp(resolvedConfig);
+const recaptchaSiteKey = env.VITE_RECAPTCHA_SITE_KEY;
+
+let appCheck = null;
+if (typeof window !== 'undefined' && recaptchaSiteKey) {
+  try {
+    appCheck = initializeAppCheck(app, {
+      provider: new ReCaptchaV3Provider(recaptchaSiteKey),
+      isTokenAutoRefreshEnabled: true,
+    });
+  } catch (error) {
+    console.error('Error initializing App Check:', error);
+  }
+}
+
 export const db = getFirestore(app, firestoreDatabaseId);
 export const auth = getAuth(app);
 export const functions = getFunctions(app, 'europe-west2');
 export const storage = getStorage(app);
+export { appCheck };
 
 setPersistence(auth, browserLocalPersistence).catch((error) => {
   console.error("Error setting persistence:", error);

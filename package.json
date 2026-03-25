@@ -5,12 +5,17 @@
   "type": "module",
   "scripts": {
     "dev": "vite --port=3000 --host=0.0.0.0",
-    "dev:emulators": "firebase emulators:start --only auth,firestore,functions,storage",
+    "dev:emulators": "PATH=\"/usr/local/opt/openjdk/bin:$PATH\" firebase emulators:start --only auth,firestore,functions,storage",
     "build": "vite build",
     "preview": "vite preview",
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit",
-    "build:functions": "npm --prefix functions run build"
+    "build:functions": "npm --prefix functions run build",
+    "test": "vitest run src",
+    "test:watch": "vitest src",
+    "test:rules": "vitest run tests/firestore.rules.test.ts",
+    "test:emulator": "PATH=\"/usr/local/opt/openjdk/bin:$PATH\" firebase emulators:exec --only auth,firestore \"npm run test:rules\"",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.14",
@@ -29,11 +34,15 @@
     "vite": "^6.2.0"
   },
   "devDependencies": {
+    "@firebase/rules-unit-testing": "^4.0.1",
+    "@playwright/test": "^1.58.2",
     "@types/node": "^22.14.0",
     "autoprefixer": "^10.4.21",
+    "jsdom": "^26.1.0",
     "tailwindcss": "^4.1.14",
     "tsx": "^4.21.0",
     "typescript": "~5.8.2",
-    "vite": "^6.2.0"
+    "vite": "^6.2.0",
+    "vitest": "^3.2.4"
   }
 }

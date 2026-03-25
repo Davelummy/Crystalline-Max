@@ -15,7 +15,8 @@ Current execution checkpoint:
 - Phase 9 complete
 - Phase 10 complete
 - Phase 11 complete
-- Phase 12 next
+- Phase 12 implemented in-repo and awaiting unrestricted localhost verification
+- Phase 13 in progress
 
 ## Locked Corrections
 
@@ -321,6 +322,14 @@ No reversal path is planned from `paid` or `not_required`.
 - Playwright
 - GitHub Actions
 
+Current repository status:
+
+- unit tests are checked in for booking and auth helpers
+- Firestore rules tests are checked in and pass on a machine that permits emulator ports
+- Playwright smoke scaffolding is checked in
+- CI is checked in for lint, unit tests, emulator-backed rules tests, and build
+- final localhost-bound reruns are blocked in the current restricted harness and must be rechecked on an unrestricted machine
+
 ### Phase 13 — Pre-Launch Hardening
 
 - App Check
@@ -329,6 +338,13 @@ No reversal path is planned from `paid` or `not_required`.
 - Sentry
 - Apple Pay domain verification
 - final production smoke test
+
+Current repository status:
+
+- App Check bootstrap is wired behind `VITE_RECAPTCHA_SITE_KEY`
+- photo format, size, and count validation is implemented in staff uploads
+- `.env.example` now documents `VITE_RECAPTCHA_SITE_KEY` and `VITE_SENTRY_DSN`
+- production-only console tasks and Sentry package wiring remain pending
 
 ## Acceptance Standard
 
