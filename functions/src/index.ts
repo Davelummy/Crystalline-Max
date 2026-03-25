@@ -84,6 +84,16 @@ function getStringArray(value: unknown) {
   return value.filter((entry): entry is string => typeof entry === 'string');
 }
 
+function getAssignedStaffIdsFromBooking(data: Record<string, unknown> | null) {
+  const assignedStaffIds = getStringArray(data?.assignedStaffIds);
+  if (assignedStaffIds.length > 0) {
+    return assignedStaffIds;
+  }
+
+  const assignedStaffId = getString(data?.assignedStaffId);
+  return assignedStaffId ? [assignedStaffId] : [];
+}
+
 function getAfterPhotoCount(data: Record<string, unknown>) {
   const afterPhotos = data.afterPhotos;
   if (Array.isArray(afterPhotos)) {
@@ -251,7 +261,7 @@ export const validateCheckin = onCall(async (request) => {
     throw new HttpsError('not-found', 'Booking not found.');
   }
 
-  if (booking.assignedStaffId !== request.auth.uid) {
+  if (!getAssignedStaffIdsFromBooking(booking).includes(request.auth.uid)) {
     throw new HttpsError('permission-denied', 'This booking is not assigned to you.');
   }
 
@@ -495,9 +505,12 @@ export const onBookingUpdated = onDocumentUpdated(
     const bookingInput = getBookingNotificationInput(bookingId, afterRecord);
     const resendKey = resendApiKey.value();
 
-    if (!beforeRecord.assignedStaffId && afterRecord.assignedStaffId) {
-      const staffId = getString(afterRecord.assignedStaffId);
-      if (staffId) {
+    const beforeAssignedIds = getAssignedStaffIdsFromBooking(beforeRecord);
+    const afterAssignedIds = getAssignedStaffIdsFromBooking(afterRecord);
+    const newlyAssignedIds = afterAssignedIds.filter((staffId) => !beforeAssignedIds.includes(staffId));
+
+    if (newlyAssignedIds.length > 0) {
+      for (const staffId of newlyAssignedIds) {
         const staffSnapshot = await db.doc(`users/${staffId}`).get();
         const staff = asRecord(staffSnapshot.data());
         const staffEmail = getString(staff?.email);
@@ -562,38 +575,40 @@ export const sendJobReminders = onSchedule(
       .map((docSnapshot) => ({ id: docSnapshot.id, data: asRecord(docSnapshot.data()) }))
       .filter((entry) => {
         const status = entry.data?.status;
-        return entry.data && (status === 'confirmed' || status === 'in_progress') && getString(entry.data.assignedStaffId);
+        return entry.data && (status === 'confirmed' || status === 'in_progress') && getAssignedStaffIdsFromBooking(entry.data).length > 0;
       });
 
     for (const job of jobs) {
-      const staffId = getString(job.data?.assignedStaffId);
-      if (!staffId || !job.data) {
-        continue;
-      }
-
-      const staffSnapshot = await db.doc(`users/${staffId}`).get();
-      const staff = asRecord(staffSnapshot.data());
-      const staffEmail = getString(staff?.email);
-
-      if (!staffEmail) {
+      const staffIds = getAssignedStaffIdsFromBooking(job.data);
+      if (staffIds.length === 0 || !job.data) {
         continue;
       }
 
       const bookingInput = getBookingNotificationInput(job.id, job.data);
-      await sendEmail({
-        apiKey: resendKey,
-        from: 'Crystalline Max Ops <ops@crystallinemax.co.uk>',
-        to: staffEmail,
-        subject: `Reminder: job tomorrow at ${getScheduleLabel(bookingInput)}`,
-        html: getStaffReminderEmailHtml(bookingInput),
-      });
+      for (const staffId of staffIds) {
+        const staffSnapshot = await db.doc(`users/${staffId}`).get();
+        const staff = asRecord(staffSnapshot.data());
+        const staffEmail = getString(staff?.email);
 
-      const payload = getNotificationPayload(bookingInput);
-      console.log('Reminder prepared', {
-        bookingId: job.id,
-        staffId,
-        title: payload.title,
-      });
+        if (!staffEmail) {
+          continue;
+        }
+
+        await sendEmail({
+          apiKey: resendKey,
+          from: 'Crystalline Max Ops <ops@crystallinemax.co.uk>',
+          to: staffEmail,
+          subject: `Reminder: job tomorrow at ${getScheduleLabel(bookingInput)}`,
+          html: getStaffReminderEmailHtml(bookingInput),
+        });
+
+        const payload = getNotificationPayload(bookingInput);
+        console.log('Reminder prepared', {
+          bookingId: job.id,
+          staffId,
+          title: payload.title,
+        });
+      }
     }
   },
 );

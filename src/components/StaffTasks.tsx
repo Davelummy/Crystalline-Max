@@ -1,11 +1,12 @@
 import React from 'react';
 import { AlertCircle, Camera, CheckCircle2, Circle, ImagePlus, ShieldCheck, Sparkles } from 'lucide-react';
 import { motion } from 'motion/react';
-import { collection, doc, onSnapshot, query, serverTimestamp, updateDoc, where } from 'firebase/firestore';
+import { doc, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 import { auth, db, storage } from '../firebase';
 import { cn } from '@/lib/utils';
 import {
+  getAssignedStaffLabel,
   formatSchedule,
   getAfterPhotos,
   getBeforePhotos,
@@ -14,6 +15,7 @@ import {
   getTaskProgressPercent,
   sortBookingsBySchedule,
 } from '../lib/bookings';
+import { subscribeToAssignedBookings } from '@/lib/assignedBookings';
 import type { BookingPhoto, BookingRecord, View } from '../types';
 
 interface StaffTasksProps {
@@ -42,12 +44,7 @@ export const StaffTasks: React.FC<StaffTasksProps> = ({ onNavigate }) => {
   React.useEffect(() => {
     if (!auth.currentUser) return;
 
-    const tasksQuery = query(collection(db, 'bookings'), where('assignedStaffId', '==', auth.currentUser.uid));
-    const unsubscribe = onSnapshot(tasksQuery, (snapshot) => {
-      const records = snapshot.docs.map((entry) => ({
-        id: entry.id,
-        ...(entry.data() as Omit<BookingRecord, 'id'>),
-      }));
+    const unsubscribe = subscribeToAssignedBookings(auth.currentUser.uid, (records) => {
       const nextBooking = sortBookingsBySchedule(
         records.filter((entry) => entry.status === 'in_progress'),
       )[0] || sortBookingsBySchedule(
@@ -234,6 +231,11 @@ export const StaffTasks: React.FC<StaffTasksProps> = ({ onNavigate }) => {
             <p className="text-white/65 mt-2 uppercase tracking-widest text-xs font-bold">
               {booking ? `${booking.customerName} - ${booking.serviceLabel}` : 'No active booking selected'}
             </p>
+            {booking && (
+              <p className="mt-2 text-[10px] font-bold uppercase tracking-widest text-white/40">
+                Assigned team: {getAssignedStaffLabel(booking)}
+              </p>
+            )}
           </div>
           <div className="text-right">
             <p className="text-xs text-white/50 uppercase font-bold mb-1">Progress</p>

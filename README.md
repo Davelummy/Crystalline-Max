@@ -20,6 +20,7 @@ Current migration status:
 - Phase 8 admin capability completion is implemented with booking confirm/cancel flows, reassignment controls, and richer admin booking detail actions
 - Phase 9 availability and capacity management is implemented with admin-managed blocked dates, booking-capacity controls, and a disabled-date customer calendar
 - Phase 10 legal and policy drafting is implemented with UK-oriented draft privacy and terms pages aligned to the current platform behavior
+- Phase 11 multi-employee job assignment is implemented with team-assignment booking fields, staff-side backward-compatible reads, and admin team assignment controls
 
 ## Approved Roadmap
 
@@ -74,6 +75,7 @@ Key approved constraints from that brief:
 - Add-ons converted into execution tasks
 - Multi-image before and after photo uploads
 - Completion state synced to customer and admin
+- Team-assigned jobs supported through shared booking execution for more than one employee
 
 ### Admin Experience
 
@@ -85,6 +87,7 @@ Key approved constraints from that brief:
 - Before and after photo review with gallery overlay
 - Booking detail actions for confirmation, cancellation, reassignment, unassignment, and offline payment override
 - Route-native admin navigation across dashboard, staff, and settings surfaces
+- Team assignment from admin booking detail, with backward-compatible single-assignee support for older bookings
 
 ## Product Rules
 

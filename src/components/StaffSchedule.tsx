@@ -1,10 +1,10 @@
 import React from 'react';
 import { Calendar as CalendarIcon, CheckCircle2, ChevronRight, Clock, MapPin } from 'lucide-react';
 import { motion } from 'motion/react';
-import { collection, onSnapshot, query, where } from 'firebase/firestore';
 import { auth, db } from '../firebase';
 import { cn } from '@/lib/utils';
-import { formatSchedule, getStatusLabel, getTaskProgressPercent, sortBookingsBySchedule } from '../lib/bookings';
+import { formatSchedule, getAssignedStaffLabel, getStatusLabel, getTaskProgressPercent, sortBookingsBySchedule } from '../lib/bookings';
+import { subscribeToAssignedBookings } from '@/lib/assignedBookings';
 import type { BookingRecord, View } from '../types';
 
 interface StaffScheduleProps {
@@ -18,12 +18,7 @@ export const StaffSchedule: React.FC<StaffScheduleProps> = ({ onNavigate }) => {
   React.useEffect(() => {
     if (!auth.currentUser) return;
 
-    const scheduleQuery = query(collection(db, 'bookings'), where('assignedStaffId', '==', auth.currentUser.uid));
-    const unsubscribe = onSnapshot(scheduleQuery, (snapshot) => {
-      const records = snapshot.docs.map((entry) => ({
-        id: entry.id,
-        ...(entry.data() as Omit<BookingRecord, 'id'>),
-      }));
+    const unsubscribe = subscribeToAssignedBookings(auth.currentUser.uid, (records) => {
       setSchedule(sortBookingsBySchedule(records));
       setLoading(false);
     }, () => setLoading(false));
@@ -80,6 +75,7 @@ export const StaffSchedule: React.FC<StaffScheduleProps> = ({ onNavigate }) => {
                       <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-[10px] text-white/40 uppercase tracking-widest font-bold">
                         <span className="flex items-center gap-1"><MapPin size={12} className="text-teal/40" /> {item.postcode}</span>
                         <span className="flex items-center gap-1"><Clock size={12} className="text-teal/40" /> {formatSchedule(item)}</span>
+                        <span>{getAssignedStaffLabel(item)}</span>
                       </div>
                       <div className="mt-4 max-w-sm">
                         <div className="mb-2 flex items-center justify-between text-[9px] font-bold uppercase tracking-widest text-white/55">

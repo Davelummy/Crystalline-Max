@@ -4,7 +4,7 @@ import { motion } from 'motion/react';
 import { collection, doc, onSnapshot, orderBy, query, serverTimestamp, updateDoc, where } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../firebase';
-import { formatSchedule, getAfterPhotos, getBeforePhotos, getPrimaryAfterPhotoUrl, getPrimaryBeforePhotoUrl, getStatusLabel, getTaskProgressPercent, sortBookingsByCreatedAt, sortBookingsBySchedule } from '../lib/bookings';
+import { formatSchedule, getAfterPhotos, getAssignedStaffLabel, getBeforePhotos, getPrimaryAfterPhotoUrl, getPrimaryBeforePhotoUrl, getStatusLabel, getTaskProgressPercent, sortBookingsByCreatedAt, sortBookingsBySchedule } from '../lib/bookings';
 import { PhotoGalleryOverlay } from './PhotoGalleryOverlay';
 import type { AppUserData, BookingPhoto, BookingRecord, CheckIn } from '../types';
 
@@ -75,8 +75,11 @@ export const AdminDashboard: React.FC = () => {
       cancelledAt: serverTimestamp(),
       assignedStaffId: null,
       assignedStaffName: null,
+      assignedStaffIds: [],
+      assignedStaffNames: [],
       assignedAt: null,
       staffAcknowledgedAt: null,
+      staffAcknowledgedByIds: [],
       updatedAt: serverTimestamp(),
     });
   };
@@ -176,7 +179,7 @@ export const AdminDashboard: React.FC = () => {
                   <div className="flex flex-col gap-1 text-[8px] text-white/40 uppercase tracking-widest">
                     <span className="flex items-center gap-2"><CalendarIcon size={10} /> {formatSchedule(booking)}</span>
                     <span className="flex items-center gap-2"><MapPin size={10} /> {booking.postcode}</span>
-                    <span className="flex items-center gap-2"><Users size={10} /> {booking.assignedStaffName || 'Unassigned'}</span>
+                    <span className="flex items-center gap-2"><Users size={10} /> {getAssignedStaffLabel(booking)}</span>
                   </div>
                   <div className="mt-4">
                     <div className="mb-2 flex items-center justify-between text-[8px] font-bold uppercase tracking-widest text-white/45">

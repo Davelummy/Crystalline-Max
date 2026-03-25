@@ -10,10 +10,17 @@ service firebase.storage {
         firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
-    function isAssignedStaff(bookingId) {
-      return isAuthenticated() &&
-        firestore.get(/databases/(default)/documents/bookings/$(bookingId)).data.assignedStaffId == request.auth.uid;
-    }
+      function isAssignedStaff(bookingId) {
+        let booking = firestore.get(/databases/(default)/documents/bookings/$(bookingId)).data;
+        return isAuthenticated() && (
+          booking.assignedStaffId == request.auth.uid ||
+          (
+            'assignedStaffIds' in booking &&
+            booking.assignedStaffIds is list &&
+            request.auth.uid in booking.assignedStaffIds
+          )
+        );
+      }
 
     function isBookingOwner(bookingId) {
       return isAuthenticated() &&

@@ -5,6 +5,8 @@ import { db } from '@/firebase';
 import {
   formatSchedule,
   getAfterPhotos,
+  getAssignedStaffIds,
+  getAssignedStaffLabel,
   getBeforePhotos,
   getBookingTasks,
   getCompletedTaskIds,
@@ -64,7 +66,7 @@ export const AdminBookingDetail: React.FC<AdminBookingDetailProps> = ({ bookingI
   }, []);
 
   React.useEffect(() => {
-    if (!booking?.assignedStaffId) {
+    if (getAssignedStaffIds(booking).length === 0) {
       setCheckins([]);
       return;
     }
@@ -85,12 +87,13 @@ export const AdminBookingDetail: React.FC<AdminBookingDetailProps> = ({ bookingI
     });
 
     return () => unsubscribe();
-  }, [booking?.assignedStaffId, bookingId]);
+  }, [booking, bookingId]);
 
   const beforePhotos = getBeforePhotos(booking);
   const afterPhotos = getAfterPhotos(booking);
   const tasks = booking ? getBookingTasks(booking.serviceId, booking.addons) : [];
   const completed = new Set(getCompletedTaskIds(booking));
+  const assignedStaffIds = getAssignedStaffIds(booking);
   const canManageAssignment = booking != null && ['pending', 'confirmed'].includes(booking.status);
   const canCancel = booking != null && ['pending', 'confirmed'].includes(booking.status);
   const canConfirm = booking?.status === 'pending';
@@ -155,8 +158,11 @@ export const AdminBookingDetail: React.FC<AdminBookingDetailProps> = ({ bookingI
       cancelledAt: serverTimestamp(),
       assignedStaffId: null,
       assignedStaffName: null,
+      assignedStaffIds: [],
+      assignedStaffNames: [],
       assignedAt: null,
       staffAcknowledgedAt: null,
+      staffAcknowledgedByIds: [],
     });
   };
 
@@ -165,16 +171,23 @@ export const AdminBookingDetail: React.FC<AdminBookingDetailProps> = ({ bookingI
       return;
     }
 
-    const selectedStaff = staff.find((member) => member.uid === staffId) || null;
-    const nextStatus = selectedStaff
+    const currentIds = getAssignedStaffIds(booking);
+    const nextIds = currentIds.includes(staffId)
+      ? currentIds.filter((id) => id !== staffId)
+      : [...currentIds, staffId];
+    const selectedStaff = staff.filter((member) => nextIds.includes(member.uid));
+    const nextStatus = nextIds.length > 0
       ? (booking.status === 'pending' ? 'confirmed' : booking.status)
       : 'pending';
 
     await updateBooking({
-      assignedStaffId: selectedStaff?.uid || null,
-      assignedStaffName: selectedStaff?.displayName || selectedStaff?.email || null,
-      assignedAt: selectedStaff ? serverTimestamp() : null,
+      assignedStaffId: selectedStaff[0]?.uid || null,
+      assignedStaffName: selectedStaff[0]?.displayName || selectedStaff[0]?.email || null,
+      assignedStaffIds: nextIds,
+      assignedStaffNames: selectedStaff.map((member) => member.displayName || member.email),
+      assignedAt: nextIds.length > 0 ? serverTimestamp() : null,
       staffAcknowledgedAt: null,
+      staffAcknowledgedByIds: [],
       status: nextStatus,
     });
   };
@@ -213,7 +226,7 @@ export const AdminBookingDetail: React.FC<AdminBookingDetailProps> = ({ bookingI
                     <p className="flex items-center gap-2"><Calendar size={16} className="text-teal" /> {booking.date}</p>
                     <p className="flex items-center gap-2"><Clock size={16} className="text-teal" /> {formatSchedule(booking)}</p>
                     <p className="flex items-center gap-2"><MapPin size={16} className="text-teal" /> {booking.locationLabel || booking.postcode}</p>
-                    <p className="flex items-center gap-2"><Users size={16} className="text-teal" /> {booking.assignedStaffName || 'Unassigned'}</p>
+                    <p className="flex items-center gap-2"><Users size={16} className="text-teal" /> {getAssignedStaffLabel(booking)}</p>
                   </div>
                   <div className="mt-6 grid gap-3 text-sm text-white/68 sm:grid-cols-2">
                     <p>{booking.customerEmail}</p>
@@ -258,24 +271,25 @@ export const AdminBookingDetail: React.FC<AdminBookingDetailProps> = ({ bookingI
               </div>
               <div className="mt-6 grid gap-4 lg:grid-cols-[1fr_auto]">
                 <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-white/50">Assignment</p>
-                  <div className="mt-4 flex flex-col gap-3 lg:flex-row lg:items-center">
-                    <select
-                      value={booking.assignedStaffId || ''}
-                      onChange={(event) => void handleAssignChange(event.target.value)}
-                      disabled={!canManageAssignment || actionBusy}
-                      className="input-field bg-white/5 border-white/10 text-white focus:border-teal disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      <option value="" className="bg-charcoal text-white">Unassign booking</option>
-                      {staff.map((member) => (
-                        <option key={member.uid} value={member.uid} className="bg-charcoal text-white">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-white/50">Assigned Team</p>
+                  <div className="mt-4 grid gap-3 md:grid-cols-2">
+                    {staff.map((member) => {
+                      const selected = assignedStaffIds.includes(member.uid);
+                      return (
+                        <button
+                          key={member.uid}
+                          type="button"
+                          onClick={() => void handleAssignChange(member.uid)}
+                          disabled={!canManageAssignment || actionBusy}
+                          className={`rounded-xl border px-4 py-3 text-left text-[10px] font-bold uppercase tracking-widest transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${selected ? 'border-teal bg-teal/10 text-teal' : 'border-white/10 bg-white/5 text-white/70 hover:border-white/20 hover:text-white'}`}
+                        >
                           {member.displayName || member.email}
-                        </option>
-                      ))}
-                    </select>
-                    <div className="text-[10px] font-bold uppercase tracking-widest text-white/45">
-                      {booking.assignedStaffName || 'No staff assigned yet'}
-                    </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <div className="mt-4 text-[10px] font-bold uppercase tracking-widest text-white/45">
+                    {getAssignedStaffLabel(booking)}
                   </div>
                 </div>
                 {booking.status !== 'cancelled' && (

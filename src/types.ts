@@ -102,8 +102,11 @@ export interface BookingRecord {
   cancelledBy?: 'customer' | 'admin' | null;
   assignedStaffId?: string | null;
   assignedStaffName?: string | null;
+  assignedStaffIds?: string[];
+  assignedStaffNames?: string[];
   assignedAt?: unknown;
   staffAcknowledgedAt?: unknown | null;
+  staffAcknowledgedByIds?: string[];
   completedTaskIds?: string[];
   taskProgressPercent?: number;
   startedAt?: unknown | null;

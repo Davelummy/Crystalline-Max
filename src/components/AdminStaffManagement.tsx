@@ -16,7 +16,7 @@ import { motion } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
 import { collection, doc, getDoc, onSnapshot, query, serverTimestamp, setDoc, updateDoc, where } from 'firebase/firestore';
 import { db } from '../firebase';
-import { formatSchedule, getStatusLabel, sortBookingsBySchedule } from '../lib/bookings';
+import { formatSchedule, getAssignedStaffIds, getAssignedStaffLabel, getStatusLabel, sortBookingsBySchedule } from '../lib/bookings';
 import type { AppUserData, BookingRecord, EmployeeInvite } from '../types';
 
 async function generateUniqueEmployeeId() {
@@ -94,9 +94,12 @@ export const AdminStaffManagement: React.FC = () => {
     await updateDoc(doc(db, 'bookings', bookingId), {
       assignedStaffId: staffMember?.uid || null,
       assignedStaffName: staffMember?.displayName || staffMember?.email || null,
+      assignedStaffIds: staffMember ? [staffMember.uid] : [],
+      assignedStaffNames: staffMember ? [staffMember.displayName || staffMember.email] : [],
       status: staffMember ? 'confirmed' : 'pending',
       assignedAt: staffMember ? serverTimestamp() : null,
       staffAcknowledgedAt: null,
+      staffAcknowledgedByIds: [],
       updatedAt: serverTimestamp(),
     });
   };
@@ -112,8 +115,11 @@ export const AdminStaffManagement: React.FC = () => {
       cancelledAt: serverTimestamp(),
       assignedStaffId: null,
       assignedStaffName: null,
+      assignedStaffIds: [],
+      assignedStaffNames: [],
       assignedAt: null,
       staffAcknowledgedAt: null,
+      staffAcknowledgedByIds: [],
       updatedAt: serverTimestamp(),
     });
   };
@@ -168,7 +174,7 @@ export const AdminStaffManagement: React.FC = () => {
     }
   };
 
-  const getAssignedCount = (staffId: string) => bookings.filter((booking) => booking.assignedStaffId === staffId).length;
+  const getAssignedCount = (staffId: string) => bookings.filter((booking) => getAssignedStaffIds(booking).includes(staffId)).length;
 
   return (
     <div className="min-h-screen bg-charcoal pt-32 pb-20 px-4">
@@ -362,6 +368,7 @@ export const AdminStaffManagement: React.FC = () => {
                       <p className="text-[10px] uppercase tracking-widest text-white/40 mt-1">{booking.serviceLabel}</p>
                       <p className="text-[10px] uppercase tracking-widest text-teal mt-2">{formatSchedule(booking)}</p>
                       <p className="text-[10px] uppercase tracking-widest text-white/35 mt-2">{getStatusLabel(booking.status)}</p>
+                      <p className="text-[10px] uppercase tracking-widest text-white/35 mt-2">{getAssignedStaffLabel(booking)}</p>
                     </div>
                     <select
                       className="input-field bg-white/5 border-white/10 text-white focus:border-teal"

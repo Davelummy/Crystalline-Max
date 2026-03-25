@@ -166,8 +166,11 @@ service cloud.firestore {
         'locationVerified',
         'assignedStaffId',
         'assignedStaffName',
+        'assignedStaffIds',
+        'assignedStaffNames',
         'assignedAt',
         'staffAcknowledgedAt',
+        'staffAcknowledgedByIds',
         'completedTaskIds',
         'taskProgressPercent',
         'startedAt',
@@ -220,8 +223,11 @@ service cloud.firestore {
              (data.createdAt is timestamp || data.createdAt is string) &&
              (!('assignedStaffId' in data) || data.assignedStaffId == null || data.assignedStaffId is string) &&
              (!('assignedStaffName' in data) || data.assignedStaffName == null || data.assignedStaffName is string) &&
+             (!('assignedStaffIds' in data) || data.assignedStaffIds is list) &&
+             (!('assignedStaffNames' in data) || data.assignedStaffNames is list) &&
              (!('assignedAt' in data) || data.assignedAt == null || data.assignedAt is timestamp || data.assignedAt is string) &&
              (!('staffAcknowledgedAt' in data) || data.staffAcknowledgedAt == null || data.staffAcknowledgedAt is timestamp || data.staffAcknowledgedAt is string) &&
+             (!('staffAcknowledgedByIds' in data) || data.staffAcknowledgedByIds is list) &&
              (!('startedAt' in data) || data.startedAt == null || data.startedAt is timestamp || data.startedAt is string) &&
              (!('completedAt' in data) || data.completedAt == null || data.completedAt is timestamp || data.completedAt is string) &&
              (!('lastProgressAt' in data) || data.lastProgressAt == null || data.lastProgressAt is timestamp || data.lastProgressAt is string) &&
@@ -328,7 +334,14 @@ service cloud.firestore {
         isValidBooking(request.resource.data)
       ) || (
         isEmployee() &&
-        resource.data.assignedStaffId == request.auth.uid &&
+        (
+          resource.data.assignedStaffId == request.auth.uid ||
+          (
+            'assignedStaffIds' in resource.data &&
+            resource.data.assignedStaffIds is list &&
+            request.auth.uid in resource.data.assignedStaffIds
+          )
+        ) &&
         isValidBooking(request.resource.data)
       );
     }

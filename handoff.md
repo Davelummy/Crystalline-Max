@@ -190,6 +190,7 @@ Roadmap corrections already accepted before implementation:
 - Phase 8 admin capability completion is now implemented and verified
 - Phase 9 availability and capacity management is now implemented and verified
 - Phase 10 legal and policy drafting is now implemented and verified
+- Phase 11 multi-employee job assignment is now implemented and verified
 - Admin navigation is now being hardened as route-native navigation rather than legacy callback-driven shell controls
 - `react-router-dom` is installed and live
 - [AuthContext.tsx](/Users/davidolumide/Crystalline-Max/src/context/AuthContext.tsx) provides shared auth/profile state
@@ -270,6 +271,8 @@ Roadmap corrections already accepted before implementation:
 - Added richer admin booking detail actions for confirmation, payment override, check-in review, and lifecycle control
 - Added `settings/availability` driven capacity management with blocked dates, per-day booking caps, and slot visibility toggles
 - Added a public-safe availability snapshot callable so the booking calendar can disable full dates without exposing booking records
+- Added multi-employee booking assignment fields with backward-compatible support for legacy single-assignee records
+- Updated admin booking assignment controls, staff schedule/tasks/notifications/check-in reads, and reminder emails to support team-assigned jobs
 
 ### Staff Operations Upgrade
 

@@ -4,7 +4,8 @@ import { collection, limit, onSnapshot, orderBy, query, where } from 'firebase/f
 import { httpsCallable } from 'firebase/functions';
 import { motion, AnimatePresence } from 'motion/react';
 import { LogIn, LogOut, MapPin, CheckCircle2, AlertCircle, Clock } from 'lucide-react';
-import { formatSchedule, getAfterPhotos, getTaskProgressPercent, sortBookingsBySchedule } from '../lib/bookings';
+import { formatSchedule, getAfterPhotos, getAssignedStaffLabel, getTaskProgressPercent, sortBookingsBySchedule } from '../lib/bookings';
+import { subscribeToAssignedBookings } from '@/lib/assignedBookings';
 import type { BookingRecord, CheckIn } from '../types';
 
 const CHECKIN_RADIUS_METERS = 200;
@@ -92,12 +93,7 @@ export const EmployeeCheckIn: React.FC = () => {
   React.useEffect(() => {
     if (!auth.currentUser) return;
 
-    const bookingsQuery = query(collection(db, 'bookings'), where('assignedStaffId', '==', auth.currentUser.uid));
-    const unsubscribe = onSnapshot(bookingsQuery, (snapshot) => {
-      const records = snapshot.docs.map((entry) => ({
-        id: entry.id,
-        ...(entry.data() as Omit<BookingRecord, 'id'>),
-      }));
+    const unsubscribe = subscribeToAssignedBookings(auth.currentUser.uid, (records) => {
       setAssignedBookings(records);
       setAssignmentLoading(false);
     }, () => {
@@ -261,6 +257,7 @@ export const EmployeeCheckIn: React.FC = () => {
                   <MapPin size={12} className="mt-0.5 text-teal" />
                   <span>{assignment.locationLabel || assignment.address || assignment.postcode}</span>
                 </p>
+                <p>Assigned team: {getAssignedStaffLabel(assignment)}</p>
               </div>
               <p className="text-[10px] font-bold uppercase tracking-widest text-white/40">
                 On-site check-in and check-out are allowed only within {CHECKIN_RADIUS_METERS}m of this location.

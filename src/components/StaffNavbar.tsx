@@ -1,9 +1,9 @@
 import React from 'react';
 import { Logo } from './Logo';
 import { Menu, X, LogOut, Clock, Calendar, ClipboardList, Bell } from 'lucide-react';
-import { collection, onSnapshot, query, where } from 'firebase/firestore';
-import { db } from '../firebase';
-import type { BookingRecord, View } from '../types';
+import { hasStaffAcknowledged } from '@/lib/bookings';
+import { subscribeToAssignedBookings } from '@/lib/assignedBookings';
+import type { View } from '../types';
 
 interface StaffNavbarProps {
   onNavigate: (view: View) => void;
@@ -16,11 +16,9 @@ export const StaffNavbar: React.FC<StaffNavbarProps> = ({ onNavigate, user, onLo
   const [unreadCount, setUnreadCount] = React.useState(0);
 
   React.useEffect(() => {
-    const notificationsQuery = query(collection(db, 'bookings'), where('assignedStaffId', '==', user.uid));
-    const unsubscribe = onSnapshot(notificationsQuery, (snapshot) => {
-      const records = snapshot.docs.map((entry) => entry.data() as BookingRecord);
+    const unsubscribe = subscribeToAssignedBookings(user.uid, (records) => {
       setUnreadCount(
-        records.filter((booking) => !booking.staffAcknowledgedAt && !['completed', 'cancelled'].includes(booking.status)).length,
+        records.filter((booking) => !hasStaffAcknowledged(booking, user.uid) && !['completed', 'cancelled'].includes(booking.status)).length,
       );
     });
 

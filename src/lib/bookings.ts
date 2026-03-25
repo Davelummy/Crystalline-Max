@@ -197,3 +197,35 @@ export function getStatusLabel(status: BookingStatus) {
       return status;
   }
 }
+
+export function getAssignedStaffIds(booking: Pick<BookingRecord, 'assignedStaffId' | 'assignedStaffIds'> | null) {
+  if (!booking) return [];
+  if (Array.isArray(booking.assignedStaffIds) && booking.assignedStaffIds.length > 0) {
+    return booking.assignedStaffIds;
+  }
+  return booking.assignedStaffId ? [booking.assignedStaffId] : [];
+}
+
+export function getAssignedStaffNames(booking: Pick<BookingRecord, 'assignedStaffName' | 'assignedStaffNames'> | null) {
+  if (!booking) return [];
+  if (Array.isArray(booking.assignedStaffNames) && booking.assignedStaffNames.length > 0) {
+    return booking.assignedStaffNames;
+  }
+  return booking.assignedStaffName ? [booking.assignedStaffName] : [];
+}
+
+export function getAssignedStaffLabel(booking: Pick<BookingRecord, 'assignedStaffName' | 'assignedStaffNames'> | null) {
+  const names = getAssignedStaffNames(booking);
+  return names.length > 0 ? names.join(', ') : 'Unassigned';
+}
+
+export function hasStaffAcknowledged(
+  booking: Pick<BookingRecord, 'staffAcknowledgedAt' | 'staffAcknowledgedByIds'> | null,
+  userId: string,
+) {
+  if (!booking) return false;
+  if (Array.isArray(booking.staffAcknowledgedByIds) && booking.staffAcknowledgedByIds.length > 0) {
+    return booking.staffAcknowledgedByIds.includes(userId);
+  }
+  return Boolean(booking.staffAcknowledgedAt);
+}

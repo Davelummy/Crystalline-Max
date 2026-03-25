@@ -1,8 +1,9 @@
 import React from 'react';
 import { Bell, CalendarClock, CheckCircle2 } from 'lucide-react';
-import { collection, doc, onSnapshot, query, serverTimestamp, updateDoc, where } from 'firebase/firestore';
+import { arrayUnion, doc, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { auth, db } from '../firebase';
-import { formatSchedule, getStatusLabel, sortBookingsBySchedule } from '../lib/bookings';
+import { formatSchedule, getStatusLabel, hasStaffAcknowledged, sortBookingsBySchedule } from '../lib/bookings';
+import { subscribeToAssignedBookings } from '@/lib/assignedBookings';
 import type { BookingRecord, View } from '../types';
 
 interface StaffNotificationsProps {
@@ -15,27 +16,19 @@ export const StaffNotifications: React.FC<StaffNotificationsProps> = ({ onNaviga
   React.useEffect(() => {
     if (!auth.currentUser) return;
 
-    const notificationsQuery = query(
-      collection(db, 'bookings'),
-      where('assignedStaffId', '==', auth.currentUser.uid),
-    );
-
-    const unsubscribe = onSnapshot(notificationsQuery, (snapshot) => {
-      const records = snapshot.docs.map((entry) => ({
-        id: entry.id,
-        ...(entry.data() as Omit<BookingRecord, 'id'>),
-      }));
+    const unsubscribe = subscribeToAssignedBookings(auth.currentUser.uid, (records) => {
       setBookings(sortBookingsBySchedule(records));
     });
 
     return () => unsubscribe();
   }, []);
 
-  const unread = bookings.filter((booking) => !booking.staffAcknowledgedAt && !['completed', 'cancelled'].includes(booking.status));
+  const unread = bookings.filter((booking) => auth.currentUser && !hasStaffAcknowledged(booking, auth.currentUser.uid) && !['completed', 'cancelled'].includes(booking.status));
 
   const acknowledge = async (bookingId: string) => {
     await updateDoc(doc(db, 'bookings', bookingId), {
       staffAcknowledgedAt: serverTimestamp(),
+      staffAcknowledgedByIds: arrayUnion(auth.currentUser?.uid || ''),
       updatedAt: serverTimestamp(),
     });
   };
@@ -59,7 +52,9 @@ export const StaffNotifications: React.FC<StaffNotificationsProps> = ({ onNaviga
 
         <div className="space-y-4">
           {bookings.length > 0 ? bookings.map((booking) => {
-            const isUnread = !booking.staffAcknowledgedAt && !['completed', 'cancelled'].includes(booking.status);
+            const isUnread = auth.currentUser != null &&
+              !hasStaffAcknowledged(booking, auth.currentUser.uid) &&
+              !['completed', 'cancelled'].includes(booking.status);
 
             return (
               <div key={booking.id} className={`dark-card p-6 ${isUnread ? 'border-teal/30' : 'border-white/5'}`}>

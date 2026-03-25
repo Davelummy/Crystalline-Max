@@ -114,6 +114,16 @@ Current examples:
 - terms content covers booking confirmation, cancellation, payment handling, photo evidence, and England and Wales jurisdiction
 - both pages remain explicitly marked as draft pending final business/legal review until real-world business identity details are confirmed
 
+### 10. Backward-Compatible Data Evolution
+
+When an operational model changes, the platform should migrate without breaking existing live records.
+
+Current application:
+
+- booking assignment now supports both legacy single-assignee fields and new multi-assignee team fields
+- staff-facing queries read both shapes during the transition
+- admin writes still preserve a primary assignee field for compatibility while the team-assignment model becomes the new source of truth
+
 ## Interface Patterns
 
 ## Portal Model
