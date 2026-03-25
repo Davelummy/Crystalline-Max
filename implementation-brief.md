@@ -320,14 +320,14 @@ No reversal path is planned from `paid` or `not_required`.
 - Firestore/rules tests
 - emulator-backed tests
 - Playwright
-- GitHub Actions
+- repo-local verification scripts
 
 Current repository status:
 
 - unit tests are checked in for booking and auth helpers
 - Firestore rules tests are checked in and pass on a machine that permits emulator ports
 - Playwright smoke scaffolding is checked in
-- CI is checked in for lint, unit tests, emulator-backed rules tests, and build
+- `npm run verify` and `npm run verify:full` are the active verification entry points
 - final localhost-bound reruns are blocked in the current restricted harness and must be rechecked on an unrestricted machine
 
 ### Phase 13 — Pre-Launch Hardening

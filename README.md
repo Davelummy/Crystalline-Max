@@ -21,7 +21,7 @@ Current migration status:
 - Phase 9 availability and capacity management is implemented with admin-managed blocked dates, booking-capacity controls, and a disabled-date customer calendar
 - Phase 10 legal and policy drafting is implemented with UK-oriented draft privacy and terms pages aligned to the current platform behavior
 - Phase 11 multi-employee job assignment is implemented with team-assignment booking fields, staff-side backward-compatible reads, and admin team assignment controls
-- Phase 12 testing and CI is implemented in-repo with Vitest unit coverage, Firestore rules tests, Playwright smoke scaffolding, and a GitHub Actions verification workflow
+- Phase 12 testing and local verification is implemented in-repo with Vitest unit coverage, Firestore rules tests, Playwright smoke scaffolding, and one-command local verify scripts
 - Phase 13 pre-launch hardening is underway with Firebase App Check bootstrap hooks, bounded photo-upload validation, and launch-only environment placeholders for reCAPTCHA and Sentry
 
 ## Approved Roadmap
@@ -333,9 +333,11 @@ firebase deploy --only functions
 firebase emulators:exec --only auth,firestore,functions,storage
 ```
 
-Test and CI commands now checked into the repo:
+Verification commands now checked into the repo:
 
 ```bash
+npm run verify
+npm run verify:full
 npm run test
 npm run test:emulator
 npm run test:e2e
@@ -346,7 +348,7 @@ Current Phase 12 state:
 - `npm run test` passes
 - Firestore rules tests pass when the machine allows emulator ports
 - Playwright smoke scaffolding is checked in, but route-level execution requires a machine that allows localhost listeners
-- CI is defined in [.github/workflows/ci.yml](/Users/davidolumide/Crystalline-Max/.github/workflows/ci.yml)
+- `npm run verify` is the default non-GitHub verification path
 
 ## Launch Hardening
 

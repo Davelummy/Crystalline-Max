@@ -15,7 +15,9 @@
     "test:watch": "vitest src",
     "test:rules": "vitest run tests/firestore.rules.test.ts",
     "test:emulator": "PATH=\"/usr/local/opt/openjdk/bin:$PATH\" firebase emulators:exec --only auth,firestore \"npm run test:rules\"",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "verify": "npm run lint && npm run test && npm run test:emulator && npm run build",
+    "verify:full": "npm run verify && npm run test:e2e"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.14",

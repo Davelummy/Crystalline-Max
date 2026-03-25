@@ -146,7 +146,7 @@ Current layers:
 - Vitest for pure shared client logic
 - Firebase rules tests for security-sensitive Firestore behavior
 - Playwright smoke coverage for route-level UI boot
-- CI enforcement on lint, unit tests, rules tests, and build
+- repo-local verification scripts that run lint, tests, emulator checks, build, and optional E2E without GitHub-hosted automation
 
 ## Interface Patterns
 

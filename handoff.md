@@ -195,7 +195,7 @@ Roadmap corrections already accepted before implementation:
 - Phase 9 availability and capacity management is now implemented and verified
 - Phase 10 legal and policy drafting is now implemented and verified
 - Phase 11 multi-employee job assignment is now implemented and verified
-- Phase 12 testing and CI is now implemented in-repo with unit tests, Firestore rules tests, Playwright smoke scaffolding, and a GitHub Actions workflow
+- Phase 12 testing and local verification is now implemented in-repo with unit tests, Firestore rules tests, Playwright smoke scaffolding, and repo-local verify commands
 - Phase 13 pre-launch hardening is now partially implemented with App Check bootstrap hooks and bounded photo-upload validation, with remaining production-console tasks still pending
 - Admin navigation is now being hardened as route-native navigation rather than legacy callback-driven shell controls
 - `react-router-dom` is installed and live
@@ -401,12 +401,13 @@ Latest repo-backed verification completed successfully:
 - `npm run lint`
 - `npm run build`
 - `npm run test`
+- `npm run verify`
 
 Phase 12 verification currently available in this repo:
 
 - Firestore rules tests are checked in at [tests/firestore.rules.test.ts](/Users/davidolumide/Crystalline-Max/tests/firestore.rules.test.ts)
 - Playwright smoke coverage is checked in at [tests/e2e/public-smoke.spec.ts](/Users/davidolumide/Crystalline-Max/tests/e2e/public-smoke.spec.ts)
-- CI is checked in at [.github/workflows/ci.yml](/Users/davidolumide/Crystalline-Max/.github/workflows/ci.yml)
+- repo-local verification entry points now live in [package.json](/Users/davidolumide/Crystalline-Max/package.json)
 - Emulator-backed rules tests and Playwright route boot still require a machine that allows localhost listeners
 
 ## Remaining Launch Tasks
