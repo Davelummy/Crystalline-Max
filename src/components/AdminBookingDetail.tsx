@@ -288,7 +288,7 @@ export const AdminBookingDetail: React.FC<AdminBookingDetailProps> = ({ bookingI
                       );
                     })}
                   </div>
-                  <div className="mt-4 text-[10px] font-bold uppercase tracking-widest text-white/45">
+                  <div className="mt-4 text-[10px] font-bold uppercase tracking-widest text-white/60">
                     {getAssignedStaffLabel(booking)}
                   </div>
                 </div>
@@ -327,7 +327,7 @@ export const AdminBookingDetail: React.FC<AdminBookingDetailProps> = ({ bookingI
                     <div key={task.id} className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm">
                       <div className="flex items-center justify-between gap-3">
                         <span>{task.title}</span>
-                        <span className={completed.has(task.id) ? 'text-teal' : 'text-white/35'}>
+                        <span className={completed.has(task.id) ? 'text-teal' : 'text-white/55'}>
                           {completed.has(task.id) ? 'Done' : 'Pending'}
                         </span>
                       </div>

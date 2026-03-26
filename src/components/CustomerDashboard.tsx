@@ -61,7 +61,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
             </h3>
           </div>
           <div className="text-left sm:text-right">
-            <p className="text-xs text-charcoal/40 uppercase font-bold">Loyalty Status</p>
+            <p className="text-xs text-charcoal/60 uppercase font-bold">Loyalty Status</p>
             <p className="text-2xl font-display text-teal">
               {userData?.bookingCount === 0 ? '10% OFF NEXT' :
                (userData?.bookingCount || 0) >= 3 ? '5% OFF ACTIVE' :
@@ -72,10 +72,10 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
 
         <div className="grid md:grid-cols-3 gap-6 mb-12">
           <div className="md:col-span-2 space-y-6">
-            <h4 className="text-sm font-bold uppercase tracking-widest text-charcoal/40">Upcoming Booking</h4>
+            <h4 className="text-sm font-bold uppercase tracking-widest text-charcoal/60">Upcoming Booking</h4>
             <div className="dark-card p-8 relative overflow-hidden">
               {loading ? (
-                <p className="text-white/40 uppercase tracking-widest text-xs">Loading bookings...</p>
+                <p className="text-white/60 uppercase tracking-widest text-xs">Loading bookings...</p>
               ) : upcoming ? (
                 <>
                   <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-6 mb-8">
@@ -153,7 +153,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
               )}
             </div>
 
-            <h4 className="text-sm font-bold uppercase tracking-widest text-charcoal/40 pt-6">Recent Activity</h4>
+            <h4 className="text-sm font-bold uppercase tracking-widest text-charcoal/60 pt-6">Recent Activity</h4>
             <div className="space-y-3">
               {pastBookings.length > 0 ? pastBookings.map((booking) => (
                 <div
@@ -163,16 +163,16 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
                 >
                   <div className="flex items-center gap-4">
                     <div className="w-10 h-10 bg-charcoal/5 rounded-lg flex items-center justify-center">
-                      <Calendar size={18} className="text-charcoal/40" />
+                      <Calendar size={18} className="text-charcoal/60" />
                     </div>
                     <div>
                       <p className="font-bold text-sm uppercase">{booking.serviceLabel}</p>
-                      <p className="text-[10px] text-charcoal/40 uppercase">{formatSchedule(booking)}</p>
+                      <p className="text-[10px] text-charcoal/60 uppercase">{formatSchedule(booking)}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-6">
                     <span className="text-sm font-bold">{getStatusLabel(booking.status)}</span>
-                    <ChevronRight size={16} className="text-charcoal/20" />
+                    <ChevronRight size={16} className="text-charcoal/55" />
                   </div>
                 </div>
               )) : (
@@ -184,7 +184,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
           </div>
 
           <div className="space-y-6">
-            <h4 className="text-sm font-bold uppercase tracking-widest text-charcoal/40">Quick Actions</h4>
+            <h4 className="text-sm font-bold uppercase tracking-widest text-charcoal/60">Quick Actions</h4>
             <button onClick={() => onNavigate('booking')} className="w-full btn-primary flex items-center justify-center gap-2 py-6">
               <Repeat size={18} /> NEW BOOKING
             </button>
@@ -196,15 +196,15 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
               <h5 className="text-xs font-bold uppercase tracking-widest mb-4">Account Summary</h5>
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between gap-4">
-                  <span className="text-charcoal/40 uppercase tracking-widest text-[10px]">Bookings</span>
+                  <span className="text-charcoal/60 uppercase tracking-widest text-[10px]">Bookings</span>
                   <span className="font-bold">{bookings.length}</span>
                 </div>
                 <div className="flex justify-between gap-4">
-                  <span className="text-charcoal/40 uppercase tracking-widest text-[10px]">Phone</span>
+                  <span className="text-charcoal/60 uppercase tracking-widest text-[10px]">Phone</span>
                   <span className="font-bold">{userData?.phoneNumber || 'Not set'}</span>
                 </div>
                 <div className="flex justify-between gap-4">
-                  <span className="text-charcoal/40 uppercase tracking-widest text-[10px]">Primary Area</span>
+                  <span className="text-charcoal/60 uppercase tracking-widest text-[10px]">Primary Area</span>
                   <span className="font-bold">{userData?.postcode || 'Not set'}</span>
                 </div>
               </div>

@@ -147,7 +147,7 @@ function PublicFooter() {
             </div>
           </div>
         </div>
-        <div className="mt-20 flex flex-col gap-4 border-t border-white/5 pt-8 text-[10px] font-bold uppercase tracking-widest text-white/45 md:flex-row md:items-center md:justify-between">
+        <div className="mt-20 flex flex-col gap-4 border-t border-white/5 pt-8 text-[10px] font-bold uppercase tracking-widest text-white/60 md:flex-row md:items-center md:justify-between">
           <p>© 2026 CRYSTALLINE MAX LTD. ALL RIGHTS RESERVED.</p>
           <div className="flex gap-8">
             <button type="button" onClick={() => navigate('/privacy')} className="hover:text-teal transition-colors">Privacy</button>

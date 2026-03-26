@@ -53,7 +53,7 @@ export const StaffSignupPage: React.FC<StaffSignupPageProps> = ({
             Employee ID
           </label>
           <div className="relative">
-            <BadgeCheck className="absolute left-4 top-1/2 -translate-y-1/2 text-white/45" size={16} />
+            <BadgeCheck className="absolute left-4 top-1/2 -translate-y-1/2 text-white/60" size={16} />
             <input
               type="text"
               value={employeeId}
@@ -71,7 +71,7 @@ export const StaffSignupPage: React.FC<StaffSignupPageProps> = ({
             Company Email
           </label>
           <div className="relative">
-            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-white/45" size={16} />
+            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-white/60" size={16} />
             <input
               type="email"
               value={email}
@@ -89,7 +89,7 @@ export const StaffSignupPage: React.FC<StaffSignupPageProps> = ({
             Password
           </label>
           <div className="relative">
-            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-white/45" size={16} />
+            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-white/60" size={16} />
             <input
               type="password"
               value={password}

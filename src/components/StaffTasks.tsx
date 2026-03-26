@@ -287,7 +287,7 @@ export const StaffTasks: React.FC<StaffTasksProps> = ({ onNavigate }) => {
           ))}
         </div>
       ) : (
-        <div className="rounded-xl border border-white/10 bg-white/5 p-3 text-[10px] font-bold uppercase tracking-widest text-white/45">
+        <div className="rounded-xl border border-white/10 bg-white/5 p-3 text-[10px] font-bold uppercase tracking-widest text-white/60">
           No photos uploaded yet
         </div>
       )}
@@ -305,7 +305,7 @@ export const StaffTasks: React.FC<StaffTasksProps> = ({ onNavigate }) => {
               {booking ? `${booking.customerName} - ${booking.serviceLabel}` : 'No active booking selected'}
             </p>
             {booking && (
-              <p className="mt-2 text-[10px] font-bold uppercase tracking-widest text-white/40">
+              <p className="mt-2 text-[10px] font-bold uppercase tracking-widest text-white/60">
                 Assigned team: {getAssignedStaffLabel(booking)}
               </p>
             )}
@@ -342,7 +342,7 @@ export const StaffTasks: React.FC<StaffTasksProps> = ({ onNavigate }) => {
                       disabled={!canEditTasks || busyAction != null}
                       className={cn(
                         'w-6 h-6 rounded-full flex items-center justify-center border transition-all disabled:opacity-40',
-                        completedTaskIds.has(task.id) ? 'bg-teal border-teal text-charcoal' : 'border-white/20 text-white/20',
+                        completedTaskIds.has(task.id) ? 'bg-teal border-teal text-charcoal' : 'border-white/20 text-white/55',
                       )}
                     >
                       {completedTaskIds.has(task.id) ? <CheckCircle2 size={14} /> : <Circle size={14} />}
@@ -351,13 +351,13 @@ export const StaffTasks: React.FC<StaffTasksProps> = ({ onNavigate }) => {
                       <p className={cn('text-sm font-bold uppercase tracking-wider', completedTaskIds.has(task.id) && 'line-through opacity-50')}>
                         {task.title}
                       </p>
-                      <span className="text-[8px] uppercase tracking-[0.2em] opacity-50">{task.category}</span>
+                      <span className="text-[10px] uppercase tracking-[0.2em] opacity-50">{task.category}</span>
                     </div>
                   </div>
 
                   <div
                     className={cn(
-                      'px-2 py-0.5 rounded text-[7px] font-bold uppercase tracking-widest',
+                      'px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest',
                       task.priority === 'high'
                         ? 'bg-red-500/10 text-red-400'
                         : task.priority === 'medium'
@@ -405,7 +405,7 @@ export const StaffTasks: React.FC<StaffTasksProps> = ({ onNavigate }) => {
                     onChange={(event) => handleFileSelection('before', event.target.files)}
                     className="input-field bg-white/5 border-white/10 text-white file:mr-4 file:rounded-lg file:border-0 file:bg-teal file:px-3 file:py-2 file:text-[10px] file:font-bold file:text-charcoal"
                   />
-                  <p className="mt-3 text-[10px] font-bold uppercase tracking-widest text-white/45">
+                  <p className="mt-3 text-[10px] font-bold uppercase tracking-widest text-white/60">
                     {beforeFiles.length > 0
                       ? `${beforeFiles.length} file(s) selected`
                       : `Up to ${MAX_PHOTOS_PER_PHASE} photos, ${MAX_FILE_SIZE_MB}MB each`}
@@ -431,7 +431,7 @@ export const StaffTasks: React.FC<StaffTasksProps> = ({ onNavigate }) => {
                     onChange={(event) => handleFileSelection('after', event.target.files)}
                     className="input-field bg-white/5 border-white/10 text-white file:mr-4 file:rounded-lg file:border-0 file:bg-teal file:px-3 file:py-2 file:text-[10px] file:font-bold file:text-charcoal"
                   />
-                  <p className="mt-3 text-[10px] font-bold uppercase tracking-widest text-white/45">
+                  <p className="mt-3 text-[10px] font-bold uppercase tracking-widest text-white/60">
                     {afterFiles.length > 0
                       ? `${afterFiles.length} file(s) selected`
                       : `Up to ${MAX_PHOTOS_PER_PHASE} photos, ${MAX_FILE_SIZE_MB}MB each`}
@@ -454,7 +454,7 @@ export const StaffTasks: React.FC<StaffTasksProps> = ({ onNavigate }) => {
                 </div>
                 <ul className="space-y-3">
                   {['Wear gloves', 'Confirm service scope', 'Check site access'].map((item) => (
-                    <li key={item} className="flex items-center gap-2 text-[9px] text-white/60 uppercase tracking-widest">
+                    <li key={item} className="flex items-center gap-2 text-[10px] text-white/60 uppercase tracking-widest">
                       <div className="w-1 h-1 bg-teal rounded-full" /> {item}
                     </li>
                   ))}

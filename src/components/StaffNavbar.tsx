@@ -49,7 +49,7 @@ export const StaffNavbar: React.FC<StaffNavbarProps> = ({ onNavigate, user, onLo
               <Bell size={14} />
               Alerts
               {unreadCount > 0 && (
-                <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-teal px-1.5 py-0.5 text-[9px] text-charcoal">
+                <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-teal px-1.5 py-0.5 text-[10px] text-charcoal">
                   {unreadCount}
                 </span>
               )}
@@ -58,9 +58,9 @@ export const StaffNavbar: React.FC<StaffNavbarProps> = ({ onNavigate, user, onLo
             <div className="flex items-center gap-4 pl-4 border-l border-white/10">
               <div className="text-right">
                 <p className="text-[10px] text-white font-bold uppercase tracking-widest">{user.displayName || 'Staff'}</p>
-                <p className="text-[8px] text-teal uppercase tracking-widest">Field Specialist</p>
+                <p className="text-[10px] text-teal uppercase tracking-widest">Field Specialist</p>
               </div>
-              <button onClick={onLogout} className="text-white/40 hover:text-red-500 transition-colors">
+              <button onClick={onLogout} className="text-white/60 hover:text-red-500 transition-colors">
                 <LogOut size={18} />
               </button>
             </div>

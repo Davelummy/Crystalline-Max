@@ -49,14 +49,14 @@ export const CustomerOnboarding: React.FC<OnboardingProps> = ({ onComplete }) =>
             <User size={32} />
           </div>
           <h1 className="text-2xl font-display uppercase tracking-wider">Welcome to Crystalline</h1>
-          <p className="text-charcoal/40 text-xs uppercase tracking-widest mt-2">Complete your profile to start booking</p>
+          <p className="text-charcoal/60 text-xs uppercase tracking-widest mt-2">Complete your profile to start booking</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label className="block text-[10px] font-bold uppercase tracking-widest text-charcoal/60 mb-2">Phone Number</label>
             <div className="relative">
-              <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-charcoal/20" size={16} />
+              <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-charcoal/55" size={16} />
               <input 
                 required
                 type="tel"
@@ -71,7 +71,7 @@ export const CustomerOnboarding: React.FC<OnboardingProps> = ({ onComplete }) =>
           <div>
             <label className="block text-[10px] font-bold uppercase tracking-widest text-charcoal/60 mb-2">Primary Address</label>
             <div className="relative">
-              <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-charcoal/20" size={16} />
+              <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-charcoal/55" size={16} />
               <input 
                 required
                 type="text"

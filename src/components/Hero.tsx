@@ -131,10 +131,10 @@ export const Hero: React.FC<HeroProps> = ({ onBookNow, onViewServices }) => {
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-charcoal/80 via-transparent to-transparent opacity-60" />
 
-                  <div className="absolute top-8 right-8 bg-teal/20 backdrop-blur-md border border-teal/30 px-3 py-1 rounded-full text-[8px] font-bold text-teal uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="absolute top-8 right-8 bg-teal/20 backdrop-blur-md border border-teal/30 px-3 py-1 rounded-full text-[10px] font-bold text-teal uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">
                     Before View
                   </div>
-                  <div className="absolute top-8 right-8 bg-white/5 backdrop-blur-md border border-white/10 px-3 py-1 rounded-full text-[8px] font-bold text-white/68 uppercase tracking-widest group-hover:opacity-0 transition-opacity">
+                  <div className="absolute top-8 right-8 bg-white/5 backdrop-blur-md border border-white/10 px-3 py-1 rounded-full text-[10px] font-bold text-white/68 uppercase tracking-widest group-hover:opacity-0 transition-opacity">
                     After View
                   </div>
 

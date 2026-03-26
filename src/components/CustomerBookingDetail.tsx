@@ -90,7 +90,7 @@ export const CustomerBookingDetail: React.FC<CustomerBookingDetailProps> = ({ bo
         <button
           type="button"
           onClick={onBack}
-          className="mb-8 inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-charcoal/45 transition-colors hover:text-teal"
+          className="mb-8 inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-charcoal/60 transition-colors hover:text-teal"
         >
           <ArrowLeft size={14} />
           Back
@@ -154,7 +154,7 @@ export const CustomerBookingDetail: React.FC<CustomerBookingDetailProps> = ({ bo
 
             <div className="grid gap-6 md:grid-cols-2">
               <div className="frost-card-light p-6">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-charcoal/45">Before Photos</p>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-charcoal/60">Before Photos</p>
                 {beforePhotos.length > 0 ? (
                   <>
                     <img src={beforePhotos[0].url} alt="Before service" className="mt-4 h-48 w-full rounded-2xl object-cover" />
@@ -172,7 +172,7 @@ export const CustomerBookingDetail: React.FC<CustomerBookingDetailProps> = ({ bo
               </div>
 
               <div className="frost-card-light p-6">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-charcoal/45">After Photos</p>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-charcoal/60">After Photos</p>
                 {afterPhotos.length > 0 ? (
                   <>
                     <img src={afterPhotos[afterPhotos.length - 1].url} alt="After service" className="mt-4 h-48 w-full rounded-2xl object-cover" />

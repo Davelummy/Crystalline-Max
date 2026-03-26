@@ -61,9 +61,9 @@ export const StaffNotifications: React.FC<StaffNotificationsProps> = ({ onNaviga
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                   <div>
                     <div className="flex items-center gap-3">
-                      <Bell size={16} className={isUnread ? 'text-teal' : 'text-white/45'} />
+                      <Bell size={16} className={isUnread ? 'text-teal' : 'text-white/60'} />
                       <p className="text-xs font-bold uppercase tracking-widest text-white">{booking.customerName}</p>
-                      {isUnread && <span className="rounded-full bg-teal/15 px-3 py-1 text-[9px] font-bold uppercase tracking-widest text-teal">New job</span>}
+                      {isUnread && <span className="rounded-full bg-teal/15 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-teal">New job</span>}
                     </div>
                     <p className="mt-3 text-sm text-white/80">{booking.serviceLabel}</p>
                     <div className="mt-3 flex flex-wrap gap-4 text-[10px] font-bold uppercase tracking-widest text-white/55">

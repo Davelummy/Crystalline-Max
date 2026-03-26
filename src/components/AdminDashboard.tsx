@@ -101,7 +101,7 @@ export const AdminDashboard: React.FC = () => {
           <p className="text-charcoal/60">Live operations from customer bookings, staff activity, and team assignments.</p>
         </div>
         <div className="text-right">
-          <p className="text-[10px] text-white/40 uppercase tracking-widest">System Status</p>
+          <p className="text-[10px] text-white/60 uppercase tracking-widest">System Status</p>
           <p className="text-teal font-bold uppercase tracking-widest flex items-center gap-2 sm:justify-end">
             <Activity size={12} /> Operational
           </p>
@@ -129,11 +129,11 @@ export const AdminDashboard: React.FC = () => {
 
           <div className="grid grid-cols-2 gap-4">
             <div className="dark-card p-6">
-              <p className="text-[10px] text-white/40 uppercase tracking-widest mb-2">Pending</p>
+              <p className="text-[10px] text-white/60 uppercase tracking-widest mb-2">Pending</p>
               <p className="text-2xl font-display text-teal">{pendingCount}</p>
             </div>
             <div className="dark-card p-6">
-              <p className="text-[10px] text-white/40 uppercase tracking-widest mb-2">Revenue</p>
+              <p className="text-[10px] text-white/60 uppercase tracking-widest mb-2">Revenue</p>
               <p className="text-2xl font-display text-teal">£{revenue.toFixed(0)}</p>
             </div>
           </div>
@@ -155,7 +155,7 @@ export const AdminDashboard: React.FC = () => {
                   </div>
                 </div>
               )) : (
-                <p className="text-sm text-white/40">Coverage data appears once bookings are created.</p>
+                <p className="text-sm text-white/60">Coverage data appears once bookings are created.</p>
               )}
             </div>
           </div>
@@ -172,17 +172,17 @@ export const AdminDashboard: React.FC = () => {
                       <h3 className="text-xs font-bold uppercase tracking-widest">{booking.customerName}</h3>
                       <p className="text-[10px] text-white/60 uppercase tracking-widest mt-1">{booking.serviceLabel}</p>
                     </div>
-                    <span className="text-[8px] bg-teal/20 text-teal px-2 py-1 rounded uppercase font-bold">
+                    <span className="text-[10px] bg-teal/20 text-teal px-2 py-1 rounded uppercase font-bold">
                       {getStatusLabel(booking.status)}
                     </span>
                   </div>
-                  <div className="flex flex-col gap-1 text-[8px] text-white/40 uppercase tracking-widest">
+                  <div className="flex flex-col gap-1 text-[10px] text-white/60 uppercase tracking-widest">
                     <span className="flex items-center gap-2"><CalendarIcon size={10} /> {formatSchedule(booking)}</span>
                     <span className="flex items-center gap-2"><MapPin size={10} /> {booking.postcode}</span>
                     <span className="flex items-center gap-2"><Users size={10} /> {getAssignedStaffLabel(booking)}</span>
                   </div>
                   <div className="mt-4">
-                    <div className="mb-2 flex items-center justify-between text-[8px] font-bold uppercase tracking-widest text-white/45">
+                    <div className="mb-2 flex items-center justify-between text-[10px] font-bold uppercase tracking-widest text-white/60">
                       <span>Progress</span>
                       <span>{getTaskProgressPercent(booking)}%</span>
                     </div>
@@ -190,7 +190,7 @@ export const AdminDashboard: React.FC = () => {
                       <div className="h-full bg-teal rounded-full transition-all" style={{ width: `${getTaskProgressPercent(booking)}%` }} />
                     </div>
                   </div>
-                  <div className="mt-4 grid grid-cols-2 gap-2 text-[8px] font-bold uppercase tracking-widest">
+                  <div className="mt-4 grid grid-cols-2 gap-2 text-[10px] font-bold uppercase tracking-widest">
                     <div className="rounded-lg border border-white/10 bg-white/5 px-2 py-2 text-white/55">
                       <p>Before</p>
                       {getPrimaryBeforePhotoUrl(booking) ? (
@@ -199,7 +199,7 @@ export const AdminDashboard: React.FC = () => {
                           <button
                             type="button"
                             onClick={() => setGalleryState({ title: `${booking.customerName} Before Photos`, photos: getBeforePhotos(booking) })}
-                            className="mt-2 w-full rounded border border-white/10 bg-white/5 px-2 py-2 text-[8px] font-bold uppercase tracking-widest text-white/85 hover:border-teal hover:text-teal transition-colors"
+                            className="mt-2 w-full rounded border border-white/10 bg-white/5 px-2 py-2 text-[10px] font-bold uppercase tracking-widest text-white/85 hover:border-teal hover:text-teal transition-colors"
                           >
                             View ({getBeforePhotos(booking).length})
                           </button>
@@ -216,7 +216,7 @@ export const AdminDashboard: React.FC = () => {
                           <button
                             type="button"
                             onClick={() => setGalleryState({ title: `${booking.customerName} After Photos`, photos: getAfterPhotos(booking) })}
-                            className="mt-2 w-full rounded border border-white/10 bg-white/5 px-2 py-2 text-[8px] font-bold uppercase tracking-widest text-white/85 hover:border-teal hover:text-teal transition-colors"
+                            className="mt-2 w-full rounded border border-white/10 bg-white/5 px-2 py-2 text-[10px] font-bold uppercase tracking-widest text-white/85 hover:border-teal hover:text-teal transition-colors"
                           >
                             View ({getAfterPhotos(booking).length})
                           </button>
@@ -230,7 +230,7 @@ export const AdminDashboard: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => navigate(`/admin/bookings/${booking.id}`)}
-                      className="rounded-lg border border-white/10 bg-white/5 px-2 py-2 text-[8px] font-bold uppercase tracking-widest text-white/85 transition-colors hover:border-teal hover:text-teal"
+                      className="rounded-lg border border-white/10 bg-white/5 px-2 py-2 text-[10px] font-bold uppercase tracking-widest text-white/85 transition-colors hover:border-teal hover:text-teal"
                     >
                       Open Detail
                     </button>
@@ -238,21 +238,21 @@ export const AdminDashboard: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => void handleCancelBooking(booking.id)}
-                        className="rounded-lg border border-red-500/30 bg-red-500/10 px-2 py-2 text-[8px] font-bold uppercase tracking-widest text-red-300 transition-colors hover:border-red-400 hover:text-red-200"
+                        className="rounded-lg border border-red-500/30 bg-red-500/10 px-2 py-2 text-[10px] font-bold uppercase tracking-widest text-red-300 transition-colors hover:border-red-400 hover:text-red-200"
                       >
                         Cancel
                       </button>
                     ) : (
-                      <div className="rounded-lg border border-white/10 bg-white/5 px-2 py-2 text-[8px] font-bold uppercase tracking-widest text-white/35">
+                      <div className="rounded-lg border border-white/10 bg-white/5 px-2 py-2 text-[10px] font-bold uppercase tracking-widest text-white/55">
                         {booking.status === 'completed' ? 'Completed' : 'Locked'}
                       </div>
                     )}
                   </div>
                 </div>
               )) : (
-                <div className="text-center py-10 text-white/40">
+                <div className="text-center py-10 text-white/60">
                   <AlertCircle className="mx-auto mb-4 opacity-20" size={32} />
-                  <p className="uppercase tracking-widest text-[8px]">No bookings yet</p>
+                  <p className="uppercase tracking-widest text-[10px]">No bookings yet</p>
                 </div>
               )}
             </div>
@@ -264,9 +264,9 @@ export const AdminDashboard: React.FC = () => {
             <h2 className="text-xs font-display uppercase tracking-widest mb-6 border-b border-white/10 pb-4">Live Activity Feed</h2>
             <div className="space-y-4">
               {checkins.length === 0 ? (
-                <div className="text-center py-20 text-white/40">
+                <div className="text-center py-20 text-white/60">
                   <AlertCircle className="mx-auto mb-4 opacity-20" size={32} />
-                  <p className="uppercase tracking-widest text-[8px]">No activity logged yet</p>
+                  <p className="uppercase tracking-widest text-[10px]">No activity logged yet</p>
                 </div>
               ) : (
                 checkins.slice(0, 8).map((checkin) => (
@@ -282,13 +282,13 @@ export const AdminDashboard: React.FC = () => {
                         <h3 className="text-[10px] font-bold uppercase tracking-wider">
                           {checkin.employeeName || 'Unknown'}
                         </h3>
-                        <span className="text-[8px] text-white/40 uppercase tracking-widest">
+                        <span className="text-[10px] text-white/60 uppercase tracking-widest">
                           {checkin.timestamp?.toDate
                             ? checkin.timestamp.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
                             : 'Pending'}
                         </span>
                       </div>
-                      <p className="text-[8px] text-white/40 uppercase tracking-widest mt-0.5">
+                      <p className="text-[10px] text-white/60 uppercase tracking-widest mt-0.5">
                         Checked {checkin.type === 'in' ? 'In' : 'Out'}
                       </p>
                     </div>

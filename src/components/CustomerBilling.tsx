@@ -51,7 +51,7 @@ export const CustomerBilling: React.FC<CustomerBillingProps> = ({ user, onBack }
       <div className="max-w-4xl mx-auto px-4">
         <button
           onClick={onBack}
-          className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-charcoal/40 hover:text-teal transition-colors mb-8"
+          className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-charcoal/60 hover:text-teal transition-colors mb-8"
         >
           <ArrowLeft size={14} /> Back to Dashboard
         </button>
@@ -78,13 +78,13 @@ export const CustomerBilling: React.FC<CustomerBillingProps> = ({ user, onBack }
                 </div>
                 <div>
                   <p className="font-bold uppercase">{booking.serviceLabel}</p>
-                  <p className="text-[10px] text-charcoal/40 uppercase tracking-widest">{formatSchedule(booking)}</p>
-                  <p className="text-[10px] text-charcoal/40 uppercase tracking-widest mt-1">{getStatusLabel(booking.status)}</p>
-                  <p className="text-[10px] text-charcoal/40 uppercase tracking-widest mt-1">Live progress: {getTaskProgressPercent(booking)}%</p>
+                  <p className="text-[10px] text-charcoal/60 uppercase tracking-widest">{formatSchedule(booking)}</p>
+                  <p className="text-[10px] text-charcoal/60 uppercase tracking-widest mt-1">{getStatusLabel(booking.status)}</p>
+                  <p className="text-[10px] text-charcoal/60 uppercase tracking-widest mt-1">Live progress: {getTaskProgressPercent(booking)}%</p>
                 </div>
               </div>
               <div className="text-left sm:text-right">
-                <p className="text-[10px] text-charcoal/40 uppercase tracking-widest mb-1">Payment State</p>
+                <p className="text-[10px] text-charcoal/60 uppercase tracking-widest mb-1">Payment State</p>
                 <p className="font-bold uppercase flex items-center gap-2 sm:justify-end">
                   <CreditCard size={14} className="text-teal" /> {getPaymentDisplayLabel(booking)}
                 </p>

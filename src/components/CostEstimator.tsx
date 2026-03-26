@@ -33,14 +33,14 @@ export const CostEstimator: React.FC<CostEstimatorProps> = ({ onBook }) => {
         <header className="text-center mb-16">
           <h2 className="text-teal text-xs tracking-[0.4em] mb-4 uppercase">Instant Quote</h2>
           <h3 className="text-4xl md:text-5xl text-white">Service Cost Estimator</h3>
-          <p className="text-white/40 mt-4 uppercase tracking-widest text-sm font-bold">Transparent pricing. No hidden fees.</p>
+          <p className="text-white/60 mt-4 uppercase tracking-widest text-sm font-bold">Transparent pricing. No hidden fees.</p>
         </header>
 
         <div className="grid lg:grid-cols-2 gap-12">
           {/* Controls */}
           <div className="space-y-10">
             <section>
-              <h4 className="text-xs font-bold uppercase tracking-widest text-white/40 mb-6">1. Select Service Type</h4>
+              <h4 className="text-xs font-bold uppercase tracking-widest text-white/60 mb-6">1. Select Service Type</h4>
               <div className="grid grid-cols-1 gap-4">
                 {SERVICES.map(service => (
                   <button
@@ -65,7 +65,7 @@ export const CostEstimator: React.FC<CostEstimatorProps> = ({ onBook }) => {
 
             {currentAddons.length > 0 && (
               <section>
-                <h4 className="text-xs font-bold uppercase tracking-widest text-white/40 mb-6">2. Add-on Enhancements</h4>
+                <h4 className="text-xs font-bold uppercase tracking-widest text-white/60 mb-6">2. Add-on Enhancements</h4>
                 <div className="grid grid-cols-1 gap-3">
                   {currentAddons.map(addon => (
                     <button
@@ -105,14 +105,14 @@ export const CostEstimator: React.FC<CostEstimatorProps> = ({ onBook }) => {
 
               <div className="space-y-4 mb-8">
                 <div className="flex justify-between text-sm">
-                  <span className="text-white/40 uppercase tracking-widest">Base Service</span>
+                  <span className="text-white/60 uppercase tracking-widest">Base Service</span>
                   <span className="text-white font-bold uppercase">{selectedService.label}</span>
                 </div>
                 {selectedAddons.map(id => {
                   const addon = currentAddons.find(a => a.id === id);
                   return (
                     <div key={id} className="flex justify-between text-sm">
-                      <span className="text-white/40 uppercase tracking-widest">{addon?.label}</span>
+                      <span className="text-white/60 uppercase tracking-widest">{addon?.label}</span>
                       <span className="text-white font-bold">+£{addon?.price}</span>
                     </div>
                   );
@@ -123,10 +123,10 @@ export const CostEstimator: React.FC<CostEstimatorProps> = ({ onBook }) => {
 
               <div className="flex justify-between items-end mb-10">
                 <div>
-                  <p className="text-white/40 text-[10px] font-bold uppercase tracking-[0.2em] mb-1">Estimated Total</p>
+                  <p className="text-white/60 text-[10px] font-bold uppercase tracking-[0.2em] mb-1">Estimated Total</p>
                   <p className="text-5xl font-display text-teal">£{total}</p>
                 </div>
-                <p className="text-[10px] text-white/20 uppercase font-bold text-right max-w-[120px]">
+                <p className="text-[10px] text-white/55 uppercase font-bold text-right max-w-[120px]">
                   Final price may vary based on vehicle size or property condition.
                 </p>
               </div>
@@ -146,7 +146,7 @@ export const CostEstimator: React.FC<CostEstimatorProps> = ({ onBook }) => {
             </div>
 
             <div className="mt-6 glass-card p-6 border-white/5">
-              <p className="text-xs text-white/40 leading-relaxed italic">
+              <p className="text-xs text-white/60 leading-relaxed italic">
                 "Crystalline Max provides the most transparent pricing in Manchester. The quote I got online was exactly what I paid at the door."
                 <span className="block mt-2 font-bold not-italic text-teal">— David S., Salford</span>
               </p>

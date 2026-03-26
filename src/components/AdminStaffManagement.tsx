@@ -183,11 +183,11 @@ export const AdminStaffManagement: React.FC = () => {
           <div>
             <h2 className="text-teal text-xs tracking-[0.4em] mb-4 uppercase">Human Resources</h2>
             <h3 className="text-4xl text-white font-display uppercase">Staff Management</h3>
-            <p className="text-white/40 mt-2 uppercase tracking-widest text-xs font-bold">Issue employee IDs, review team records, and assign work</p>
+            <p className="text-white/60 mt-2 uppercase tracking-widest text-xs font-bold">Issue employee IDs, review team records, and assign work</p>
           </div>
           <div className="flex gap-4">
             <div className="relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/55" size={18} />
               <input
                 type="text"
                 value={search}
@@ -205,10 +205,10 @@ export const AdminStaffManagement: React.FC = () => {
         <div className="grid gap-8">
           <div className="grid lg:grid-cols-[1.1fr_0.9fr] gap-8">
             <div className="dark-card p-6 border-white/5">
-              <h4 className="text-xs font-bold uppercase tracking-widest text-white/40 mb-6">Create Staff Employee ID</h4>
+              <h4 className="text-xs font-bold uppercase tracking-widest text-white/60 mb-6">Create Staff Employee ID</h4>
               <form onSubmit={handleCreateInvite} className="grid md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-widest text-white/40 mb-2">
+                  <label className="block text-[10px] font-bold uppercase tracking-widest text-white/60 mb-2">
                     Staff Name
                   </label>
                   <input
@@ -222,11 +222,11 @@ export const AdminStaffManagement: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-widest text-white/40 mb-2">
+                  <label className="block text-[10px] font-bold uppercase tracking-widest text-white/60 mb-2">
                     Reserved Email
                   </label>
                   <div className="relative">
-                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={16} />
+                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-white/55" size={16} />
                     <input
                       type="email"
                       value={inviteForm.email}
@@ -238,7 +238,7 @@ export const AdminStaffManagement: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-widest text-white/40 mb-2">
+                  <label className="block text-[10px] font-bold uppercase tracking-widest text-white/60 mb-2">
                     Position
                   </label>
                   <select
@@ -276,7 +276,7 @@ export const AdminStaffManagement: React.FC = () => {
             </div>
 
             <div className="dark-card p-6 border-white/5">
-              <h4 className="text-xs font-bold uppercase tracking-widest text-white/40 mb-6">Recent Employee IDs</h4>
+              <h4 className="text-xs font-bold uppercase tracking-widest text-white/60 mb-6">Recent Employee IDs</h4>
               <div className="space-y-4">
                 {recentInvites.length > 0 ? recentInvites.map((invite) => (
                   <div key={invite.employeeId} className="rounded-2xl border border-white/5 bg-white/5 p-4">
@@ -286,7 +286,7 @@ export const AdminStaffManagement: React.FC = () => {
                           {invite.displayName || 'Unnamed Staff Invite'}
                         </p>
                         <p className="text-[10px] uppercase tracking-widest text-teal mt-2">{invite.employeeId}</p>
-                        <p className="text-[10px] uppercase tracking-widest text-white/40 mt-2">
+                        <p className="text-[10px] uppercase tracking-widest text-white/60 mt-2">
                           {invite.email || 'Any company email can claim this ID'}
                         </p>
                       </div>
@@ -303,9 +303,9 @@ export const AdminStaffManagement: React.FC = () => {
                       <span className={invite.claimed ? 'text-emerald-400' : 'text-amber-300'}>
                         {invite.claimed ? 'Claimed' : 'Waiting for Signup'}
                       </span>
-                      <span className="text-white/30">{invite.position || 'field-operator'}</span>
+                      <span className="text-white/55">{invite.position || 'field-operator'}</span>
                       {invite.claimedByEmail && (
-                        <span className="text-white/30">{invite.claimedByEmail}</span>
+                        <span className="text-white/55">{invite.claimedByEmail}</span>
                       )}
                     </div>
                   </div>
@@ -337,17 +337,17 @@ export const AdminStaffManagement: React.FC = () => {
                         <ShieldCheck size={14} className="text-teal" />
                       </div>
                       <p className="text-teal text-xs font-bold uppercase tracking-widest mb-3">{member.position || 'Field Specialist'}</p>
-                      <div className="flex flex-wrap items-center gap-6 text-[10px] text-white/40 uppercase tracking-widest font-bold">
+                      <div className="flex flex-wrap items-center gap-6 text-[10px] text-white/60 uppercase tracking-widest font-bold">
                         <span className="flex items-center gap-1"><BadgeCheck size={12} className="text-teal" /> {member.employeeId || 'No ID saved'}</span>
                         <span className="flex items-center gap-1"><Star size={12} className="fill-teal text-teal" /> {member.experience || '0'} yrs</span>
-                        <span className="flex items-center gap-1"><Clock size={12} className="text-teal/40" /> {getAssignedCount(member.uid)} assigned</span>
-                        <span className="flex items-center gap-1"><MapPin size={12} className="text-teal/40" /> {member.postcode || 'Manchester'}</span>
+                        <span className="flex items-center gap-1"><Clock size={12} className="text-teal/60" /> {getAssignedCount(member.uid)} assigned</span>
+                        <span className="flex items-center gap-1"><MapPin size={12} className="text-teal/60" /> {member.postcode || 'Manchester'}</span>
                       </div>
                     </div>
                   </div>
 
                   <div className="text-right">
-                    <p className="text-[10px] text-white/20 uppercase font-bold mb-1">Contact</p>
+                    <p className="text-[10px] text-white/55 uppercase font-bold mb-1">Contact</p>
                     <p className="text-[10px] uppercase tracking-widest text-white/60">{member.phoneNumber || 'No phone saved'}</p>
                   </div>
                 </motion.div>
@@ -359,16 +359,16 @@ export const AdminStaffManagement: React.FC = () => {
             </div>
 
             <div className="dark-card p-6 border-white/5 h-fit">
-              <h4 className="text-xs font-bold uppercase tracking-widest text-white/40 mb-6">Assignment Queue</h4>
+              <h4 className="text-xs font-bold uppercase tracking-widest text-white/60 mb-6">Assignment Queue</h4>
               <div className="space-y-4">
                 {manageableBookings.length > 0 ? manageableBookings.map((booking) => (
                   <div key={booking.id} className="rounded-2xl border border-white/5 bg-white/5 p-4 space-y-4">
                     <div>
                       <p className="text-xs font-bold uppercase tracking-widest text-white">{booking.customerName}</p>
-                      <p className="text-[10px] uppercase tracking-widest text-white/40 mt-1">{booking.serviceLabel}</p>
+                      <p className="text-[10px] uppercase tracking-widest text-white/60 mt-1">{booking.serviceLabel}</p>
                       <p className="text-[10px] uppercase tracking-widest text-teal mt-2">{formatSchedule(booking)}</p>
-                      <p className="text-[10px] uppercase tracking-widest text-white/35 mt-2">{getStatusLabel(booking.status)}</p>
-                      <p className="text-[10px] uppercase tracking-widest text-white/35 mt-2">{getAssignedStaffLabel(booking)}</p>
+                      <p className="text-[10px] uppercase tracking-widest text-white/55 mt-2">{getStatusLabel(booking.status)}</p>
+                      <p className="text-[10px] uppercase tracking-widest text-white/55 mt-2">{getAssignedStaffLabel(booking)}</p>
                     </div>
                     <select
                       className="input-field bg-white/5 border-white/10 text-white focus:border-teal"
@@ -403,7 +403,7 @@ export const AdminStaffManagement: React.FC = () => {
                           Cancel
                         </button>
                       ) : (
-                        <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-[10px] font-bold uppercase tracking-widest text-white/35">
+                        <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-[10px] font-bold uppercase tracking-widest text-white/55">
                           {booking.status === 'completed' ? 'Completed' : 'In progress'}
                         </div>
                       )}
@@ -417,7 +417,7 @@ export const AdminStaffManagement: React.FC = () => {
           </div>
 
           <div className="dark-card p-6 border-white/5">
-            <div className="flex items-center gap-3 text-white/30 text-[10px] uppercase tracking-widest font-bold">
+            <div className="flex items-center gap-3 text-white/55 text-[10px] uppercase tracking-widest font-bold">
               <CheckCircle2 size={14} className="text-teal" />
               Staff account flow: admin issues employee ID, staff creates account with employee ID plus company email, admin accounts stay manually provisioned in Firestore.
             </div>

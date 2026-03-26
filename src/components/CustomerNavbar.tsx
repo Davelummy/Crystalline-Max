@@ -37,9 +37,9 @@ export const CustomerNavbar: React.FC<CustomerNavbarProps> = ({ onNavigate, user
             <div className="flex items-center gap-4 pl-4 border-l border-charcoal/10">
               <div className="text-right">
                 <p className="text-[10px] text-charcoal font-bold uppercase tracking-widest">{user.displayName || 'Client'}</p>
-                <p className="text-[8px] text-teal uppercase tracking-widest">Premium Member</p>
+                <p className="text-[10px] text-teal uppercase tracking-widest">Premium Member</p>
               </div>
-              <button onClick={onLogout} className="text-charcoal/40 hover:text-red-500 transition-colors">
+              <button onClick={onLogout} className="text-charcoal/60 hover:text-red-500 transition-colors">
                 <LogOut size={18} />
               </button>
             </div>

@@ -371,7 +371,7 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ initialServiceId, onCo
                     </div>
                     <div className="text-left">
                       <span className="block font-bold uppercase tracking-wider">{item.label}</span>
-                      <span className="text-xs text-charcoal/40 uppercase tracking-widest">
+                      <span className="text-xs text-charcoal/60 uppercase tracking-widest">
                         Starting from £{item.basePrice}
                       </span>
                     </div>
@@ -415,8 +415,8 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ initialServiceId, onCo
               </div>
             ) : (
               <div className="text-center py-12">
-                <Sparkles className="mx-auto mb-4 text-teal/40" size={48} />
-                <p className="text-charcoal/40 uppercase tracking-widest text-xs mb-8">No specific add-ons for this service</p>
+                <Sparkles className="mx-auto mb-4 text-teal/60" size={48} />
+                <p className="text-charcoal/60 uppercase tracking-widest text-xs mb-8">No specific add-ons for this service</p>
                 <button onClick={nextStep} className="btn-primary w-full">CONTINUE TO LOCATION</button>
               </div>
             )}
@@ -533,7 +533,7 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ initialServiceId, onCo
                     >
                       <div className="text-left">
                         <span className="block font-bold uppercase tracking-wider">{item.label}</span>
-                        <span className="text-[10px] text-charcoal/40 uppercase tracking-widest">{item.window}</span>
+                        <span className="text-[10px] text-charcoal/60 uppercase tracking-widest">{item.window}</span>
                       </div>
                       <Clock size={16} className="text-teal" />
                     </button>
@@ -593,7 +593,7 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ initialServiceId, onCo
               </div>
               {selection.addons.length > 0 && (
                 <div className="space-y-2">
-                  <span className="text-[10px] text-charcoal/40 uppercase tracking-widest">Add-ons</span>
+                  <span className="text-[10px] text-charcoal/60 uppercase tracking-widest">Add-ons</span>
                   {selection.addons.map((addonId) => (
                     <div key={addonId} className="flex justify-between text-[10px]">
                       <span className="text-charcoal/60 uppercase tracking-widest">
@@ -649,7 +649,7 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ initialServiceId, onCo
               >
                 {currentStep > step.id ? <Check size={14} /> : step.id}
               </div>
-              <span className="text-[9px] font-bold uppercase tracking-widest text-charcoal/40">{step.title}</span>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-charcoal/60">{step.title}</span>
             </div>
           ))}
         </div>
@@ -670,7 +670,7 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ initialServiceId, onCo
         {currentStep > 1 && (
           <button
             onClick={prevStep}
-            className="mt-12 text-[10px] font-bold uppercase tracking-widest text-charcoal/40 hover:text-charcoal transition-colors flex items-center gap-2"
+            className="mt-12 text-[10px] font-bold uppercase tracking-widest text-charcoal/60 hover:text-charcoal transition-colors flex items-center gap-2"
           >
             <span>←</span> Back to Previous Step
           </button>

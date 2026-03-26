@@ -117,7 +117,7 @@ export const AdminSettings: React.FC = () => {
         <header className="mb-12">
           <h2 className="mb-4 text-xs tracking-[0.4em] text-teal uppercase">Configuration</h2>
           <h3 className="text-4xl text-white font-display uppercase">System Settings</h3>
-          <p className="mt-2 text-xs font-bold uppercase tracking-widest text-white/40">
+          <p className="mt-2 text-xs font-bold uppercase tracking-widest text-white/60">
             General values live in `settings/general`. Availability and capacity live in `settings/availability`.
           </p>
         </header>
@@ -133,7 +133,7 @@ export const AdminSettings: React.FC = () => {
               <div className="space-y-8">
                 <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-bold uppercase tracking-widest text-white/40">Business Name</label>
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-white/60">Business Name</label>
                     <input
                       type="text"
                       value={settings.businessName}
@@ -142,7 +142,7 @@ export const AdminSettings: React.FC = () => {
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-bold uppercase tracking-widest text-white/40">Support Email</label>
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-white/60">Support Email</label>
                     <input
                       type="email"
                       value={settings.supportEmail}
@@ -154,7 +154,7 @@ export const AdminSettings: React.FC = () => {
 
                 <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-bold uppercase tracking-widest text-white/40">Support Phone</label>
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-white/60">Support Phone</label>
                     <input
                       type="text"
                       value={settings.supportPhone}
@@ -163,7 +163,7 @@ export const AdminSettings: React.FC = () => {
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-bold uppercase tracking-widest text-white/40">Service Region</label>
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-white/60">Service Region</label>
                     <input
                       type="text"
                       value={settings.serviceRegion}
@@ -174,7 +174,7 @@ export const AdminSettings: React.FC = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-white/40">Business Address</label>
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-white/60">Business Address</label>
                   <textarea
                     value={settings.businessAddress}
                     onChange={(event) => setSettings((prev) => ({ ...prev, businessAddress: event.target.value }))}
@@ -209,7 +209,7 @@ export const AdminSettings: React.FC = () => {
                     >
                       <div>
                         <p className="text-xs font-bold uppercase tracking-widest text-white">{item.label}</p>
-                        <p className="mt-1 text-[8px] font-bold uppercase text-white/20">{item.description}</p>
+                        <p className="mt-1 text-[10px] font-bold uppercase text-white/55">{item.description}</p>
                       </div>
                       <div className={cn('relative h-5 w-10 rounded-full transition-colors', settings[item.key] ? 'bg-teal' : 'bg-white/10')}>
                         <div className={cn('absolute top-1 h-3 w-3 rounded-full transition-all', settings[item.key] ? 'right-1 bg-charcoal' : 'left-1 bg-white/40')} />
@@ -228,7 +228,7 @@ export const AdminSettings: React.FC = () => {
 
               <div className="space-y-8">
                 <div className="space-y-2">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-white/40">Max Bookings Per Day</label>
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-white/60">Max Bookings Per Day</label>
                   <input
                     type="number"
                     min={1}
@@ -242,7 +242,7 @@ export const AdminSettings: React.FC = () => {
                 </div>
 
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-white/40">Available Detailing Times</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-white/60">Available Detailing Times</p>
                   <div className="mt-4 flex flex-wrap gap-3">
                     {DETAILING_TIME_OPTIONS.map((time) => {
                       const selected = availability.availableDetailingTimes.includes(time);
@@ -266,7 +266,7 @@ export const AdminSettings: React.FC = () => {
                 </div>
 
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-white/40">Available Residential / Commercial Windows</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-white/60">Available Residential / Commercial Windows</p>
                   <div className="mt-4 grid gap-3 md:grid-cols-3">
                     {TIME_WINDOW_OPTIONS.map((option) => {
                       const selected = availability.availableTimeWindows.includes(option.id);
@@ -285,7 +285,7 @@ export const AdminSettings: React.FC = () => {
                           <p className={cn('text-xs font-bold uppercase tracking-widest', selected ? 'text-teal' : 'text-white')}>
                             {option.label}
                           </p>
-                          <p className="mt-2 text-[10px] font-bold uppercase tracking-widest text-white/35">
+                          <p className="mt-2 text-[10px] font-bold uppercase tracking-widest text-white/55">
                             {option.window}
                           </p>
                         </button>
@@ -299,7 +299,7 @@ export const AdminSettings: React.FC = () => {
 
           <div className="space-y-8">
             <div className="dark-card border-white/5 p-8">
-              <p className="text-xs font-bold uppercase tracking-widest text-white/40">Blocked Dates</p>
+              <p className="text-xs font-bold uppercase tracking-widest text-white/60">Blocked Dates</p>
               <p className="mt-2 text-sm text-white/50">
                 Select dates that should be unavailable for new bookings. Customers will see these dates disabled in the booking calendar.
               </p>
@@ -315,22 +315,22 @@ export const AdminSettings: React.FC = () => {
             </div>
 
             <div className="dark-card border-white/5 p-6">
-              <p className="text-xs font-bold uppercase tracking-widest text-white/40">Current Availability Snapshot</p>
+              <p className="text-xs font-bold uppercase tracking-widest text-white/60">Current Availability Snapshot</p>
               <div className="mt-4 space-y-3 text-[10px] font-bold uppercase tracking-widest">
                 <div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 px-4 py-3">
-                  <span className="text-white/45">Blocked dates</span>
+                  <span className="text-white/60">Blocked dates</span>
                   <span className="text-teal">{availability.blockedDates.length}</span>
                 </div>
                 <div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 px-4 py-3">
-                  <span className="text-white/45">Detailing slots</span>
+                  <span className="text-white/60">Detailing slots</span>
                   <span className="text-teal">{availability.availableDetailingTimes.length}</span>
                 </div>
                 <div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 px-4 py-3">
-                  <span className="text-white/45">Time windows</span>
+                  <span className="text-white/60">Time windows</span>
                   <span className="text-teal">{availability.availableTimeWindows.length}</span>
                 </div>
                 <div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 px-4 py-3">
-                  <span className="text-white/45">Capacity per day</span>
+                  <span className="text-white/60">Capacity per day</span>
                   <span className="text-teal">{availability.maxBookingsPerDay}</span>
                 </div>
               </div>
@@ -356,7 +356,7 @@ export const AdminSettings: React.FC = () => {
                     ? 'text-red-300'
                     : statusTone === 'success'
                       ? 'text-emerald-300'
-                      : 'text-white/30',
+                      : 'text-white/55',
                 )}
               >
                 {status || 'General settings and availability are saved together.'}

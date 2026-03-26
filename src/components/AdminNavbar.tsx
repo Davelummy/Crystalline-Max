@@ -42,9 +42,9 @@ export const AdminNavbar: React.FC<AdminNavbarProps> = ({ user, onLogout }) => {
             <div className="flex items-center gap-4 pl-4 border-l border-white/10">
               <div className="text-right">
                 <p className="text-[10px] text-white font-bold uppercase tracking-widest">{user.displayName || 'Admin'}</p>
-                <p className="text-[8px] text-teal uppercase tracking-widest">System Administrator</p>
+                <p className="text-[10px] text-teal uppercase tracking-widest">System Administrator</p>
               </div>
-              <button onClick={onLogout} className="text-white/40 hover:text-red-500 transition-colors">
+              <button onClick={onLogout} className="text-white/60 hover:text-red-500 transition-colors">
                 <LogOut size={18} />
               </button>
             </div>

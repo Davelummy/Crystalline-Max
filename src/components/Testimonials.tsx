@@ -70,7 +70,7 @@ export const Testimonials: React.FC = () => {
               transition={{ delay: idx * 0.1 }}
               className="glass-card p-10 border-white/5 relative group hover:border-teal/30 transition-all duration-500"
             >
-              <Quote className="absolute top-8 right-8 text-teal/10 group-hover:text-teal/20 transition-colors" size={48} />
+              <Quote className="absolute top-8 right-8 text-teal opacity-10 transition-opacity group-hover:opacity-20" size={48} />
 
               <div className="flex gap-1 mb-8">
                 {[...Array(testimonial.rating)].map((_, index) => (

@@ -84,7 +84,7 @@ export const UserProfileEdit: React.FC<UserProfileEditProps> = ({ user, onBack }
       <div className="max-w-2xl mx-auto px-4">
         <button 
           onClick={onBack}
-          className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-charcoal/40 hover:text-teal transition-colors mb-8"
+          className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-charcoal/60 hover:text-teal transition-colors mb-8"
         >
           <ArrowLeft size={14} /> Back to Dashboard
         </button>
@@ -98,7 +98,7 @@ export const UserProfileEdit: React.FC<UserProfileEditProps> = ({ user, onBack }
           <form onSubmit={handleSubmit} className="space-y-8">
             <div className="grid md:grid-cols-2 gap-8">
               <div className="space-y-2">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-charcoal/40 flex items-center gap-2">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-charcoal/60 flex items-center gap-2">
                   <User size={12} className="text-teal" /> Full Name
                 </label>
                 <input 
@@ -112,7 +112,7 @@ export const UserProfileEdit: React.FC<UserProfileEditProps> = ({ user, onBack }
               </div>
 
               <div className="space-y-2">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-charcoal/40 flex items-center gap-2">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-charcoal/60 flex items-center gap-2">
                   <Phone size={12} className="text-teal" /> Phone Number
                 </label>
                 <input 
@@ -127,7 +127,7 @@ export const UserProfileEdit: React.FC<UserProfileEditProps> = ({ user, onBack }
             </div>
 
             <div className="space-y-2">
-              <label className="text-[10px] font-bold uppercase tracking-widest text-charcoal/40 flex items-center gap-2">
+              <label className="text-[10px] font-bold uppercase tracking-widest text-charcoal/60 flex items-center gap-2">
                 <MapPin size={12} className="text-teal" /> Street Address
               </label>
               <input 
@@ -142,7 +142,7 @@ export const UserProfileEdit: React.FC<UserProfileEditProps> = ({ user, onBack }
 
             <div className="grid md:grid-cols-2 gap-8">
               <div className="space-y-2">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-charcoal/40">City</label>
+                <label className="text-[10px] font-bold uppercase tracking-widest text-charcoal/60">City</label>
                 <input 
                   type="text"
                   value={formData.city}
@@ -154,7 +154,7 @@ export const UserProfileEdit: React.FC<UserProfileEditProps> = ({ user, onBack }
               </div>
 
               <div className="space-y-2">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-charcoal/40">Postcode</label>
+                <label className="text-[10px] font-bold uppercase tracking-widest text-charcoal/60">Postcode</label>
                 <input 
                   type="text"
                   value={formData.postcode}

@@ -32,7 +32,7 @@ export const StaffSchedule: React.FC<StaffScheduleProps> = ({ onNavigate }) => {
         <header className="mb-12">
           <h2 className="text-teal text-xs tracking-[0.4em] mb-4 uppercase">Your Schedule</h2>
           <h3 className="text-4xl text-white font-display uppercase">Assigned Bookings</h3>
-          <p className="text-white/40 mt-2 uppercase tracking-widest text-xs font-bold">Pulled from live Firestore bookings</p>
+          <p className="text-white/60 mt-2 uppercase tracking-widest text-xs font-bold">Pulled from live Firestore bookings</p>
         </header>
 
         {loading ? (
@@ -59,11 +59,11 @@ export const StaffSchedule: React.FC<StaffScheduleProps> = ({ onNavigate }) => {
                           ? 'bg-teal/10 border-teal/20 text-teal'
                           : item.status === 'in_progress'
                             ? 'bg-teal border-teal text-charcoal'
-                            : 'bg-white/5 border-white/10 text-white/40',
+                            : 'bg-white/5 border-white/10 text-white/60',
                       )}
                     >
                       <CalendarIcon size={16} />
-                      <span className="text-[8px] uppercase tracking-widest font-bold mt-1">{item.date}</span>
+                      <span className="text-[10px] uppercase tracking-widest font-bold mt-1">{item.date}</span>
                     </div>
 
                     <div>
@@ -72,13 +72,13 @@ export const StaffSchedule: React.FC<StaffScheduleProps> = ({ onNavigate }) => {
                         {item.status === 'completed' && <CheckCircle2 size={14} className="text-teal" />}
                       </div>
                       <p className="text-teal text-xs font-bold uppercase tracking-widest mb-3">{item.serviceLabel}</p>
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-[10px] text-white/40 uppercase tracking-widest font-bold">
-                        <span className="flex items-center gap-1"><MapPin size={12} className="text-teal/40" /> {item.postcode}</span>
-                        <span className="flex items-center gap-1"><Clock size={12} className="text-teal/40" /> {formatSchedule(item)}</span>
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-[10px] text-white/60 uppercase tracking-widest font-bold">
+                        <span className="flex items-center gap-1"><MapPin size={12} className="text-teal/60" /> {item.postcode}</span>
+                        <span className="flex items-center gap-1"><Clock size={12} className="text-teal/60" /> {formatSchedule(item)}</span>
                         <span>{getAssignedStaffLabel(item)}</span>
                       </div>
                       <div className="mt-4 max-w-sm">
-                        <div className="mb-2 flex items-center justify-between text-[9px] font-bold uppercase tracking-widest text-white/55">
+                        <div className="mb-2 flex items-center justify-between text-[10px] font-bold uppercase tracking-widest text-white/55">
                           <span>Job progress</span>
                           <span>{getTaskProgressPercent(item)}%</span>
                         </div>
@@ -92,19 +92,19 @@ export const StaffSchedule: React.FC<StaffScheduleProps> = ({ onNavigate }) => {
                   <div className="flex items-center gap-4">
                     <div
                       className={cn(
-                        'px-3 py-1 rounded-full text-[8px] font-bold uppercase tracking-[0.2em] border',
+                        'px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-[0.2em] border',
                         item.status === 'completed'
                           ? 'bg-teal/10 border-teal/20 text-teal'
                           : item.status === 'in_progress'
                             ? 'bg-teal/20 border-teal/40 text-teal animate-pulse'
-                            : 'bg-white/5 border-white/10 text-white/20',
+                            : 'bg-white/5 border-white/10 text-white/55',
                       )}
                     >
                       {getStatusLabel(item.status)}
                     </div>
                     <button
                       onClick={() => onNavigate('tasks')}
-                      className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-white/20 hover:bg-teal hover:text-charcoal transition-all"
+                      className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-white/55 hover:bg-teal hover:text-charcoal transition-all"
                     >
                       <ChevronRight size={20} />
                     </button>

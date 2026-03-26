@@ -228,12 +228,12 @@ export const EmployeeCheckIn: React.FC = () => {
         <div className={`absolute top-0 left-0 right-0 h-1 ${status === 'in' ? 'bg-teal' : 'bg-red-500'}`} />
         
         <h1 className="text-3xl mb-2 font-display uppercase tracking-wider">Staff Portal</h1>
-        <p className="text-white/40 text-xs uppercase tracking-[0.2em] mb-10">
+        <p className="text-white/60 text-xs uppercase tracking-[0.2em] mb-10">
           {auth.currentUser?.displayName || auth.currentUser?.email}
         </p>
 
         <div className="mb-12">
-          <div className={`w-24 h-24 rounded-full mx-auto flex items-center justify-center mb-6 border-2 ${status === 'in' ? 'border-teal text-teal' : 'border-white/10 text-white/20'}`}>
+          <div className={`w-24 h-24 rounded-full mx-auto flex items-center justify-center mb-6 border-2 ${status === 'in' ? 'border-teal text-teal' : 'border-white/10 text-white/55'}`}>
             <Clock size={40} />
           </div>
           <p className="text-sm uppercase tracking-widest text-white/60">
@@ -244,7 +244,7 @@ export const EmployeeCheckIn: React.FC = () => {
         </div>
 
         <div className="mb-8 rounded-2xl border border-white/10 bg-white/5 p-5 text-left">
-          <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-white/45">Active assignment</p>
+          <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-white/60">Active assignment</p>
           {assignment ? (
             <div className="mt-4 space-y-3">
               <div>
@@ -259,10 +259,10 @@ export const EmployeeCheckIn: React.FC = () => {
                 </p>
                 <p>Assigned team: {getAssignedStaffLabel(assignment)}</p>
               </div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-white/40">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-white/60">
                 On-site check-in and check-out are allowed only within {CHECKIN_RADIUS_METERS}m of this location.
               </p>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-white/40">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-white/60">
                 Check-out also requires every task item completed and the job marked complete.
               </p>
               {distanceFromSite != null && (
@@ -272,7 +272,7 @@ export const EmployeeCheckIn: React.FC = () => {
               )}
             </div>
           ) : (
-            <p className="mt-4 text-[10px] font-bold uppercase tracking-widest text-white/45">
+            <p className="mt-4 text-[10px] font-bold uppercase tracking-widest text-white/60">
               No active assignment found for today. Check-in stays disabled until an admin assigns a live job.
             </p>
           )}
@@ -288,7 +288,7 @@ export const EmployeeCheckIn: React.FC = () => {
                 : 'bg-white/5 border-white/10 hover:border-teal hover:bg-teal/10'
             }`}
           >
-            <LogIn className={status === 'in' ? 'text-teal/40' : 'text-teal'} />
+            <LogIn className={status === 'in' ? 'text-teal/60' : 'text-teal'} />
             <span className="text-[10px] font-bold tracking-widest uppercase">Check In</span>
           </button>
 
@@ -301,7 +301,7 @@ export const EmployeeCheckIn: React.FC = () => {
                 : 'bg-white/5 border-white/10 hover:border-red-500 hover:bg-red-500/10'
             }`}
           >
-            <LogOut className={status === 'out' ? 'text-red-500/40' : 'text-red-500'} />
+            <LogOut className={status === 'out' ? 'text-red-500/60' : 'text-red-500'} />
             <span className="text-[10px] font-bold tracking-widest uppercase">Check Out</span>
           </button>
         </div>
@@ -322,7 +322,7 @@ export const EmployeeCheckIn: React.FC = () => {
 
         {lastAction && (
           <div className="mt-10 pt-8 border-t border-white/5 text-left">
-            <p className="text-[10px] text-white/20 uppercase tracking-widest mb-4">Last Activity</p>
+            <p className="text-[10px] text-white/55 uppercase tracking-widest mb-4">Last Activity</p>
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-3">
                 <div className={`w-1.5 h-1.5 rounded-full ${lastAction.type === 'in' ? 'bg-teal' : 'bg-red-500'}`} />
@@ -330,12 +330,12 @@ export const EmployeeCheckIn: React.FC = () => {
                   Checked {lastAction.type}
                 </span>
               </div>
-              <span className="text-[10px] text-white/40 uppercase tracking-widest">
+              <span className="text-[10px] text-white/60 uppercase tracking-widest">
                 {lastAction.timestamp?.toDate ? lastAction.timestamp.toDate().toLocaleString() : 'Just now'}
               </span>
             </div>
             {lastAction.bookingAddress && (
-              <p className="mt-3 text-[10px] text-white/40 uppercase tracking-widest">
+              <p className="mt-3 text-[10px] text-white/60 uppercase tracking-widest">
                 Site: {lastAction.bookingAddress}
               </p>
             )}

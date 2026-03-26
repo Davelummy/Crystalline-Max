@@ -49,14 +49,14 @@ export const StaffOnboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
             <Briefcase size={32} />
           </div>
           <h1 className="text-2xl font-display uppercase tracking-wider text-white">Staff Onboarding</h1>
-          <p className="text-white/40 text-[10px] uppercase tracking-widest mt-2">Join the Crystalline Max precision team</p>
+          <p className="text-white/60 text-[10px] uppercase tracking-widest mt-2">Join the Crystalline Max precision team</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label className="block text-[10px] font-bold uppercase tracking-widest text-white/40 mb-2">Contact Phone</label>
+            <label className="block text-[10px] font-bold uppercase tracking-widest text-white/60 mb-2">Contact Phone</label>
             <div className="relative">
-              <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={16} />
+              <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-white/55" size={16} />
               <input 
                 required
                 type="tel"
@@ -69,7 +69,7 @@ export const StaffOnboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
           </div>
 
           <div>
-            <label className="block text-[10px] font-bold uppercase tracking-widest text-white/40 mb-2">Specialization</label>
+            <label className="block text-[10px] font-bold uppercase tracking-widest text-white/60 mb-2">Specialization</label>
             <select 
               className="input-field bg-white/5 border-white/10 text-white focus:border-teal"
               value={formData.position}
@@ -82,7 +82,7 @@ export const StaffOnboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
           </div>
 
           <div>
-            <label className="block text-[10px] font-bold uppercase tracking-widest text-white/40 mb-2">Experience (Years)</label>
+            <label className="block text-[10px] font-bold uppercase tracking-widest text-white/60 mb-2">Experience (Years)</label>
             <input 
               required
               type="number"
@@ -98,9 +98,9 @@ export const StaffOnboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
           </button>
         </form>
 
-        <div className="mt-8 pt-8 border-t border-white/5 flex items-center gap-3 text-white/20">
+        <div className="mt-8 pt-8 border-t border-white/5 flex items-center gap-3 text-white/55">
           <ShieldCheck size={14} />
-          <p className="text-[8px] uppercase tracking-widest">Secure internal staff portal access</p>
+          <p className="text-[10px] uppercase tracking-widest">Secure internal staff portal access</p>
         </div>
       </motion.div>
     </div>
