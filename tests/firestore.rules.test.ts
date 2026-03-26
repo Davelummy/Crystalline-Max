@@ -128,7 +128,7 @@ describe('Firestore rules', () => {
       await setDoc(doc(context.firestore(), 'employeeInvites/CMX-ABC123'), {
         employeeId: 'CMX-ABC123',
         displayName: 'Amina Yusuf',
-        email: 'amina@crystallinemax.co.uk',
+        email: 'amina@ctmds.co.uk',
         position: 'field-operator',
         claimed: false,
         createdAt: '2026-03-25T00:00:00.000Z',
@@ -136,12 +136,12 @@ describe('Firestore rules', () => {
       });
     });
 
-    const employeeDb = testEnv.authenticatedContext('employee-1', { email: 'amina@crystallinemax.co.uk' }).firestore();
+    const employeeDb = testEnv.authenticatedContext('employee-1', { email: 'amina@ctmds.co.uk' }).firestore();
     await assertSucceeds(updateDoc(doc(employeeDb, 'employeeInvites/CMX-ABC123'), {
       claimed: true,
       claimedAt: serverTimestamp(),
       claimedByUid: 'employee-1',
-      claimedByEmail: 'amina@crystallinemax.co.uk',
+      claimedByEmail: 'amina@ctmds.co.uk',
       updatedAt: serverTimestamp(),
     }));
   });
@@ -151,22 +151,22 @@ describe('Firestore rules', () => {
       await setDoc(doc(context.firestore(), 'employeeInvites/CMX-ABC123'), {
         employeeId: 'CMX-ABC123',
         displayName: 'Amina Yusuf',
-        email: 'amina@crystallinemax.co.uk',
+        email: 'amina@ctmds.co.uk',
         position: 'field-operator',
         claimed: true,
         claimedByUid: 'employee-0',
-        claimedByEmail: 'amina@crystallinemax.co.uk',
+        claimedByEmail: 'amina@ctmds.co.uk',
         createdAt: '2026-03-25T00:00:00.000Z',
         updatedAt: '2026-03-25T00:00:00.000Z',
       });
     });
 
-    const employeeDb = testEnv.authenticatedContext('employee-1', { email: 'amina@crystallinemax.co.uk' }).firestore();
+    const employeeDb = testEnv.authenticatedContext('employee-1', { email: 'amina@ctmds.co.uk' }).firestore();
     await assertFails(updateDoc(doc(employeeDb, 'employeeInvites/CMX-ABC123'), {
       claimed: true,
       claimedAt: serverTimestamp(),
       claimedByUid: 'employee-1',
-      claimedByEmail: 'amina@crystallinemax.co.uk',
+      claimedByEmail: 'amina@ctmds.co.uk',
       updatedAt: serverTimestamp(),
     }));
   });
@@ -175,15 +175,15 @@ describe('Firestore rules', () => {
     await testEnv.withSecurityRulesDisabled(async (context) => {
       await setDoc(doc(context.firestore(), 'users/admin-1'), {
         uid: 'admin-1',
-        email: 'admin@crystallinemax.co.uk',
+        email: 'admin@ctmds.co.uk',
         role: 'admin',
       });
       await setDoc(doc(context.firestore(), 'settings/general'), {
-        businessName: 'Crystalline Max',
+        businessName: 'Crystalline Max Ltd',
       });
     });
 
-    const adminDb = testEnv.authenticatedContext('admin-1', { email: 'admin@crystallinemax.co.uk' }).firestore();
+    const adminDb = testEnv.authenticatedContext('admin-1', { email: 'admin@ctmds.co.uk' }).firestore();
     const snapshot = await assertSucceeds(getDoc(doc(adminDb, 'settings/general')));
     expect(snapshot.exists()).toBe(true);
   });
@@ -191,7 +191,7 @@ describe('Firestore rules', () => {
   it('allows public read access to settings/general only', async () => {
     await testEnv.withSecurityRulesDisabled(async (context) => {
       await setDoc(doc(context.firestore(), 'settings/general'), {
-        businessName: 'Crystalline Max',
+        businessName: 'Crystalline Max Ltd',
       });
       await setDoc(doc(context.firestore(), 'settings/availability'), {
         maxBookingsPerDay: 4,

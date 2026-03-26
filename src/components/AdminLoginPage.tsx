@@ -55,7 +55,7 @@ export const AdminLoginPage: React.FC<AdminLoginPageProps> = ({
               type="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
-              placeholder="admin@crystallinemax.co.uk"
+              placeholder="admin@ctmds.co.uk"
               className="input-field bg-white/5 border-white/10 text-white pl-12 focus:border-teal"
               autoCapitalize="none"
               autoCorrect="off"

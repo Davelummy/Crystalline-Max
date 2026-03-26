@@ -32,7 +32,7 @@ const slides = [
     beforeImage: homeBefore,
     tag: 'Sanitization',
     tagValue: 'Crystalline Standard',
-    location: 'Greater Manchester',
+    location: 'Salford & Stockport',
   },
   {
     id: 3,

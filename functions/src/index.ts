@@ -173,6 +173,8 @@ function getBookingNotificationInput(
   };
 }
 
+const NOTIFICATION_FROM = 'Crystalline Max Ltd <admin@ctmds.co.uk>';
+
 async function sendEmail(input: {
   apiKey: string;
   from: string;
@@ -518,7 +520,7 @@ export const onBookingUpdated = onDocumentUpdated(
         if (staffEmail) {
           await sendEmail({
             apiKey: resendKey,
-            from: 'Crystalline Max Ops <ops@crystallinemax.co.uk>',
+            from: NOTIFICATION_FROM,
             to: staffEmail,
             subject: `New job assigned: ${bookingInput.serviceLabel}`,
             html: getStaffAssignmentEmailHtml(bookingInput),
@@ -534,7 +536,7 @@ export const onBookingUpdated = onDocumentUpdated(
       if (customerEmail) {
         await sendEmail({
           apiKey: resendKey,
-          from: 'Crystalline Max Bookings <bookings@crystallinemax.co.uk>',
+          from: NOTIFICATION_FROM,
           to: customerEmail,
           subject: 'Your booking is confirmed',
           html: getCustomerConfirmationEmailHtml({
@@ -551,7 +553,7 @@ export const onBookingUpdated = onDocumentUpdated(
       if (customerEmail) {
         await sendEmail({
           apiKey: resendKey,
-          from: 'Crystalline Max Bookings <bookings@crystallinemax.co.uk>',
+          from: NOTIFICATION_FROM,
           to: customerEmail,
           subject: 'Your job is complete',
           html: getCustomerCompletionEmailHtml(bookingInput),
@@ -596,7 +598,7 @@ export const sendJobReminders = onSchedule(
 
         await sendEmail({
           apiKey: resendKey,
-          from: 'Crystalline Max Ops <ops@crystallinemax.co.uk>',
+          from: NOTIFICATION_FROM,
           to: staffEmail,
           subject: `Reminder: job tomorrow at ${getScheduleLabel(bookingInput)}`,
           html: getStaffReminderEmailHtml(bookingInput),

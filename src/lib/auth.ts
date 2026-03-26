@@ -10,7 +10,7 @@ import type { Portal } from '../types';
 
 const LOGIN_TARGET_KEY = 'crystalline-max-login-target';
 const LOGIN_RETURN_PATH_KEY = 'crystalline-max-login-return-path';
-export const COMPANY_EMAIL_DOMAIN = '@crystallinemax.co.uk';
+export const COMPANY_EMAIL_DOMAIN = '@ctmds.co.uk';
 
 function readLoginTargetStorage() {
   if (typeof window === 'undefined') return null;

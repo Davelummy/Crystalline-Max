@@ -1,17 +1,20 @@
 import React from 'react';
 import { LegalPageLayout } from './LegalPageLayout';
+import { useGeneralSettings } from '@/lib/generalSettings';
 
 interface PrivacyPageProps {
   onBack: () => void;
 }
 
 export const PrivacyPage: React.FC<PrivacyPageProps> = ({ onBack }) => {
+  const { settings } = useGeneralSettings();
+
   return (
     <LegalPageLayout title="Privacy Policy" lastUpdated="24 March 2026" onBack={onBack}>
       <section>
         <h2 className="mb-3 text-xs font-bold uppercase tracking-[0.25em] text-teal">Who This Policy Covers</h2>
         <p>
-          This privacy notice explains how Crystalline Max uses personal data collected through its website, booking platform, customer portal, staff portal, and admin operations tools. It applies to customer enquiries, account records, booking requests, verified service-location data, before and after job media, staff operational attendance records, and payment-related events handled through the platform.
+          This privacy notice explains how {settings.businessName} uses personal data collected through its website, booking platform, customer portal, staff portal, and admin operations tools. It applies to customer enquiries, account records, booking requests, verified service-location data, before and after job media, staff operational attendance records, and payment-related events handled through the platform.
         </p>
       </section>
 
@@ -42,7 +45,7 @@ export const PrivacyPage: React.FC<PrivacyPageProps> = ({ onBack }) => {
       <section>
         <h2 className="mb-3 text-xs font-bold uppercase tracking-[0.25em] text-teal">Our Lawful Bases</h2>
         <p>
-          Depending on the interaction, Crystalline Max relies on one or more of the following lawful bases under UK GDPR:
+          Depending on the interaction, {settings.businessName} relies on one or more of the following lawful bases under UK GDPR:
           contract performance for booked services, legitimate interests in running and securing the business, legal obligations where records must be retained, and consent where a particular communication or optional processing activity requires it.
         </p>
       </section>
@@ -50,21 +53,21 @@ export const PrivacyPage: React.FC<PrivacyPageProps> = ({ onBack }) => {
       <section>
         <h2 className="mb-3 text-xs font-bold uppercase tracking-[0.25em] text-teal">Processors And Service Providers</h2>
         <p>
-          The platform currently uses Firebase and related Google Cloud infrastructure for authentication, database, serverless functions, and storage. Payment processing is handled through Stripe. Email notifications are sent through Resend when configured. These providers act as processors or sub-processors where they process data on behalf of Crystalline Max for service delivery, infrastructure, communications, or payment handling.
+          The platform currently uses Firebase and related Google Cloud infrastructure for authentication, database, serverless functions, and storage. Payment processing is handled through Stripe. Email notifications are sent through Resend when configured. These providers act as processors or sub-processors where they process data on behalf of {settings.businessName} for service delivery, infrastructure, communications, or payment handling.
         </p>
       </section>
 
       <section>
         <h2 className="mb-3 text-xs font-bold uppercase tracking-[0.25em] text-teal">International Transfers</h2>
         <p>
-          Some service providers may process data outside the United Kingdom. Where that happens, Crystalline Max expects processing to take place under contractual or technical safeguards intended to meet UK GDPR standards for international data transfers.
+          Some service providers may process data outside the United Kingdom. Where that happens, {settings.businessName} expects processing to take place under contractual or technical safeguards intended to meet UK GDPR standards for international data transfers.
         </p>
       </section>
 
       <section>
         <h2 className="mb-3 text-xs font-bold uppercase tracking-[0.25em] text-teal">Retention</h2>
         <p>
-          Booking records, service photos, account records, check-in logs, and related operational data are retained for as long as reasonably necessary to deliver services, maintain customer history, handle complaints or disputes, meet tax/accounting needs, and defend legal claims. The current draft operational baseline is:
+          Booking records, service photos, account records, check-in logs, and related operational data are retained for as long as reasonably necessary to deliver services, maintain customer history, handle complaints or disputes, meet tax/accounting needs, and defend legal claims. The retention baseline is:
         </p>
         <ul className="list-disc space-y-2 pl-5">
           <li>Active account and booking records: retained while the customer relationship remains live and for a reasonable audit period afterwards.</li>
@@ -76,7 +79,7 @@ export const PrivacyPage: React.FC<PrivacyPageProps> = ({ onBack }) => {
       <section>
         <h2 className="mb-3 text-xs font-bold uppercase tracking-[0.25em] text-teal">Your Rights Under UK GDPR</h2>
         <p>
-          Subject to applicable law, you may request access to your personal data, correction of inaccurate data, deletion, restriction, objection, and portability. You may also complain to the UK Information Commissioner&apos;s Office if you believe your data has been handled unlawfully. Crystalline Max may ask for identity verification before acting on a request.
+          Subject to applicable law, you may request access to your personal data, correction of inaccurate data, deletion, restriction, objection, and portability. You may also complain to the UK Information Commissioner&apos;s Office if you believe your data has been handled unlawfully. {settings.businessName} may ask for identity verification before acting on a request.
         </p>
       </section>
 
@@ -90,14 +93,14 @@ export const PrivacyPage: React.FC<PrivacyPageProps> = ({ onBack }) => {
       <section>
         <h2 className="mb-3 text-xs font-bold uppercase tracking-[0.25em] text-teal">Security</h2>
         <p>
-          Crystalline Max uses access controls, role-based portal separation, managed cloud infrastructure, and verification checks such as location validation and authenticated media access. No internet service can be guaranteed completely secure, so users should also keep their own credentials protected.
+          {settings.businessName} uses access controls, role-based portal separation, managed cloud infrastructure, and verification checks such as location validation and authenticated media access. No internet service can be guaranteed completely secure, so users should also keep their own credentials protected.
         </p>
       </section>
 
       <section>
         <h2 className="mb-3 text-xs font-bold uppercase tracking-[0.25em] text-teal">Contact And Complaints</h2>
         <p>
-          Privacy requests and complaints should be sent to <span className="font-bold text-white">privacy@crystallinemax.co.uk</span>. This contact route is included as draft operational policy content pending final business confirmation. If you are not satisfied with the response, you may complain to the UK Information Commissioner&apos;s Office.
+          Privacy requests and complaints should be sent to <span className="font-bold text-white">{settings.supportEmail}</span>. If you are not satisfied with the response, you may complain to the UK Information Commissioner&apos;s Office.
         </p>
       </section>
     </LegalPageLayout>

@@ -73,7 +73,7 @@ Booking is now a real Firestore-backed workflow rather than a fake success flow.
 ### Staff Account Creation Flow
 
 - Admin issues an employee ID from Staff Management
-- Employee ID may optionally be reserved to a specific `@crystallinemax.co.uk` email
+- Employee ID may optionally be reserved to a specific `@ctmds.co.uk` email
 - New staff create their account from the dedicated signup page
 - Staff must use company email and password
 - Firestore user record is created with `role: "employee"` only when the invite is valid
@@ -165,7 +165,7 @@ Roadmap corrections already accepted before implementation:
 
 - employee-only access for `/staff/*`
 - reminder scheduling in `Europe/London`
-- draft legal pages marked for review
+- UK-oriented legal pages now use the live business identity and no longer carry draft markers
 - zero build errors as the baseline acceptance target
 - booking metric semantics to be revisited before server-trigger rollout
 - multi-employee job assignment is now added as a dedicated later phase because the current booking model is still single-assignee
@@ -338,7 +338,7 @@ Roadmap corrections already accepted before implementation:
 - Responsive layout improved for laptop and mobile portal flows
 - Text contrast adjusted where readability was poor
 - Broken or unavailable imagery was replaced with bundled, niche-appropriate assets without replacing the site with placeholder blocks
-- Public footer contact details now use temporary Manchester placeholder business data pending final real-world replacement before launch
+- Public footer contact details now use the live business identity from `settings/general`
 
 ## Current Firebase Project
 
@@ -357,14 +357,14 @@ Local Firestore and Storage emulator use also requires Java/OpenJDK on the machi
 ### Staff
 
 - Provider: Firebase email/password
-- Email domain: `@crystallinemax.co.uk`
+- Email domain: `@ctmds.co.uk`
 - Firestore role: `employee`
 - Signup requirement: valid employee ID
 
 ### Admin
 
 - Provider: Firebase email/password
-- Email domain: `@crystallinemax.co.uk`
+- Email domain: `@ctmds.co.uk`
 - Firestore role: `admin`
 - Provisioning: manual only
 

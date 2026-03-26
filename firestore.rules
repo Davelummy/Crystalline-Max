@@ -30,7 +30,7 @@ service cloud.firestore {
     function isCompanyEmail() {
       return isAuthenticated() &&
              request.auth.token.email is string &&
-             request.auth.token.email.matches('.*@crystallinemax\\.co\\.uk$');
+             request.auth.token.email.matches('.*@ctmds\\.co\\.uk$');
     }
 
     function isAuthEmail(email) {

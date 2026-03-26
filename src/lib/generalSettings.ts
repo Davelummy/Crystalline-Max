@@ -6,6 +6,7 @@ export interface GeneralSettings {
   businessName: string;
   supportEmail: string;
   supportPhone: string;
+  businessAddress: string;
   serviceRegion: string;
   maintenanceMode: boolean;
   requireTwoFactor: boolean;
@@ -13,19 +14,35 @@ export interface GeneralSettings {
 }
 
 export const DEFAULT_GENERAL_SETTINGS: GeneralSettings = {
-  businessName: 'Crystalline Max',
-  supportEmail: 'support@crystallinemax.co.uk',
-  supportPhone: '+44 161 524 7812',
-  serviceRegion: 'Greater Manchester',
+  businessName: 'Crystalline Max Ltd',
+  supportEmail: 'admin@ctmds.co.uk',
+  supportPhone: '07425 241192',
+  businessAddress: 'International House\n61 Mosley Street\nManchester\nM2 3HZ',
+  serviceRegion: 'Manchester, Salford, Stockport and close environs',
   maintenanceMode: false,
   requireTwoFactor: true,
   publicRegistration: true,
 };
 
+function migrateLegacyGeneralSettings(value?: Partial<GeneralSettings> | null): Partial<GeneralSettings> {
+  if (!value) {
+    return {};
+  }
+
+  return {
+    ...value,
+    businessName: value.businessName === 'Crystalline Max' ? DEFAULT_GENERAL_SETTINGS.businessName : value.businessName,
+    supportEmail: value.supportEmail === 'support@crystallinemax.co.uk' ? DEFAULT_GENERAL_SETTINGS.supportEmail : value.supportEmail,
+    supportPhone: value.supportPhone === '+44 161 524 7812' ? DEFAULT_GENERAL_SETTINGS.supportPhone : value.supportPhone,
+    businessAddress: value.businessAddress || DEFAULT_GENERAL_SETTINGS.businessAddress,
+    serviceRegion: value.serviceRegion === 'Greater Manchester' ? DEFAULT_GENERAL_SETTINGS.serviceRegion : value.serviceRegion,
+  };
+}
+
 export function normalizeGeneralSettings(value?: Partial<GeneralSettings> | null): GeneralSettings {
   return {
     ...DEFAULT_GENERAL_SETTINGS,
-    ...(value || {}),
+    ...migrateLegacyGeneralSettings(value),
   };
 }
 

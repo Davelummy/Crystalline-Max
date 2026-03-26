@@ -25,7 +25,7 @@ These corrections are applied to the roadmap before implementation starts:
 - Build acceptance uses zero errors as the baseline. Existing bundle-size warnings are not treated as a blocker unless a phase explicitly includes code-splitting work.
 - Staff routes are employee-only. Admin observes staff operations from admin routes rather than entering staff flows directly.
 - Reminder scheduling uses `Europe/London`, not UTC.
-- Legal pages will be written as UK-oriented draft content aligned to the product, and explicitly marked as pending final business/legal review.
+- Legal pages should stay aligned to the live product behavior and business identity, without draft-only publishing markers.
 - `bookingCount` should not remain a vague loyalty proxy. The preferred future metric is `completedBookingCount`, or another explicitly named metric with stable business meaning.
 - `react-router-dom` and `stripe` provide their own types. Avoid adding redundant `@types` packages unless a package clearly requires them.
 
@@ -304,8 +304,8 @@ No reversal path is planned from `paid` or `not_required`.
 
 ### Phase 10 — Legal And Policy Drafting
 
-- UK-oriented draft privacy and terms pages
-- clearly marked as draft pending final review
+- UK-oriented privacy and terms pages
+- business identity and legal contact details aligned to the live settings profile
 
 ### Phase 11 — Multi-Employee Job Assignment
 

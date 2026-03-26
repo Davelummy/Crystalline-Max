@@ -26,7 +26,7 @@ afterEach(() => {
 
 describe('isCompanyEmail', () => {
   it(`accepts ${COMPANY_EMAIL_DOMAIN}`, () => {
-    expect(isCompanyEmail('staff@crystallinemax.co.uk')).toBe(true);
+    expect(isCompanyEmail('staff@ctmds.co.uk')).toBe(true);
   });
 
   it('rejects non-company emails', () => {
@@ -34,7 +34,7 @@ describe('isCompanyEmail', () => {
   });
 
   it('is case-insensitive', () => {
-    expect(isCompanyEmail('STAFF@CRYSTALLINEMAX.CO.UK')).toBe(true);
+    expect(isCompanyEmail('STAFF@CTMDS.CO.UK')).toBe(true);
   });
 });
 

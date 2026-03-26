@@ -125,7 +125,7 @@ Current examples:
 
 - privacy content mentions verified map locations, photo evidence, check-in data, Firebase, Stripe, and Resend
 - terms content covers booking confirmation, cancellation, payment handling, photo evidence, and England and Wales jurisdiction
-- both pages remain explicitly marked as draft pending final business/legal review until real-world business identity details are confirmed
+- both pages must stay aligned to real product behavior and live business identity
 
 ### 10. Backward-Compatible Data Evolution
 
@@ -278,7 +278,7 @@ The UI follows a high-contrast premium operations look:
 - restrained accent use
 - uppercase labeling for system/status language
 
-Supporting business details shown in the interface may use temporary placeholder operational data during development, but production content must be replaced with final verified business information before launch.
+Supporting business details shown in the interface should come from the verified live business profile rather than ad hoc placeholder copy.
 
 ### Contrast And Readability
 

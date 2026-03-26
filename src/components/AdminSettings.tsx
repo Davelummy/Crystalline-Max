@@ -173,6 +173,16 @@ export const AdminSettings: React.FC = () => {
                   </div>
                 </div>
 
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-white/40">Business Address</label>
+                  <textarea
+                    value={settings.businessAddress}
+                    onChange={(event) => setSettings((prev) => ({ ...prev, businessAddress: event.target.value }))}
+                    rows={4}
+                    className="input-field min-h-32 resize-y bg-white/5 border-white/10 text-white focus:border-teal"
+                  />
+                </div>
+
                 <div className="space-y-3">
                   {[
                     {

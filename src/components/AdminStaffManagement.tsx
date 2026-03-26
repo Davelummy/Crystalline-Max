@@ -231,7 +231,7 @@ export const AdminStaffManagement: React.FC = () => {
                       type="email"
                       value={inviteForm.email}
                       onChange={(event) => setInviteForm((current) => ({ ...current, email: event.target.value }))}
-                      placeholder="optional@crystallinemax.co.uk"
+                      placeholder="optional@ctmds.co.uk"
                       className="input-field bg-white/5 border-white/10 text-white pl-12 focus:border-teal"
                     />
                   </div>

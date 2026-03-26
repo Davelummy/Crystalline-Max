@@ -19,7 +19,7 @@ Current migration status:
 - Phase 7 notifications is implemented and deployed with booking update email triggers and a Europe/London scheduled reminder job
 - Phase 8 admin capability completion is implemented with booking confirm/cancel flows, reassignment controls, and richer admin booking detail actions
 - Phase 9 availability and capacity management is implemented with admin-managed blocked dates, booking-capacity controls, and a disabled-date customer calendar
-- Phase 10 legal and policy drafting is implemented with UK-oriented draft privacy and terms pages aligned to the current platform behavior
+- Phase 10 legal and policy drafting is implemented with UK-oriented privacy and terms pages aligned to the current platform behavior
 - Phase 11 multi-employee job assignment is implemented with team-assignment booking fields, staff-side backward-compatible reads, and admin team assignment controls
 - Phase 12 testing and local verification is implemented in-repo with Vitest unit coverage, Firestore rules tests, Playwright smoke scaffolding, and one-command local verify scripts
 - Phase 13 pre-launch hardening is underway with Firebase App Check bootstrap hooks, bounded photo-upload validation, and launch-only environment placeholders for reCAPTCHA and Sentry
@@ -41,7 +41,7 @@ Key approved constraints from that brief:
 
 - `/staff/*` routes are employee-only
 - reminder scheduling targets `Europe/London`
-- legal pages are drafted for UK compliance but marked pending final review
+- legal pages are aligned to current UK-facing platform behavior and now carry the live business identity
 - build completion is measured against zero errors, not against existing bundle warnings
 - the roadmap now includes a dedicated multi-employee job-assignment phase because the live booking model is still single-assignee
 
@@ -52,7 +52,7 @@ Key approved constraints from that brief:
 - Service-focused landing experience
 - Portal selection for customer and staff
 - Dedicated `/admin` access path for admin
-- Footer and static contact details currently use Manchester placeholder business details until final publishing data is supplied
+- Footer and legal contact details now use the live business identity stored in `settings/general`
 - Public footer contact details and service-region copy now read from `settings/general`, so admin changes affect the live public surface
 
 ### Customer Experience
@@ -127,14 +127,14 @@ Primary collections:
 ### Staff
 
 - Firebase email/password
-- Must use `@crystallinemax.co.uk`
+- Must use `@ctmds.co.uk`
 - Firestore role: `employee`
 - First account creation requires a valid employee invite
 
 ### Admin
 
 - Firebase email/password
-- Must use `@crystallinemax.co.uk`
+- Must use `@ctmds.co.uk`
 - Firestore role: `admin`
 - Must be provisioned manually before login
 
