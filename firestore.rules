@@ -23,6 +23,10 @@ service cloud.firestore {
       return actorRole() == 'admin';
     }
 
+    function isStaff() {
+      return actorRole() == 'employee';
+    }
+
     function isEmployee() {
       return actorRole() == 'employee' || actorRole() == 'admin';
     }
@@ -70,6 +74,9 @@ service cloud.firestore {
         'position',
         'experience',
         'onboarded',
+        'bio',
+        'salaryAllocation',
+        'salaryCurrency',
         'createdAt',
         'updatedAt'
       ];
@@ -89,6 +96,9 @@ service cloud.firestore {
              (!('position' in data) || data.position is string) &&
              (!('experience' in data) || data.experience is string) &&
              (!('onboarded' in data) || data.onboarded is bool) &&
+             (!('bio' in data) || data.bio == null || data.bio is string) &&
+             (!('salaryAllocation' in data) || data.salaryAllocation == null || data.salaryAllocation is number) &&
+             (!('salaryCurrency' in data) || data.salaryCurrency is string) &&
              (data.createdAt is timestamp || data.createdAt is string) &&
              (!('updatedAt' in data) || data.updatedAt is timestamp || data.updatedAt is string) &&
              (!('bookingCount' in data) || data.bookingCount is int);
@@ -139,6 +149,25 @@ service cloud.firestore {
                'updatedAt'
              ]) &&
              isValidInvite(request.resource.data, employeeId);
+    }
+
+    function hasValidPhotos(data) {
+      return (!('beforePhotoUrl' in data) || data.beforePhotoUrl == null || data.beforePhotoUrl is string) &&
+             (!('beforePhotoPath' in data) || data.beforePhotoPath == null || data.beforePhotoPath is string) &&
+             (!('afterPhotoUrl' in data) || data.afterPhotoUrl == null || data.afterPhotoUrl is string) &&
+             (!('afterPhotoPath' in data) || data.afterPhotoPath == null || data.afterPhotoPath is string) &&
+             (!('beforePhotos' in data) || data.beforePhotos is list) &&
+             (!('afterPhotos' in data) || data.afterPhotos is list);
+    }
+
+    function hasValidAssignment(data) {
+      return (!('assignedStaffId' in data) || data.assignedStaffId == null || data.assignedStaffId is string) &&
+             (!('assignedStaffName' in data) || data.assignedStaffName == null || data.assignedStaffName is string) &&
+             (!('assignedStaffIds' in data) || data.assignedStaffIds is list) &&
+             (!('assignedStaffNames' in data) || data.assignedStaffNames is list) &&
+             (!('assignedAt' in data) || data.assignedAt == null || data.assignedAt is timestamp || data.assignedAt is string) &&
+             (!('staffAcknowledgedAt' in data) || data.staffAcknowledgedAt == null || data.staffAcknowledgedAt is timestamp || data.staffAcknowledgedAt is string) &&
+             (!('staffAcknowledgedByIds' in data) || data.staffAcknowledgedByIds is list);
     }
 
     function isValidBooking(data) {
@@ -222,23 +251,12 @@ service cloud.firestore {
              (!('completedTaskIds' in data) || data.completedTaskIds is list) &&
              (!('taskProgressPercent' in data) || data.taskProgressPercent is number) &&
              (data.createdAt is timestamp || data.createdAt is string) &&
-             (!('assignedStaffId' in data) || data.assignedStaffId == null || data.assignedStaffId is string) &&
-             (!('assignedStaffName' in data) || data.assignedStaffName == null || data.assignedStaffName is string) &&
-             (!('assignedStaffIds' in data) || data.assignedStaffIds is list) &&
-             (!('assignedStaffNames' in data) || data.assignedStaffNames is list) &&
-             (!('assignedAt' in data) || data.assignedAt == null || data.assignedAt is timestamp || data.assignedAt is string) &&
-             (!('staffAcknowledgedAt' in data) || data.staffAcknowledgedAt == null || data.staffAcknowledgedAt is timestamp || data.staffAcknowledgedAt is string) &&
-             (!('staffAcknowledgedByIds' in data) || data.staffAcknowledgedByIds is list) &&
              (!('startedAt' in data) || data.startedAt == null || data.startedAt is timestamp || data.startedAt is string) &&
              (!('completedAt' in data) || data.completedAt == null || data.completedAt is timestamp || data.completedAt is string) &&
              (!('lastProgressAt' in data) || data.lastProgressAt == null || data.lastProgressAt is timestamp || data.lastProgressAt is string) &&
-             (!('beforePhotoUrl' in data) || data.beforePhotoUrl == null || data.beforePhotoUrl is string) &&
-             (!('beforePhotoPath' in data) || data.beforePhotoPath == null || data.beforePhotoPath is string) &&
-             (!('afterPhotoUrl' in data) || data.afterPhotoUrl == null || data.afterPhotoUrl is string) &&
-             (!('afterPhotoPath' in data) || data.afterPhotoPath == null || data.afterPhotoPath is string) &&
-             (!('beforePhotos' in data) || data.beforePhotos is list) &&
-             (!('afterPhotos' in data) || data.afterPhotos is list) &&
-             (!('updatedAt' in data) || data.updatedAt is timestamp || data.updatedAt is string);
+             (!('updatedAt' in data) || data.updatedAt is timestamp || data.updatedAt is string) &&
+             hasValidPhotos(data) &&
+             hasValidAssignment(data);
     }
 
     function isValidCheckIn(data) {
@@ -268,6 +286,17 @@ service cloud.firestore {
                data.location.latitude is number &&
                data.location.longitude is number
              ));
+    }
+
+    function isAssignedStaff() {
+      return isStaff() && (
+        resource.data.assignedStaffId == request.auth.uid ||
+        (
+          'assignedStaffIds' in resource.data &&
+          resource.data.assignedStaffIds is list &&
+          request.auth.uid in resource.data.assignedStaffIds
+        )
+      );
     }
 
     match /users/{userId} {
@@ -315,8 +344,16 @@ service cloud.firestore {
     }
 
     match /bookings/{bookingId} {
-      allow read: if isAuthenticated() &&
-                  (resource.data.userId == request.auth.uid || isEmployee());
+      allow get: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid ||
+        isAdmin() ||
+        isAssignedStaff()
+      );
+      allow list: if isAuthenticated() && (
+        isAdmin() ||
+        resource.data.userId == request.auth.uid ||
+        isAssignedStaff()
+      );
       allow create: if isAuthenticated() &&
                     isValidBooking(request.resource.data) &&
                     request.resource.data.userId == request.auth.uid &&
@@ -334,22 +371,19 @@ service cloud.firestore {
         isAdmin() &&
         isValidBooking(request.resource.data)
       ) || (
-        isEmployee() &&
-        (
-          resource.data.assignedStaffId == request.auth.uid ||
-          (
-            'assignedStaffIds' in resource.data &&
-            resource.data.assignedStaffIds is list &&
-            request.auth.uid in resource.data.assignedStaffIds
-          )
-        ) &&
+        isAssignedStaff() &&
         isValidBooking(request.resource.data)
       );
     }
 
     match /checkins/{checkinId} {
       allow get: if isAdmin() || (isAuthenticated() && resource.data.employeeUid == request.auth.uid);
-      allow list: if isAdmin() || isEmployee();
+      allow list: if isAdmin() || (isStaff() && resource.data.employeeUid == request.auth.uid);
+    }
+
+    match /notificationLogs/{logId} {
+      allow read: if isAdmin();
+      allow write: if false;
     }
 
     match /settings/{settingId} {

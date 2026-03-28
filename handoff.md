@@ -15,7 +15,7 @@ The product is built around one shared operational truth: bookings live in Fires
 
 ### Public Surface
 
-- Brand-led landing page and service presentation
+- Brand-led landing page with service presentation, Trust Strip, How It Works process steps, and a rotating CTA Carousel
 - Portal selection for customer and staff access
 - Dedicated `/admin` entry path for admin access only
 - Responsive public navigation and portal routing
@@ -57,6 +57,9 @@ The product is built around one shared operational truth: bookings live in Fires
 - Admin booking detail with confirm, cancel, reassign, unassign, and offline payment override controls
 - Availability and capacity controls backed by `settings/availability`
 - General configuration in `settings/general` now drives public business/contact output instead of acting as dead config
+- Staff cards in Staff Management open a modal that routes to two dedicated subpages:
+  - `/admin/staff/:staffId/profile` — employment record, contact details, and payroll allocation editing
+  - `/admin/staff/:staffId/assignments` — active bookings, completed history, cancellations, and average task progress stats
 
 ## Core Business Flows
 
@@ -136,6 +139,7 @@ Main collections:
 - `employeeInvites`
 - `checkins`
 - `settings`
+- `notificationLogs` — admin-read only; written by Cloud Functions on email delivery failure
 
 ### Shared Domain Models
 
@@ -200,6 +204,9 @@ Roadmap corrections already accepted before implementation:
 - Phase 11 multi-employee job assignment is now implemented and verified
 - Phase 12 testing and local verification is now implemented in-repo with unit tests, Firestore rules tests, Playwright smoke scaffolding, and repo-local verify commands
 - Phase 13 pre-launch hardening is now partially implemented with App Check bootstrap hooks and bounded photo-upload validation, with remaining production-console tasks still pending
+- MVP landing page expansion is complete: TrustStrip, HowItWorks, and CTACarousel sections added to the public landing page
+- Staff Management deep-linking is complete: card modal routes to AdminStaffProfile and AdminStaffAssignments dedicated subpages
+- Firestore rules hardened: isStaff() helper, assignment-scoped booking reads, scoped checkins list, notificationLogs rule, reduced isValidBooking() expression depth
 - Admin navigation is now being hardened as route-native navigation rather than legacy callback-driven shell controls
 - `react-router-dom` is installed and live
 - [AuthContext.tsx](/Users/davidolumide/Crystalline-Max/src/context/AuthContext.tsx) provides shared auth/profile state
@@ -255,6 +262,12 @@ Roadmap corrections already accepted before implementation:
   - legacy photo compatibility
   - enriched check-in payloads
 - Rules have been deployed to the linked Firebase project
+- Added `isStaff()` helper (pure employee role, excludes admin) to enable assignment-scoped enforcement distinct from admin-level access
+- Replaced broad `allow read` on bookings with separate `allow get` and `allow list` rules that gate employee access to only the bookings they are assigned to, via `assignedStaffId` or `assignedStaffIds`
+- Fixed `checkins` list rule so employees can only enumerate their own attendance records, not all check-ins
+- Added `notificationLogs` collection rule: admin-read only, client write blocked
+- Refactored `isValidBooking()` by extracting photo-field checks into `hasValidPhotos()` and assignment-field checks into `hasValidAssignment()` to reduce expression depth and resolve emulator evaluation-limit denials
+- Added `bio`, `salaryAllocation`, and `salaryCurrency` to `isValidUser()` allowedFields to support the staff profile payroll form
 
 ### Data Integrity And Storage Hardening
 
@@ -342,6 +355,12 @@ Roadmap corrections already accepted before implementation:
 - Text contrast adjusted where readability was poor
 - Broken or unavailable imagery was replaced with bundled, niche-appropriate assets without replacing the site with placeholder blocks
 - Public footer contact details now use the live business identity from `settings/general`
+- Landing page expanded with three new sections:
+  - `TrustStrip` — credibility bar directly below the hero: 5-star rating, insurance, same-week availability, coverage area, satisfaction guarantee
+  - `HowItWorks` — four-step process overview (Book → Assign → Execute → Guarantee)
+  - `CTACarousel` — bottom-of-page rotating service spotlight with per-service book and estimate actions, replacing the static CTA block
+- Staff Management modal flow added: each staff card is now clickable and opens a modal with two navigation options — Employment Profile and Tasks & Assignments — each routing to a dedicated subpage
+- Admin routes added: `/admin/staff/:staffId/profile` (`AdminStaffProfile`) and `/admin/staff/:staffId/assignments` (`AdminStaffAssignments`)
 
 ## Current Firebase Project
 
@@ -396,6 +415,11 @@ Local Firestore and Storage emulator use also requires Java/OpenJDK on the machi
 - [src/components/StaffTasks.tsx](/Users/davidolumide/Crystalline-Max/src/components/StaffTasks.tsx)
 - [src/components/EmployeeCheckIn.tsx](/Users/davidolumide/Crystalline-Max/src/components/EmployeeCheckIn.tsx)
 - [src/components/AdminStaffManagement.tsx](/Users/davidolumide/Crystalline-Max/src/components/AdminStaffManagement.tsx)
+- [src/components/AdminStaffProfile.tsx](/Users/davidolumide/Crystalline-Max/src/components/AdminStaffProfile.tsx)
+- [src/components/AdminStaffAssignments.tsx](/Users/davidolumide/Crystalline-Max/src/components/AdminStaffAssignments.tsx)
+- [src/components/HowItWorks.tsx](/Users/davidolumide/Crystalline-Max/src/components/HowItWorks.tsx)
+- [src/components/TrustStrip.tsx](/Users/davidolumide/Crystalline-Max/src/components/TrustStrip.tsx)
+- [src/components/CTACarousel.tsx](/Users/davidolumide/Crystalline-Max/src/components/CTACarousel.tsx)
 
 ## Verification Status
 
