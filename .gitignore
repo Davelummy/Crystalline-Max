@@ -10,3 +10,6 @@ playwright-report/
 .env*
 !.env.example
 firebase-applet-config.json
+
+# Local Netlify folder
+.netlify
