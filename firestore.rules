@@ -108,6 +108,7 @@ service cloud.firestore {
              data.employeeId == employeeId &&
              data.displayName is string &&
              data.email is string &&
+             (data.email == '' || data.email.matches('.*@ctmds\\.co\\.uk$')) &&
              data.position is string &&
              data.claimed is bool &&
              (data.createdAt is timestamp || data.createdAt is string) &&
