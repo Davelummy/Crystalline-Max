@@ -56,6 +56,9 @@ export interface AppUserData {
   position?: string;
   experience?: string;
   onboarded?: boolean;
+  salaryAllocation?: number;
+  salaryCurrency?: string;
+  bio?: string;
   createdAt?: unknown;
   updatedAt?: unknown;
 }

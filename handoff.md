@@ -77,6 +77,8 @@ Booking is now a real Firestore-backed workflow rather than a fake success flow.
 - New staff create their account from the dedicated signup page
 - Staff must use company email and password
 - Firestore user record is created with `role: "employee"` only when the invite is valid
+- Staff Management now surfaces a dedicated biodata panel per employee showing salary allocation, onboarding state, and a live job-allocation history pulled from the latest bookings so payroll and scheduling stays auditable.
+- Salary allocation data is stored on each `users/{uid}` document (`salaryAllocation`, `salaryCurrency`, `bio`) and can be updated directly from this panel.
 
 ### Admin Access Flow
 

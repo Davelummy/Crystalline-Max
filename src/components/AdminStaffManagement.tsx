@@ -50,6 +50,11 @@ export const AdminStaffManagement: React.FC = () => {
   const [inviteStatus, setInviteStatus] = React.useState<string | null>(null);
   const [inviteError, setInviteError] = React.useState<string | null>(null);
   const [isCreatingInvite, setIsCreatingInvite] = React.useState(false);
+  const [selectedStaffId, setSelectedStaffId] = React.useState<string | null>(null);
+  const [salaryForm, setSalaryForm] = React.useState({ allocation: '', currency: 'GBP' });
+  const [salaryStatus, setSalaryStatus] = React.useState<string | null>(null);
+  const [salaryError, setSalaryError] = React.useState<string | null>(null);
+  const [isSavingSalary, setIsSavingSalary] = React.useState(false);
 
   React.useEffect(() => {
     const staffQuery = query(collection(db, 'users'), where('role', '==', 'employee'));
@@ -85,10 +90,61 @@ export const AdminStaffManagement: React.FC = () => {
     () => [...invites].sort((left, right) => left.employeeId.localeCompare(right.employeeId)).slice(0, 8),
     [invites],
   );
+  const selectedStaff = React.useMemo(() => {
+    if (!staff.length) {
+      return null;
+    }
+    if (selectedStaffId) {
+      const focused = staff.find((member) => member.uid === selectedStaffId);
+      if (focused) return focused;
+    }
+    return staff[0];
+  }, [staff, selectedStaffId]);
+
+  React.useEffect(() => {
+    if (!selectedStaffId && staff.length) {
+      setSelectedStaffId(staff[0].uid);
+    }
+  }, [staff, selectedStaffId]);
+
+  React.useEffect(() => {
+    if (!selectedStaff) {
+      setSalaryForm({ allocation: '', currency: 'GBP' });
+      return;
+    }
+
+    setSalaryForm({
+      allocation: selectedStaff.salaryAllocation?.toString() ?? '',
+      currency: selectedStaff.salaryCurrency || 'GBP',
+    });
+    setSalaryStatus(null);
+    setSalaryError(null);
+  }, [selectedStaff]);
 
   const manageableBookings = sortBookingsBySchedule(
     bookings.filter((booking) => booking.status !== 'cancelled'),
   );
+
+  const selectedStaffHistory = React.useMemo(() => {
+    if (!selectedStaff) {
+      return [];
+    }
+
+    const staffId = selectedStaff.uid;
+    const relevant = manageableBookings.filter((booking) => {
+      if (booking.assignedStaffId === staffId) {
+        return true;
+      }
+
+      if (booking.assignedStaffIds && booking.assignedStaffIds.includes(staffId)) {
+        return true;
+      }
+
+      return false;
+    });
+
+    return relevant.slice(-5).reverse();
+  }, [manageableBookings, selectedStaff]);
 
   const handleAssign = async (bookingId: string, staffMember: AppUserData | null) => {
     await updateDoc(doc(db, 'bookings', bookingId), {
@@ -122,6 +178,33 @@ export const AdminStaffManagement: React.FC = () => {
       staffAcknowledgedByIds: [],
       updatedAt: serverTimestamp(),
     });
+  };
+
+  const handleSalarySave = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!selectedStaff) {
+      setSalaryError('Select a staff member before saving payroll info.');
+      return;
+    }
+
+    const allocationValue = parseFloat(salaryForm.allocation);
+    setIsSavingSalary(true);
+    setSalaryStatus(null);
+    setSalaryError(null);
+
+    try {
+      await updateDoc(doc(db, 'users', selectedStaff.uid), {
+        salaryAllocation: Number.isNaN(allocationValue) ? null : allocationValue,
+        salaryCurrency: salaryForm.currency.trim() || 'GBP',
+        updatedAt: serverTimestamp(),
+      });
+      setSalaryStatus('Payroll info saved.');
+    } catch (error) {
+      console.error('Failed to save salary allocation:', error);
+      setSalaryError('Could not save payroll data. Try again.');
+    } finally {
+      setIsSavingSalary(false);
+    }
   };
 
   const handleCreateInvite = async (event: React.FormEvent) => {
@@ -318,18 +401,20 @@ export const AdminStaffManagement: React.FC = () => {
 
           <div className="grid lg:grid-cols-[1.2fr_0.8fr] gap-8">
             <div className="grid grid-cols-1 gap-4">
-              {filteredStaff.length > 0 ? filteredStaff.map((member, idx) => (
-                <motion.div
-                  key={member.uid}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: idx * 0.05 }}
-                  className="group dark-card p-6 border-white/5 hover:border-teal/30 transition-all flex flex-wrap items-center justify-between gap-6"
-                >
-                  <div className="flex items-center gap-6">
-                    <div className="w-16 h-16 rounded-2xl bg-white/5 overflow-hidden border border-white/10 group-hover:border-teal/30 transition-all flex items-center justify-center">
-                      <Users className="text-teal" />
-                    </div>
+              {filteredStaff.length > 0 ? filteredStaff.map((member, idx) => {
+                const isSelected = member.uid === selectedStaff?.uid;
+                return (
+                  <motion.div
+                    key={member.uid}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: idx * 0.05 }}
+                  className={`group dark-card relative p-6 ${isSelected ? 'border-teal/50' : 'border-white/5'} hover:border-teal/30 transition-all flex flex-wrap items-center justify-between gap-6`}
+                  >
+                    <div className="flex items-center gap-6">
+                      <div className="w-16 h-16 rounded-2xl bg-white/5 overflow-hidden border border-white/10 group-hover:border-teal/30 transition-all flex items-center justify-center">
+                        <Users className="text-teal" />
+                      </div>
 
                     <div>
                       <div className="flex items-center gap-2 mb-1">
@@ -344,73 +429,169 @@ export const AdminStaffManagement: React.FC = () => {
                         <span className="flex items-center gap-1"><MapPin size={12} className="text-teal/60" /> {member.postcode || 'Manchester'}</span>
                       </div>
                     </div>
-                  </div>
+                    </div>
 
-                  <div className="text-right">
-                    <p className="text-[10px] text-white/55 uppercase font-bold mb-1">Contact</p>
-                    <p className="text-[10px] uppercase tracking-widest text-white/60">{member.phoneNumber || 'No phone saved'}</p>
-                  </div>
-                </motion.div>
-              )) : (
+                    <div className="text-right">
+                      <p className="text-[10px] text-white/55 uppercase font-bold mb-1">Contact</p>
+                      <p className="text-[10px] uppercase tracking-widest text-white/60">{member.phoneNumber || 'No phone saved'}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedStaffId(member.uid)}
+                      className="absolute top-4 right-4 text-[10px] uppercase tracking-widest text-white/60 border border-white/10 rounded-full px-3 py-1 hover:border-teal hover:text-teal transition-colors"
+                    >
+                      {isSelected ? 'Viewing' : 'View Bio'}
+                    </button>
+                  </motion.div>
+                );
+              }) : (
                 <div className="dark-card p-8 text-sm text-white/50">
                   No staff records found yet. Issue employee IDs above, then have staff create their own account from the public portal.
                 </div>
               )}
             </div>
 
-            <div className="dark-card p-6 border-white/5 h-fit">
-              <h4 className="text-xs font-bold uppercase tracking-widest text-white/60 mb-6">Assignment Queue</h4>
-              <div className="space-y-4">
-                {manageableBookings.length > 0 ? manageableBookings.map((booking) => (
-                  <div key={booking.id} className="rounded-2xl border border-white/5 bg-white/5 p-4 space-y-4">
-                    <div>
-                      <p className="text-xs font-bold uppercase tracking-widest text-white">{booking.customerName}</p>
-                      <p className="text-[10px] uppercase tracking-widest text-white/60 mt-1">{booking.serviceLabel}</p>
-                      <p className="text-[10px] uppercase tracking-widest text-teal mt-2">{formatSchedule(booking)}</p>
-                      <p className="text-[10px] uppercase tracking-widest text-white/55 mt-2">{getStatusLabel(booking.status)}</p>
-                      <p className="text-[10px] uppercase tracking-widest text-white/55 mt-2">{getAssignedStaffLabel(booking)}</p>
-                    </div>
-                    <select
-                      className="input-field bg-white/5 border-white/10 text-white focus:border-teal"
-                      value={booking.assignedStaffId || ''}
-                      disabled={!['pending', 'confirmed'].includes(booking.status)}
-                      onChange={(event) => {
-                        const selected = staff.find((member) => member.uid === event.target.value) || null;
-                        void handleAssign(booking.id, selected);
-                      }}
-                    >
-                      <option value="" className="bg-charcoal text-white">Unassign booking</option>
-                      {staff.map((member) => (
-                        <option key={member.uid} value={member.uid} className="bg-charcoal text-white">
-                          {member.displayName || member.email}
-                        </option>
-                      ))}
-                    </select>
-                    <div className="grid grid-cols-2 gap-2">
-                      <button
-                        type="button"
-                        onClick={() => navigate(`/admin/bookings/${booking.id}`)}
-                        className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-[10px] font-bold uppercase tracking-widest text-white transition-colors hover:border-teal hover:text-teal"
+            <div className="space-y-8">
+              <div className="dark-card p-6 border-white/5 h-fit">
+                <h4 className="text-xs font-bold uppercase tracking-widest text-white/60 mb-6">Assignment Queue</h4>
+                <div className="space-y-4">
+                  {manageableBookings.length > 0 ? manageableBookings.map((booking) => (
+                    <div key={booking.id} className="rounded-2xl border border-white/5 bg-white/5 p-4 space-y-4">
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-widest text-white">{booking.customerName}</p>
+                        <p className="text-[10px] uppercase tracking-widest text-white/60 mt-1">{booking.serviceLabel}</p>
+                        <p className="text-[10px] uppercase tracking-widest text-teal mt-2">{formatSchedule(booking)}</p>
+                        <p className="text-[10px] uppercase tracking-widest text-white/55 mt-2">{getStatusLabel(booking.status)}</p>
+                        <p className="text-[10px] uppercase tracking-widest text-white/55 mt-2">{getAssignedStaffLabel(booking)}</p>
+                      </div>
+                      <select
+                        className="input-field bg-white/5 border-white/10 text-white focus:border-teal"
+                        value={booking.assignedStaffId || ''}
+                        disabled={!['pending', 'confirmed'].includes(booking.status)}
+                        onChange={(event) => {
+                          const selected = staff.find((member) => member.uid === event.target.value) || null;
+                          void handleAssign(booking.id, selected);
+                        }}
                       >
-                        Open Detail
-                      </button>
-                      {['pending', 'confirmed'].includes(booking.status) ? (
+                        <option value="" className="bg-charcoal text-white">Unassign booking</option>
+                        {staff.map((member) => (
+                          <option key={member.uid} value={member.uid} className="bg-charcoal text-white">
+                            {member.displayName || member.email}
+                          </option>
+                        ))}
+                      </select>
+                      <div className="grid grid-cols-2 gap-2">
                         <button
                           type="button"
-                          onClick={() => void handleCancelBooking(booking.id)}
-                          className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-[10px] font-bold uppercase tracking-widest text-red-300 transition-colors hover:border-red-400 hover:text-red-200"
+                          onClick={() => navigate(`/admin/bookings/${booking.id}`)}
+                          className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-[10px] font-bold uppercase tracking-widest text-white transition-colors hover:border-teal hover:text-teal"
                         >
-                          Cancel
+                          Open Detail
                         </button>
-                      ) : (
-                        <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-[10px] font-bold uppercase tracking-widest text-white/55">
-                          {booking.status === 'completed' ? 'Completed' : 'In progress'}
+                        {['pending', 'confirmed'].includes(booking.status) ? (
+                          <button
+                            type="button"
+                            onClick={() => void handleCancelBooking(booking.id)}
+                            className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-[10px] font-bold uppercase tracking-widest text-red-300 transition-colors hover:border-red-400 hover:text-red-200"
+                          >
+                            Cancel
+                          </button>
+                        ) : (
+                          <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-[10px] font-bold uppercase tracking-widest text-white/55">
+                            {booking.status === 'completed' ? 'Completed' : 'In progress'}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )) : (
+                    <p className="text-sm text-white/50">There are no active bookings to manage right now.</p>
+                  )}
+                </div>
+              </div>
+
+              <div className="dark-card p-6 border-white/5">
+                <div className="flex items-center justify-between mb-4">
+                  <h4 className="text-xs font-bold uppercase tracking-widest text-white/60">Staff Biodata</h4>
+                  <span className="text-[10px] uppercase tracking-widest text-white/50">Payroll & history</span>
+                </div>
+                {selectedStaff ? (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-[10px] uppercase tracking-widest text-white/50">Employee ID</p>
+                        <p className="text-teal font-bold uppercase">{selectedStaff.employeeId || 'Unassigned'}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] uppercase tracking-widest text-white/50">Position</p>
+                        <p className="text-white font-bold">{selectedStaff.position || 'Field Specialist'}</p>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-[10px] uppercase tracking-widest text-white/50">Experience</p>
+                        <p className="text-white font-bold">{selectedStaff.experience || '0'} yrs</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] uppercase tracking-widest text-white/50">Onboarded</p>
+                        <p className="text-white font-bold">{selectedStaff.onboarded ? 'Yes' : 'Pending'}</p>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-[10px] uppercase tracking-widest text-white/50">Phone</p>
+                        <p className="text-white font-bold">{selectedStaff.phoneNumber || 'Not provided'}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] uppercase tracking-widest text-white/50">Region</p>
+                        <p className="text-white font-bold">{selectedStaff.postcode || 'Manchester'}</p>
+                      </div>
+                    </div>
+                    {selectedStaff.bio && (
+                      <p className="text-sm text-white/60 leading-relaxed">{selectedStaff.bio}</p>
+                    )}
+                    <form onSubmit={handleSalarySave} className="space-y-2">
+                      <p className="text-[10px] uppercase tracking-widest text-white/50">Salary allocation</p>
+                      <div className="grid grid-cols-2 gap-3">
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={salaryForm.allocation}
+                          onChange={(event) => setSalaryForm((current) => ({ ...current, allocation: event.target.value }))}
+                          placeholder={selectedStaff.salaryAllocation !== undefined ? selectedStaff.salaryAllocation.toString() : '0.00'}
+                          className="input-field text-charcoal bg-white/90 border-white/20"
+                        />
+                        <input
+                          type="text"
+                          value={salaryForm.currency}
+                          onChange={(event) => setSalaryForm((current) => ({ ...current, currency: event.target.value }))}
+                          className="input-field text-charcoal bg-white/90 border-white/20"
+                        />
+                      </div>
+                      <button
+                        type="submit"
+                        disabled={isSavingSalary}
+                        className="btn-primary w-full text-[10px] py-3 uppercase tracking-widest disabled:opacity-50"
+                      >
+                        {isSavingSalary ? 'Saving...' : 'Update payroll'}
+                      </button>
+                      {salaryStatus && <p className="text-[10px] text-teal uppercase tracking-widest">{salaryStatus}</p>}
+                      {salaryError && <p className="text-[10px] text-red-500 uppercase tracking-widest">{salaryError}</p>}
+                    </form>
+                    <div className="space-y-2">
+                      <p className="text-[10px] uppercase tracking-widest text-white/50">Recent job allocation</p>
+                      {selectedStaffHistory.length > 0 ? selectedStaffHistory.map((job) => (
+                        <div key={job.id} className="rounded-xl border border-white/10 bg-white/5 p-3 text-[10px] uppercase tracking-widest text-white/60">
+                          <p className="text-white font-bold">{job.serviceLabel}</p>
+                          <p className="text-white/70">{formatSchedule(job)}</p>
+                          <p className="text-teal mt-1">{getStatusLabel(job.status)}</p>
                         </div>
+                      )) : (
+                        <p className="text-[10px] uppercase tracking-widest text-white/50">No recent jobs assigned.</p>
                       )}
                     </div>
                   </div>
-                )) : (
-                  <p className="text-sm text-white/50">There are no active bookings to manage right now.</p>
+                ) : (
+                  <p className="text-sm text-white/50">Select a staff card to view their biodata and payroll notes.</p>
                 )}
               </div>
             </div>
