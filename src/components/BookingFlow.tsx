@@ -635,7 +635,7 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ initialServiceId, onCo
   };
 
   return (
-    <section className="py-24 bg-white min-h-screen">
+    <section className="py-24 bg-white text-charcoal min-h-screen">
       <div className="max-w-xl mx-auto px-4">
         <div className="flex justify-between mb-16 relative">
           <div className="absolute top-4 left-0 right-0 h-[1px] bg-charcoal/10 -z-10" />
