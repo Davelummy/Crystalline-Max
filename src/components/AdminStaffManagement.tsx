@@ -17,6 +17,7 @@ import { useNavigate } from 'react-router-dom';
 import { collection, doc, getDoc, onSnapshot, query, serverTimestamp, setDoc, updateDoc, where } from 'firebase/firestore';
 import { db } from '../firebase';
 import { formatSchedule, getAssignedStaffIds, getAssignedStaffLabel, getStatusLabel, sortBookingsBySchedule } from '../lib/bookings';
+import { COMPANY_EMAIL_DOMAIN } from '../lib/auth';
 import type { AppUserData, BookingRecord, EmployeeInvite } from '../types';
 
 async function generateUniqueEmployeeId() {
@@ -216,6 +217,12 @@ export const AdminStaffManagement: React.FC = () => {
     try {
       const employeeId = await generateUniqueEmployeeId();
       const normalizedEmail = inviteForm.email.trim().toLowerCase();
+
+      if (normalizedEmail && !normalizedEmail.endsWith(COMPANY_EMAIL_DOMAIN)) {
+        setInviteError(`Reserved email must be a company address ending in ${COMPANY_EMAIL_DOMAIN}, or leave it blank to allow any company email.`);
+        setIsCreatingInvite(false);
+        return;
+      }
 
       await setDoc(doc(db, 'employeeInvites', employeeId), {
         employeeId,
