@@ -23,6 +23,9 @@ Current migration status:
 - Phase 11 multi-employee job assignment is implemented with team-assignment booking fields, staff-side backward-compatible reads, and admin team assignment controls
 - Phase 12 testing and local verification is implemented in-repo with Vitest unit coverage, Firestore rules tests, Playwright smoke scaffolding, and one-command local verify scripts
 - Phase 13 pre-launch hardening is underway with Firebase App Check bootstrap hooks, bounded photo-upload validation, and launch-only environment placeholders for reCAPTCHA and Sentry
+- MVP landing page expansion is complete with a trust-signal strip, How It Works section, and a rotating CTA carousel
+- Staff management deep-linking is complete with per-employee profile and assignments subpages accessible from a click-through card modal
+- Firestore rules are hardened with assignment-scoped booking reads, a dedicated `isStaff()` helper, reduced expression depth, and a `notificationLogs` rule
 
 ## Approved Roadmap
 
@@ -49,7 +52,7 @@ Key approved constraints from that brief:
 
 ### Public Experience
 
-- Service-focused landing experience
+- Service-focused landing experience with Trust Strip, How It Works, and CTA Carousel sections
 - Portal selection for customer and staff
 - Dedicated `/admin` access path for admin
 - Footer and legal contact details now use the live business identity stored in `settings/general`
@@ -92,6 +95,7 @@ Key approved constraints from that brief:
 - Route-native admin navigation across dashboard, staff, and settings surfaces
 - Team assignment from admin booking detail, with backward-compatible single-assignee support for older bookings
 - Admin settings now drive the public business name, support contact, and service-region presentation instead of writing to an unused document
+- Staff cards now open a modal that routes to two dedicated subpages: `/admin/staff/:staffId/profile` (employment record and payroll) and `/admin/staff/:staffId/assignments` (active bookings, history, progress stats)
 
 ## Product Rules
 
@@ -116,6 +120,7 @@ Primary collections:
 - `employeeInvites`
 - `checkins`
 - `settings`
+- `notificationLogs` (admin-read only; write-locked to client; Cloud Functions write on email failure)
 
 ## Authentication Model
 

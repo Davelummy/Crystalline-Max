@@ -18,6 +18,8 @@ import { AdminNavbar } from './components/AdminNavbar';
 import { AdminOnboarding } from './components/AdminOnboarding';
 import { AdminSettings } from './components/AdminSettings';
 import { AdminStaffManagement } from './components/AdminStaffManagement';
+import { AdminStaffProfile } from './components/AdminStaffProfile';
+import { AdminStaffAssignments } from './components/AdminStaffAssignments';
 import { AdminBookingDetail } from './components/AdminBookingDetail';
 import { BookingFlow } from './components/BookingFlow';
 import { CostEstimator } from './components/CostEstimator';
@@ -44,6 +46,9 @@ import { StaffSignupPage } from './components/StaffSignupPage';
 import { StaffTasks } from './components/StaffTasks';
 import { TermsPage } from './components/TermsPage';
 import { Testimonials } from './components/Testimonials';
+import { HowItWorks } from './components/HowItWorks';
+import { TrustStrip } from './components/TrustStrip';
+import { CTACarousel } from './components/CTACarousel';
 import { UserProfileEdit } from './components/UserProfileEdit';
 import { useAuth } from './context/AuthContext';
 import { auth, db } from './firebase';
@@ -90,8 +95,29 @@ function AccessMessage({
 
 function SyncingScreen() {
   return (
-    <div className="min-h-screen flex items-center justify-center uppercase tracking-widest text-xs">
-      Syncing Portal...
+    <div className="min-h-screen bg-charcoal flex items-center justify-center">
+      <div className="flex flex-col items-center gap-8">
+        <div className="relative w-16 h-16">
+          {/* Outer ring */}
+          <div
+            className="absolute inset-0 rounded-full border-2 border-teal/20 border-t-teal animate-spin"
+            style={{ animationDuration: '1.4s', animationTimingFunction: 'linear' }}
+          />
+          {/* Inner ring — reverse */}
+          <div
+            className="absolute inset-[5px] rounded-full border-2 border-transparent border-b-teal/50 animate-spin"
+            style={{ animationDuration: '0.9s', animationTimingFunction: 'linear', animationDirection: 'reverse' }}
+          />
+          {/* Centre pulse */}
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div
+              className="w-2.5 h-2.5 rounded-full bg-teal animate-pulse"
+              style={{ boxShadow: '0 0 14px 4px rgba(0,245,212,0.55)' }}
+            />
+          </div>
+        </div>
+        <p className="text-[10px] uppercase tracking-[0.4em] text-teal/55 font-bold">Crystalline Max</p>
+      </div>
     </div>
   );
 }
@@ -172,15 +198,14 @@ function LandingPage() {
           element?.scrollIntoView({ behavior: 'smooth' });
         }}
       />
+      <TrustStrip />
       <Services onBook={(serviceId) => navigate(`/book/${serviceId}`)} />
+      <HowItWorks />
       <Testimonials />
-      <div className="py-20 text-center bg-charcoal border-y border-white/5">
-        <h3 className="text-2xl mb-8 text-white">Ready for a precision clean?</h3>
-        <div className="flex flex-wrap justify-center gap-4">
-          <button onClick={() => navigate('/book')} className="btn-primary">START BOOKING</button>
-          <button onClick={() => navigate('/estimate')} className="btn-secondary">GET ESTIMATE</button>
-        </div>
-      </div>
+      <CTACarousel
+        onBook={(serviceId) => navigate(`/book/${serviceId}`)}
+        onEstimate={() => navigate('/estimate')}
+      />
     </>
   );
 }
@@ -925,6 +950,10 @@ function AppRouter() {
         });
       }
 
+      // Always sign out after a failed signup so the user is not left in a
+      // partially-authenticated state that shows "Provisioning Required".
+      await signOut(auth).catch(() => undefined);
+
       setAuthError(error instanceof Error ? error.message : getAuthErrorMessage(error));
       return undefined;
     } finally {
@@ -1020,6 +1049,8 @@ function AppRouter() {
         <Route element={<AdminLayout onLogout={handleLogout} />}>
           <Route path="dashboard" element={<AdminDashboard />} />
           <Route path="staff" element={<AdminStaffManagement />} />
+          <Route path="staff/:staffId/profile" element={<AdminStaffProfile />} />
+          <Route path="staff/:staffId/assignments" element={<AdminStaffAssignments />} />
           <Route path="bookings/:bookingId" element={<AdminBookingDetailRoute />} />
           <Route path="settings" element={<AdminSettings />} />
         </Route>

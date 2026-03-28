@@ -9,7 +9,7 @@ import {
   type RulesTestEnvironment,
 } from '@firebase/rules-unit-testing';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { doc, getDoc, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, query, serverTimestamp, setDoc, updateDoc, where } from 'firebase/firestore';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const projectId = 'crystalline-max-rules-test';
