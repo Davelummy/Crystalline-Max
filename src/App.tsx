@@ -99,7 +99,8 @@ function SyncingScreen() {
 function getDefaultAuthenticatedPath(user: User | null, userRole: UserRole | null) {
   if (userRole === 'admin') return '/admin/dashboard';
   if (userRole === 'employee') return '/staff';
-  if (user) return '/customer';
+  if (userRole === 'client') return '/customer';
+  if (user) return '/portal';
   return null;
 }
 
@@ -371,8 +372,21 @@ function PortalSelectionRoute() {
 
   if (loading) return <SyncingScreen />;
 
+  if (user && !userRole) {
+    return (
+      <AccessMessage
+        title="Provisioning Required"
+        body="Your account is signed in but no role profile was found yet. Ask admin to issue a valid employee ID and complete signup again."
+        actionLabel="Sign Out"
+        onAction={() => {
+          void signOut(auth);
+        }}
+      />
+    );
+  }
+
   const redirect = getDefaultAuthenticatedPath(user, userRole);
-  if (redirect) {
+  if (redirect && redirect !== location.pathname) {
     return <Navigate to={redirect} replace />;
   }
 

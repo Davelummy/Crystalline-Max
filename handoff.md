@@ -79,6 +79,7 @@ Booking is now a real Firestore-backed workflow rather than a fake success flow.
 - Firestore user record is created with `role: "employee"` only when the invite is valid
 - Staff Management now surfaces a dedicated biodata panel per employee showing salary allocation, onboarding state, and a live job-allocation history pulled from the latest bookings so payroll and scheduling stays auditable.
 - Salary allocation data is stored on each `users/{uid}` document (`salaryAllocation`, `salaryCurrency`, `bio`) and can be updated directly from this panel.
+- If an authenticated company user has no valid Firestore role profile, `/portal` now shows a provisioning-required screen with sign-out action instead of redirecting through a blank route loop.
 
 ### Admin Access Flow
 
@@ -419,6 +420,13 @@ Phase 12 verification currently available in this repo:
 - add the Stripe Apple Pay domain association file on the production domain
 - install and verify Sentry with a real DSN
 - run final E2E and production smoke tests from an unrestricted machine
+
+## Netlify Pilot Deployment
+
+- frontend is currently hosted at the Netlify site `ctmds-pilot-app.netlify.app`; the repo is connected to that site so every push to `main` triggers `npm run build` and publishes `dist`.
+- Set the `VITE_FIREBASE_*`, `VITE_STRIPE_PUBLISHABLE_KEY`, `VITE_SENTRY_DSN`, and `VITE_RECAPTCHA_SITE_KEY` env vars in Netlify, and make sure the Netlify domain is listed in Firebase Auth + App Check allowed domains.
+- For pilot sanity, manual `netlify deploy --prod --no-build --dir dist --site 84d38116-eb95-4c37-8fdb-51fc8261cc21` uploads the locally tuned bundle (title/logo/contrast fixes) that keeps rollout momentum while we still rely on the Netlify env setup.
+- The admin/staff/customer portals on Netlify already point at the same Firebase project and Stripe configuration that will be used in production, so the pilot is ideal for internal satisfaction scoring before the `ctmds.co.uk` cutover.
 
 ## Documentation Rule Going Forward
 
