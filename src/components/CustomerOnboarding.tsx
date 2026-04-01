@@ -75,7 +75,7 @@ export const CustomerOnboarding: React.FC<OnboardingProps> = ({ onComplete }) =>
               <input 
                 required
                 type="text"
-                placeholder="123 Street Name, Manchester"
+                placeholder="123 Street Name"
                 className="input-field-light pl-12"
                 value={formData.address}
                 onChange={e => setFormData({ ...formData, address: e.target.value })}
@@ -89,7 +89,7 @@ export const CustomerOnboarding: React.FC<OnboardingProps> = ({ onComplete }) =>
               <input
                 required
                 type="text"
-                placeholder="Manchester"
+                placeholder="City or Town"
                 className="input-field-light"
                 value={formData.city}
                 onChange={e => setFormData({ ...formData, city: e.target.value })}

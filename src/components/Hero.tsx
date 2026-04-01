@@ -32,7 +32,7 @@ const slides = [
     beforeImage: homeBefore,
     tag: 'Sanitization',
     tagValue: 'Crystalline Standard',
-    location: 'Salford & Stockport',
+    location: 'Salford, Stockport & Oxfordshire',
   },
   {
     id: 3,
@@ -43,7 +43,7 @@ const slides = [
     beforeImage: officeBefore,
     tag: 'Business Solutions',
     tagValue: 'Custom Quotes',
-    location: 'Manchester Hub',
+    location: 'Manchester & Oxfordshire Hub',
   },
 ];
 

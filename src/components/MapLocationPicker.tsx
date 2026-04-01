@@ -1,6 +1,6 @@
 import React from 'react';
-import { LocateFixed, MapPin, Navigation, RefreshCw } from 'lucide-react';
-import { CircleMarker, MapContainer, TileLayer, useMapEvents } from 'react-leaflet';
+import { LocateFixed, MapPin, Navigation, RefreshCw, Search } from 'lucide-react';
+import { CircleMarker, MapContainer, TileLayer, useMap, useMapEvents } from 'react-leaflet';
 import type { BookingLocationSelection } from '../types';
 
 const MANCHESTER_CENTER: [number, number] = [53.4808, -2.2426];
@@ -16,6 +16,14 @@ interface ReverseGeocodeResponse {
     county?: string;
     postcode?: string;
   };
+}
+
+interface SearchGeocodeResponse {
+  place_id: number;
+  display_name: string;
+  lat: string;
+  lon: string;
+  address?: ReverseGeocodeResponse['address'];
 }
 
 interface MapLocationPickerProps {
@@ -37,8 +45,22 @@ function MapSelectionEvents({
   return null;
 }
 
-function buildLocationSelection(lat: number, lng: number, response: ReverseGeocodeResponse): BookingLocationSelection {
-  const address = response.address ?? {};
+function MapViewController({ center }: { center: [number, number] }) {
+  const map = useMap();
+
+  React.useEffect(() => {
+    map.setView(center, Math.max(map.getZoom(), 14), { animate: true });
+  }, [center, map]);
+
+  return null;
+}
+
+function buildLocationSelection(
+  lat: number,
+  lng: number,
+  response: { display_name?: string; address?: ReverseGeocodeResponse['address'] },
+): BookingLocationSelection {
+  const address = response.address || {};
   const line1 = [address.house_number, address.road].filter(Boolean).join(' ').trim();
   const city = address.city || address.town || address.village || address.county || 'Manchester';
   const postcode = address.postcode || '';
@@ -72,8 +94,29 @@ async function reverseGeocode(lat: number, lng: number) {
   return buildLocationSelection(lat, lng, data);
 }
 
+async function searchGeocode(query: string, signal: AbortSignal) {
+  const response = await fetch(
+    `https://nominatim.openstreetmap.org/search?format=jsonv2&q=${encodeURIComponent(query)}&addressdetails=1&limit=5&countrycodes=gb`,
+    {
+      headers: {
+        Accept: 'application/json',
+      },
+      signal,
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error('Address search failed. Try refining the address.');
+  }
+
+  return (await response.json()) as SearchGeocodeResponse[];
+}
+
 export const MapLocationPicker: React.FC<MapLocationPickerProps> = ({ value, onChange }) => {
   const [isResolving, setIsResolving] = React.useState(false);
+  const [isSearching, setIsSearching] = React.useState(false);
+  const [query, setQuery] = React.useState(value?.locationLabel || '');
+  const [searchResults, setSearchResults] = React.useState<SearchGeocodeResponse[]>([]);
   const [error, setError] = React.useState<string | null>(null);
 
   const center = React.useMemo<[number, number]>(
@@ -88,6 +131,8 @@ export const MapLocationPicker: React.FC<MapLocationPickerProps> = ({ value, onC
     try {
       const selection = await reverseGeocode(lat, lng);
       onChange(selection);
+      setQuery(selection.locationLabel);
+      setSearchResults([]);
     } catch (lookupError) {
       console.error('Map location lookup failed:', lookupError);
       setError(lookupError instanceof Error ? lookupError.message : 'Location lookup failed.');
@@ -110,6 +155,8 @@ export const MapLocationPicker: React.FC<MapLocationPickerProps> = ({ value, onC
         try {
           const selection = await reverseGeocode(position.coords.latitude, position.coords.longitude);
           onChange(selection);
+          setQuery(selection.locationLabel);
+          setSearchResults([]);
         } catch (lookupError) {
           console.error('Current location lookup failed:', lookupError);
           setError(lookupError instanceof Error ? lookupError.message : 'Location lookup failed.');
@@ -126,13 +173,62 @@ export const MapLocationPicker: React.FC<MapLocationPickerProps> = ({ value, onC
     );
   };
 
+  React.useEffect(() => {
+    const normalizedQuery = query.trim();
+
+    if (normalizedQuery.length < 3) {
+      setSearchResults([]);
+      setIsSearching(false);
+      return;
+    }
+
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(async () => {
+      setIsSearching(true);
+      setError(null);
+
+      try {
+        const results = await searchGeocode(normalizedQuery, controller.signal);
+        setSearchResults(results);
+      } catch (searchError) {
+        if ((searchError as { name?: string })?.name !== 'AbortError') {
+          console.error('Address search failed:', searchError);
+          setError(searchError instanceof Error ? searchError.message : 'Address search failed.');
+        }
+      } finally {
+        setIsSearching(false);
+      }
+    }, 350);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+      controller.abort();
+    };
+  }, [query]);
+
+  const handleSelectResult = (result: SearchGeocodeResponse) => {
+    const lat = Number.parseFloat(result.lat);
+    const lng = Number.parseFloat(result.lon);
+
+    if (Number.isNaN(lat) || Number.isNaN(lng)) {
+      setError('The selected address has invalid coordinates. Choose another suggestion.');
+      return;
+    }
+
+    const selection = buildLocationSelection(lat, lng, result);
+    onChange(selection);
+    setQuery(selection.locationLabel);
+    setSearchResults([]);
+    setError(null);
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h4 className="text-xs font-bold uppercase tracking-widest text-charcoal/70">Tap the map to verify the service address</h4>
+          <h4 className="text-xs font-bold uppercase tracking-widest text-charcoal/70">Type your address or tap the map to verify it</h4>
           <p className="mt-1 text-xs text-charcoal/55">
-            We reverse-check the exact point into a real address so fake locations cannot be submitted.
+            Start typing and choose an autocomplete suggestion, or pin the location manually on the map.
           </p>
         </div>
         <button
@@ -146,8 +242,40 @@ export const MapLocationPicker: React.FC<MapLocationPickerProps> = ({ value, onC
         </button>
       </div>
 
+      <div className="space-y-2">
+        <label className="text-[10px] font-bold uppercase tracking-widest text-charcoal/60">Search Address</label>
+        <div className="relative">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-charcoal/55" size={16} />
+          <input
+            type="text"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Start typing your full address"
+            className="input-field-light pl-12"
+          />
+        </div>
+        {isSearching && (
+          <p className="text-[10px] font-bold uppercase tracking-widest text-charcoal/55">Searching addresses...</p>
+        )}
+        {searchResults.length > 0 && (
+          <div className="max-h-56 overflow-y-auto rounded-2xl border border-charcoal/10 bg-white shadow-[0_16px_40px_rgba(10,12,16,0.08)]">
+            {searchResults.map((result) => (
+              <button
+                key={result.place_id}
+                type="button"
+                onClick={() => handleSelectResult(result)}
+                className="w-full border-b border-charcoal/5 px-4 py-3 text-left transition-colors hover:bg-charcoal/[0.03] last:border-b-0"
+              >
+                <p className="text-xs font-bold tracking-wide text-charcoal">{result.display_name}</p>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
       <div className="overflow-hidden rounded-3xl border border-charcoal/10 bg-white shadow-[0_20px_50px_rgba(10,12,16,0.08)]">
         <MapContainer center={center} zoom={12} className="h-[22rem] w-full md:h-[26rem]" scrollWheelZoom>
+          <MapViewController center={center} />
           <TileLayer
             attribution='&copy; OpenStreetMap contributors'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -181,7 +309,7 @@ export const MapLocationPicker: React.FC<MapLocationPickerProps> = ({ value, onC
               </>
             ) : (
               <p className="mt-2 text-sm text-charcoal/60">
-                No address verified yet. Tap the map or use your current location to continue.
+                No address verified yet. Type an address, tap a result, or pin directly on the map.
               </p>
             )}
             {error && <p className="mt-3 text-xs font-bold uppercase tracking-widest text-red-500">{error}</p>}

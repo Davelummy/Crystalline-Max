@@ -2,11 +2,13 @@ export type Portal = 'public' | 'customer' | 'staff' | 'admin';
 
 export type View =
   | 'landing'
+  | 'services'
   | 'booking'
   | 'customer'
   | 'admin'
   | 'brand'
   | 'estimator'
+  | 'contact'
   | 'checkin'
   | 'schedule'
   | 'tasks'

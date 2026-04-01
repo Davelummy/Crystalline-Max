@@ -3,6 +3,7 @@ import { Calendar, ChevronRight, Clock, MapPin, Repeat, User } from 'lucide-reac
 import { collection, onSnapshot, query, where } from 'firebase/firestore';
 import { db } from '../firebase';
 import { formatSchedule, getAfterPhotos, getBeforePhotos, getPrimaryAfterPhotoUrl, getPrimaryBeforePhotoUrl, getStatusLabel, getTaskProgressPercent, hasJobCompleted, hasJobStarted, isUpcomingBooking, sortBookingsByCreatedAt, sortBookingsBySchedule } from '../lib/bookings';
+import { getActivePromotion } from '../lib/promotions';
 import { PhotoGalleryOverlay } from './PhotoGalleryOverlay';
 import type { AppUserData, BookingPhoto, BookingRecord, View } from '../types';
 
@@ -39,6 +40,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
   const upcoming = scheduled.find((booking) => booking.status === 'in_progress') ??
     scheduled.find((booking) => isUpcomingBooking(booking)) ??
     null;
+  const activePromotion = getActivePromotion();
   const pastBookings = bookings.filter((booking) => booking.id !== upcoming?.id).slice(0, 5);
   const beforePhotos = upcoming ? getBeforePhotos(upcoming) : [];
   const afterPhotos = upcoming ? getAfterPhotos(upcoming) : [];
@@ -67,6 +69,11 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
                (userData?.bookingCount || 0) >= 3 ? '5% OFF ACTIVE' :
                `${Math.max(0, 3 - (userData?.bookingCount || 0))} TO 5% OFF`}
             </p>
+            {activePromotion && (
+              <p className="mt-1 text-[10px] font-bold uppercase tracking-widest text-charcoal/60">
+                {activePromotion.label} · Ends {activePromotion.endsOn}
+              </p>
+            )}
           </div>
         </header>
 

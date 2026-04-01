@@ -2,6 +2,7 @@ import React from 'react';
 import { Logo } from './Logo';
 import { Menu, X, User } from 'lucide-react';
 import type { View } from '../types';
+import { useLocation } from 'react-router-dom';
 
 interface PublicNavbarProps {
   onNavigate: (view: View) => void;
@@ -9,6 +10,14 @@ interface PublicNavbarProps {
 
 export const PublicNavbar: React.FC<PublicNavbarProps> = ({ onNavigate }) => {
   const [isOpen, setIsOpen] = React.useState(false);
+  const location = useLocation();
+
+  const navItems: Array<{ label: string; view: View; match: (pathname: string) => boolean }> = [
+    { label: 'Home', view: 'landing', match: (pathname) => pathname === '/' },
+    { label: 'Services', view: 'services', match: (pathname) => pathname === '/services' },
+    { label: 'Estimator', view: 'estimator', match: (pathname) => pathname === '/estimate' },
+    { label: 'Contact', view: 'contact', match: (pathname) => pathname === '/contact' },
+  ];
 
   return (
     <nav className="glass-nav border-white/5 shadow-2xl">
@@ -17,9 +26,19 @@ export const PublicNavbar: React.FC<PublicNavbarProps> = ({ onNavigate }) => {
           <Logo variant="light" />
           
           <div className="hidden md:flex items-center gap-8">
-            <button onClick={() => onNavigate('landing')} className="text-xs font-bold tracking-widest text-white hover:text-teal transition-colors uppercase">Services</button>
-            <button onClick={() => onNavigate('estimator')} className="text-xs font-bold tracking-widest text-white hover:text-teal transition-colors uppercase">Estimator</button>
-            
+            {navItems.map((item) => {
+              const isActive = item.match(location.pathname);
+              return (
+                <button
+                  key={item.label}
+                  onClick={() => onNavigate(item.view)}
+                  className={`text-xs font-bold tracking-widest transition-colors uppercase ${isActive ? 'text-teal' : 'text-white hover:text-teal'}`}
+                >
+                  {item.label}
+                </button>
+              );
+            })}
+
             <div className="h-6 w-px bg-white/10 mx-2" />
 
             <button 
@@ -46,10 +65,17 @@ export const PublicNavbar: React.FC<PublicNavbarProps> = ({ onNavigate }) => {
       {/* Mobile Menu */}
       {isOpen && (
         <div className="md:hidden bg-charcoal/98 backdrop-blur-xl border-b border-white/10 p-4 flex flex-col gap-4">
-          <button onClick={() => { onNavigate('landing'); setIsOpen(false); }} className="text-xs font-bold tracking-widest text-white text-left uppercase">Home</button>
-          <button onClick={() => { onNavigate('landing'); setIsOpen(false); }} className="text-xs font-bold tracking-widest text-white text-left uppercase">Services</button>
-          <button onClick={() => { onNavigate('estimator'); setIsOpen(false); }} className="text-xs font-bold tracking-widest text-white text-left uppercase">Estimator</button>
+          {navItems.map((item) => (
+            <button
+              key={item.label}
+              onClick={() => { onNavigate(item.view); setIsOpen(false); }}
+              className={`text-xs font-bold tracking-widest text-left uppercase ${item.match(location.pathname) ? 'text-teal' : 'text-white'}`}
+            >
+              {item.label}
+            </button>
+          ))}
           <button onClick={() => { onNavigate('selection'); setIsOpen(false); }} className="text-xs font-bold tracking-widest text-white text-left uppercase">Portals</button>
+          <button onClick={() => { onNavigate('booking'); setIsOpen(false); }} className="text-xs font-bold tracking-widest text-white text-left uppercase">Book Now</button>
         </div>
       )}
     </nav>

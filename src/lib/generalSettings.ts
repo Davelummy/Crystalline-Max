@@ -24,6 +24,24 @@ export const DEFAULT_GENERAL_SETTINGS: GeneralSettings = {
   publicRegistration: true,
 };
 
+function normalizeServiceRegion(value?: string) {
+  if (!value) return DEFAULT_GENERAL_SETTINGS.serviceRegion;
+
+  const normalized = value.trim();
+  if (!normalized) return DEFAULT_GENERAL_SETTINGS.serviceRegion;
+
+  const lower = normalized.toLowerCase();
+  const mentionsCoreAreas =
+    lower.includes('greater manchester') ||
+    (lower.includes('manchester') && lower.includes('salford') && lower.includes('stockport'));
+
+  if (mentionsCoreAreas && !lower.includes('oxfordshire')) {
+    return DEFAULT_GENERAL_SETTINGS.serviceRegion;
+  }
+
+  return normalized;
+}
+
 function migrateLegacyGeneralSettings(value?: Partial<GeneralSettings> | null): Partial<GeneralSettings> {
   if (!value) {
     return {};
@@ -35,11 +53,7 @@ function migrateLegacyGeneralSettings(value?: Partial<GeneralSettings> | null): 
     supportEmail: value.supportEmail === 'support@crystallinemax.co.uk' ? DEFAULT_GENERAL_SETTINGS.supportEmail : value.supportEmail,
     supportPhone: value.supportPhone === '+44 161 524 7812' ? DEFAULT_GENERAL_SETTINGS.supportPhone : value.supportPhone,
     businessAddress: value.businessAddress || DEFAULT_GENERAL_SETTINGS.businessAddress,
-    serviceRegion:
-      value.serviceRegion === 'Greater Manchester' ||
-      value.serviceRegion === 'Manchester, Salford, Stockport and close environs'
-        ? DEFAULT_GENERAL_SETTINGS.serviceRegion
-        : value.serviceRegion,
+    serviceRegion: normalizeServiceRegion(value.serviceRegion),
   };
 }
 

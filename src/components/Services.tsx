@@ -56,6 +56,8 @@ const services = [
 
 interface ServicesProps {
   onBook?: (serviceId: string) => void;
+  onEstimate?: () => void;
+  onContact?: () => void;
 }
 
 const comparisons = [
@@ -82,7 +84,7 @@ const comparisons = [
   },
 ];
 
-export const Services: React.FC<ServicesProps> = ({ onBook }) => {
+export const Services: React.FC<ServicesProps> = ({ onBook, onEstimate, onContact }) => {
   const [expandedId, setExpandedId] = React.useState<string | null>(null);
   const [activeComparison, setActiveComparison] = React.useState(0);
 
@@ -230,6 +232,23 @@ export const Services: React.FC<ServicesProps> = ({ onBook }) => {
               </div>
             </motion.div>
           </AnimatePresence>
+        </div>
+
+        <div className="mt-16 dark-card p-8 md:p-10 flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-teal mb-2">Need A Precise Quote?</p>
+            <p className="text-sm text-white/72 max-w-xl">
+              Use the estimator for instant baseline pricing, then contact us for commercial scope, recurring plans, and specialist requirements.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <button type="button" onClick={onEstimate} className="btn-secondary">
+              Open Estimator
+            </button>
+            <button type="button" onClick={onContact} className="btn-primary">
+              Contact Team
+            </button>
+          </div>
         </div>
       </div>
     </section>

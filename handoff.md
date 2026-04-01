@@ -17,11 +17,19 @@ The product is built around one shared operational truth: bookings live in Fires
 
 - Brand-led landing page with service presentation, Trust Strip, How It Works process steps, and a rotating CTA Carousel
 - Testimonial-style personal quotes and avatar claims have been removed from the public surface; the section now presents neutral operational standards to avoid misrepresentation risk.
+- Cost estimator secondary copy now uses neutral pricing guidance text (no named customer quote blocks).
+- CTA carousel service IDs now map to real booking service IDs (`car-full`, `home`, `office`) so booking preselection cannot break.
+- Promotion messaging now supports date-bounded campaigns; expired campaigns auto-hide.
 - Portal selection for customer and staff access
 - Dedicated `/admin` entry path for admin access only
 - Responsive public navigation and portal routing
+- Public information architecture is now route-canonical: `Home (/), Services (/services), Estimator (/estimate), Contact (/contact), Booking (/book), Portals (/portal), Privacy (/privacy), Terms (/terms)`.
+- Public navbar now routes to canonical pages instead of mixed in-page jumps.
 - Public footer business/contact details now read from `settings/general`
+- Public footer quick links now cover all primary public routes plus portal entry to prevent dead-end navigation.
 - Primary service-region baseline now includes Oxfordshire alongside Manchester, Salford, and Stockport.
+- General settings normalization now upgrades legacy region strings that mention the Manchester/Salford/Stockport baseline but omit Oxfordshire.
+- New public Contact page (`/contact`) reads live data from `settings/general` and routes users into booking or portal flows.
 
 ### Customer Portal
 
@@ -70,7 +78,8 @@ The product is built around one shared operational truth: bookings live in Fires
 Booking is now a real Firestore-backed workflow rather than a fake success flow.
 
 - Customer selects a service and add-ons
-- Customer selects service location on a map instead of manually typing an unverified address
+- Customer can search and autocomplete a service address, then select a verified match
+- Customer can still select service location on a map or use current location
 - App reverse-geocodes and stores verified coordinates and label
 - Booking is created in Firestore as a live booking document
 - Booking becomes the single source of truth for assignment, execution, progress, and completion

@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'motion/react';
 import { CheckCircle2, ClipboardCheck, ShieldCheck, TimerReset } from 'lucide-react';
+import { useGeneralSettings } from '@/lib/generalSettings';
 
 const standards = [
   {
@@ -24,6 +25,13 @@ const standards = [
 ];
 
 export const Testimonials: React.FC = () => {
+  const { settings } = useGeneralSettings();
+  const coverageAreas = settings.serviceRegion
+    .replace(/and close environs/gi, '')
+    .split(',')
+    .map((part) => part.trim())
+    .filter(Boolean);
+
   return (
     <section className="py-32 bg-charcoal relative overflow-hidden">
       <div className="absolute top-0 right-0 w-1/3 h-full bg-teal/5 blur-[120px] pointer-events-none" />
@@ -76,10 +84,9 @@ export const Testimonials: React.FC = () => {
         </div>
 
         <div className="mt-20 pt-12 border-t border-white/5 flex flex-wrap justify-center gap-12 opacity-65">
-          <div className="text-sm font-bold uppercase tracking-[0.25em] text-white/70">Manchester Coverage</div>
-          <div className="text-sm font-bold uppercase tracking-[0.25em] text-white/70">Salford Coverage</div>
-          <div className="text-sm font-bold uppercase tracking-[0.25em] text-white/70">Stockport Coverage</div>
-          <div className="text-sm font-bold uppercase tracking-[0.25em] text-white/70">Oxfordshire Coverage</div>
+          {coverageAreas.map((area) => (
+            <div key={area} className="text-sm font-bold uppercase tracking-[0.25em] text-white/70">{area} Coverage</div>
+          ))}
         </div>
       </div>
     </section>

@@ -9,7 +9,7 @@ export const BrandBoard: React.FC = () => {
         <header className="mb-20">
           <h2 className="text-teal text-xs tracking-[0.4em] mb-4 uppercase">Brand Identity System</h2>
           <h3 className="text-5xl mb-2">CRYSTALLINE MAX LTD</h3>
-          <p className="text-charcoal/60 uppercase tracking-widest text-sm font-bold">Manchester, UK • Est. 2026</p>
+          <p className="text-charcoal/60 uppercase tracking-widest text-sm font-bold">Manchester + Oxfordshire, UK • Est. 2026</p>
         </header>
 
         <div className="grid md:grid-cols-2 gap-20">
