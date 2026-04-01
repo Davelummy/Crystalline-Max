@@ -18,7 +18,7 @@ export const DEFAULT_GENERAL_SETTINGS: GeneralSettings = {
   supportEmail: 'admin@ctmds.co.uk',
   supportPhone: '07425 241192',
   businessAddress: 'International House\n61 Mosley Street\nManchester\nM2 3HZ',
-  serviceRegion: 'Manchester, Salford, Stockport and close environs',
+  serviceRegion: 'Manchester, Salford, Stockport, Oxfordshire and close environs',
   maintenanceMode: false,
   requireTwoFactor: true,
   publicRegistration: true,
@@ -35,7 +35,11 @@ function migrateLegacyGeneralSettings(value?: Partial<GeneralSettings> | null): 
     supportEmail: value.supportEmail === 'support@crystallinemax.co.uk' ? DEFAULT_GENERAL_SETTINGS.supportEmail : value.supportEmail,
     supportPhone: value.supportPhone === '+44 161 524 7812' ? DEFAULT_GENERAL_SETTINGS.supportPhone : value.supportPhone,
     businessAddress: value.businessAddress || DEFAULT_GENERAL_SETTINGS.businessAddress,
-    serviceRegion: value.serviceRegion === 'Greater Manchester' ? DEFAULT_GENERAL_SETTINGS.serviceRegion : value.serviceRegion,
+    serviceRegion:
+      value.serviceRegion === 'Greater Manchester' ||
+      value.serviceRegion === 'Manchester, Salford, Stockport and close environs'
+        ? DEFAULT_GENERAL_SETTINGS.serviceRegion
+        : value.serviceRegion,
   };
 }
 

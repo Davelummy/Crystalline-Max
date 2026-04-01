@@ -16,10 +16,12 @@ The product is built around one shared operational truth: bookings live in Fires
 ### Public Surface
 
 - Brand-led landing page with service presentation, Trust Strip, How It Works process steps, and a rotating CTA Carousel
+- Testimonial-style personal quotes and avatar claims have been removed from the public surface; the section now presents neutral operational standards to avoid misrepresentation risk.
 - Portal selection for customer and staff access
 - Dedicated `/admin` entry path for admin access only
 - Responsive public navigation and portal routing
 - Public footer business/contact details now read from `settings/general`
+- Primary service-region baseline now includes Oxfordshire alongside Manchester, Salford, and Stockport.
 
 ### Customer Portal
 

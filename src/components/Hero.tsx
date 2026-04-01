@@ -94,7 +94,7 @@ export const Hero: React.FC<HeroProps> = ({ onBookNow, onViewServices }) => {
 
               <div className="mt-12 flex flex-wrap items-center gap-6 text-[10px] font-bold text-white/68 uppercase tracking-widest">
                 <div className="flex items-center gap-2">
-                  <Shield size={14} className="text-teal" /> 5-STAR RATED
+                  <Shield size={14} className="text-teal" /> QUALITY ASSURED
                 </div>
                 <div className="flex items-center gap-2">
                   <Clock size={14} className="text-teal" /> 24/7 BOOKING
