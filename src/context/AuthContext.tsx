@@ -1,8 +1,8 @@
 import React from 'react';
-import { onAuthStateChanged, type User } from 'firebase/auth';
+import { onAuthStateChanged, signOut, type User } from 'firebase/auth';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { auth, db } from '@/firebase';
-import { isCompanyEmail } from '@/lib/auth';
+import { getClientStayLoggedInPreference, isCompanyEmail } from '@/lib/auth';
 import type { AppUserData } from '@/types';
 
 interface AuthContextValue {
@@ -67,6 +67,49 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (unsubscribeUserDoc) unsubscribeUserDoc();
     };
   }, []);
+
+  React.useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (!user || userRole !== 'client') return;
+    if (getClientStayLoggedInPreference()) return;
+
+    const timeoutMinutes = Number(import.meta.env.VITE_CLIENT_IDLE_TIMEOUT_MINUTES || '30');
+    const idleTimeoutMs = Number.isFinite(timeoutMinutes) && timeoutMinutes > 0
+      ? timeoutMinutes * 60 * 1000
+      : 30 * 60 * 1000;
+
+    let timerId: number | null = null;
+
+    const resetTimer = () => {
+      if (timerId) {
+        window.clearTimeout(timerId);
+      }
+      timerId = window.setTimeout(() => {
+        void signOut(auth);
+      }, idleTimeoutMs);
+    };
+
+    const events: Array<keyof WindowEventMap> = [
+      'mousemove',
+      'mousedown',
+      'keydown',
+      'scroll',
+      'touchstart',
+      'click',
+    ];
+
+    events.forEach((eventName) => window.addEventListener(eventName, resetTimer, { passive: true }));
+    document.addEventListener('visibilitychange', resetTimer);
+    resetTimer();
+
+    return () => {
+      events.forEach((eventName) => window.removeEventListener(eventName, resetTimer));
+      document.removeEventListener('visibilitychange', resetTimer);
+      if (timerId) {
+        window.clearTimeout(timerId);
+      }
+    };
+  }, [user, userRole]);
 
   return (
     <AuthContext.Provider value={{ user, userData, userRole, loading }}>

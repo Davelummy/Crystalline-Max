@@ -16,6 +16,7 @@ import { AdminDashboard } from './components/AdminDashboard';
 import { AdminLoginPage } from './components/AdminLoginPage';
 import { AdminNavbar } from './components/AdminNavbar';
 import { AdminOnboarding } from './components/AdminOnboarding';
+import { AdminQuoteRequests } from './components/AdminQuoteRequests';
 import { AdminSettings } from './components/AdminSettings';
 import { AdminStaffManagement } from './components/AdminStaffManagement';
 import { AdminStaffProfile } from './components/AdminStaffProfile';
@@ -36,6 +37,7 @@ import { NotFoundPage } from './components/NotFoundPage';
 import { PortalSelection } from './components/PortalSelection';
 import { PrivacyPage } from './components/PrivacyPage';
 import { PublicNavbar } from './components/PublicNavbar';
+import { QuoteRequestFlow } from './components/QuoteRequestFlow';
 import { RouteGuard } from './components/RouteGuard';
 import { Services } from './components/Services';
 import { StaffNavbar } from './components/StaffNavbar';
@@ -68,6 +70,7 @@ import {
   signInWithCompanyEmail,
   signInWithGoogle,
 } from './lib/auth';
+import { serviceRequiresQuote } from './lib/bookings';
 import { useGeneralSettings } from './lib/generalSettings';
 import type { AppUserData, EmployeeInvite, UserRole, View } from './types';
 
@@ -187,6 +190,7 @@ function PublicFooter() {
           <div className="flex flex-wrap gap-6">
             <button type="button" onClick={() => navigate('/')} className="hover:text-teal transition-colors">Home</button>
             <button type="button" onClick={() => navigate('/services')} className="hover:text-teal transition-colors">Services</button>
+            <button type="button" onClick={() => navigate('/quote')} className="hover:text-teal transition-colors">Quotes</button>
             <button type="button" onClick={() => navigate('/estimate')} className="hover:text-teal transition-colors">Estimator</button>
             <button type="button" onClick={() => navigate('/contact')} className="hover:text-teal transition-colors">Contact</button>
             <button type="button" onClick={() => navigate('/portal')} className="hover:text-teal transition-colors">Portals</button>
@@ -211,6 +215,7 @@ function LandingPage() {
       <TrustStrip />
       <Services
         onBook={(serviceId) => navigate(`/book/${serviceId}`)}
+        onRequestQuote={(serviceId) => navigate(`/quote/${serviceId}`)}
         onEstimate={() => navigate('/estimate')}
         onContact={() => navigate('/contact')}
       />
@@ -218,6 +223,7 @@ function LandingPage() {
       <Testimonials />
       <CTACarousel
         onBook={(serviceId) => navigate(`/book/${serviceId}`)}
+        onRequestQuote={(serviceId) => navigate(`/quote/${serviceId}`)}
         onEstimate={() => navigate('/estimate')}
       />
     </>
@@ -229,6 +235,7 @@ function ServicesPage() {
   return (
     <Services
       onBook={(serviceId) => navigate(`/book/${serviceId}`)}
+      onRequestQuote={(serviceId) => navigate(`/quote/${serviceId}`)}
       onEstimate={() => navigate('/estimate')}
       onContact={() => navigate('/contact')}
     />
@@ -237,7 +244,13 @@ function ServicesPage() {
 
 function CostEstimatorPage() {
   const navigate = useNavigate();
-  return <CostEstimator onBook={(serviceId) => navigate(`/book/${serviceId}`)} onContact={() => navigate('/contact')} />;
+  return (
+    <CostEstimator
+      onBook={(serviceId) => navigate(`/book/${serviceId}`)}
+      onRequestQuote={(serviceId) => navigate(`/quote/${serviceId}`)}
+      onContact={() => navigate('/contact')}
+    />
+  );
 }
 
 function ContactPageRoute() {
@@ -247,14 +260,31 @@ function ContactPageRoute() {
 
 function BookingFlowPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { serviceId } = useParams();
+  const quoteBasePath = location.pathname.startsWith('/customer') ? '/customer/quote' : '/quote';
+
+  if (serviceId && serviceRequiresQuote(serviceId)) {
+    return <Navigate to={`${quoteBasePath}/${serviceId}`} replace />;
+  }
 
   return (
     <BookingFlow
       initialServiceId={serviceId}
+      onRequestQuote={(nextServiceId) => navigate(`${quoteBasePath}/${nextServiceId}`)}
       onComplete={() => navigate('/customer', { replace: true })}
     />
   );
+}
+
+function QuoteRequestPage() {
+  const { serviceId } = useParams();
+  return <QuoteRequestFlow initialServiceId={serviceId} source="public" />;
+}
+
+function CustomerQuoteRequestPage() {
+  const { serviceId } = useParams();
+  return <QuoteRequestFlow initialServiceId={serviceId} source="customer_portal" />;
 }
 
 function PublicLayout() {
@@ -267,6 +297,10 @@ function PublicLayout() {
     }
     if (view === 'booking') {
       navigate('/book');
+      return;
+    }
+    if (view === 'quote') {
+      navigate('/quote');
       return;
     }
     if (view === 'estimator') {
@@ -306,7 +340,7 @@ function PublicLayout() {
 function CustomerLayout({ onLogout }: { onLogout: (nextPath?: string) => Promise<void> }) {
   const navigate = useNavigate();
   const { user, userData, userRole, loading } = useAuth();
-  const redirectTo = !user ? '/portal' : userRole === 'employee' ? '/staff' : userRole === 'admin' ? '/admin/dashboard' : '/portal';
+  const redirectTo = !user ? '/portal' : '/login';
 
   return (
     <RouteGuard allowed={['client']} userRole={userRole} loading={loading} redirectTo={redirectTo}>
@@ -324,6 +358,10 @@ function CustomerLayout({ onLogout }: { onLogout: (nextPath?: string) => Promise
               }
               if (view === 'billing') {
                 navigate('/customer/billing');
+                return;
+              }
+              if (view === 'quote') {
+                navigate('/customer/quote');
                 return;
               }
               if (view === 'profile') {
@@ -345,7 +383,7 @@ function CustomerLayout({ onLogout }: { onLogout: (nextPath?: string) => Promise
 function StaffLayout({ onLogout }: { onLogout: (nextPath?: string) => Promise<void> }) {
   const navigate = useNavigate();
   const { user, userData, userRole, loading } = useAuth();
-  const redirectTo = !user ? '/portal' : userRole === 'admin' ? '/admin/dashboard' : '/customer';
+  const redirectTo = !user ? '/portal' : '/staff/login';
 
   return (
     <RouteGuard allowed={['employee']} userRole={userRole} loading={loading} redirectTo={redirectTo}>
@@ -461,7 +499,7 @@ function CustomerLoginRoute({
   isLoggingIn,
   error,
 }: {
-  onLogin: (fromPath?: string) => Promise<string | undefined>;
+  onLogin: (stayLoggedIn: boolean, fromPath?: string) => Promise<string | undefined>;
   isLoggingIn: boolean;
   error: string | null;
 }) {
@@ -471,9 +509,11 @@ function CustomerLoginRoute({
 
   if (loading) return <SyncingScreen />;
 
-  const redirect = getDefaultAuthenticatedPath(user, userRole);
-  if (redirect) {
-    return <Navigate to={redirect} replace />;
+  if (userRole === 'client') {
+    const redirect = getDefaultAuthenticatedPath(user, userRole);
+    if (redirect) {
+      return <Navigate to={redirect} replace />;
+    }
   }
 
   const fromPath = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname;
@@ -481,12 +521,14 @@ function CustomerLoginRoute({
   return (
     <CustomerLoginPage
       onBack={() => navigate('/portal')}
-      onLogin={async () => {
-        const nextPath = await onLogin(fromPath);
+      onLogin={async (stayLoggedIn) => {
+        const nextPath = await onLogin(stayLoggedIn, fromPath);
         if (nextPath) navigate(nextPath, { replace: true });
       }}
       isLoggingIn={isLoggingIn}
       error={error}
+      activeSessionEmail={user?.email}
+      activeSessionRole={userRole}
     />
   );
 }
@@ -506,9 +548,11 @@ function StaffLoginRoute({
 
   if (loading) return <SyncingScreen />;
 
-  const redirect = getDefaultAuthenticatedPath(user, userRole);
-  if (redirect) {
-    return <Navigate to={redirect} replace />;
+  if (userRole === 'employee') {
+    const redirect = getDefaultAuthenticatedPath(user, userRole);
+    if (redirect) {
+      return <Navigate to={redirect} replace />;
+    }
   }
 
   const fromPath = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname;
@@ -523,6 +567,8 @@ function StaffLoginRoute({
       onCreateAccount={() => navigate('/staff/signup', { state: location.state })}
       isLoggingIn={isLoggingIn}
       error={error}
+      activeSessionEmail={user?.email}
+      activeSessionRole={userRole}
     />
   );
 }
@@ -542,9 +588,11 @@ function StaffSignupRoute({
 
   if (loading) return <SyncingScreen />;
 
-  const redirect = getDefaultAuthenticatedPath(user, userRole);
-  if (redirect) {
-    return <Navigate to={redirect} replace />;
+  if (userRole === 'employee') {
+    const redirect = getDefaultAuthenticatedPath(user, userRole);
+    if (redirect) {
+      return <Navigate to={redirect} replace />;
+    }
   }
 
   const fromPath = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname;
@@ -559,6 +607,8 @@ function StaffSignupRoute({
       onGoToLogin={() => navigate('/staff/login', { state: location.state })}
       isLoggingIn={isLoggingIn}
       error={error}
+      activeSessionEmail={user?.email}
+      activeSessionRole={userRole}
     />
   );
 }
@@ -622,6 +672,10 @@ function CustomerDashboardRoute() {
         }
         if (view === 'billing') {
           navigate('/customer/billing');
+          return;
+        }
+        if (view === 'quote') {
+          navigate('/customer/quote');
           return;
         }
         if (view === 'profile') {
@@ -826,7 +880,7 @@ function AppRouter() {
     }
   }, [location.pathname]);
 
-  const handleCustomerLogin = React.useCallback(async (fromPath?: string) => {
+  const handleCustomerLogin = React.useCallback(async (stayLoggedIn: boolean, fromPath?: string) => {
     if (isLoggingIn) return undefined;
 
     setIsLoggingIn(true);
@@ -834,7 +888,7 @@ function AppRouter() {
 
     try {
       saveLoginReturnPath(fromPath);
-      const result = await signInWithGoogle('customer');
+      const result = await signInWithGoogle('customer', { stayLoggedIn });
       if (!result?.user) return undefined;
       clearLoginTarget();
       clearLoginReturnPath();
@@ -1038,6 +1092,8 @@ function AppRouter() {
         <Route path="/services" element={<ServicesPage />} />
         <Route path="/estimate" element={<CostEstimatorPage />} />
         <Route path="/contact" element={<ContactPageRoute />} />
+        <Route path="/quote" element={<QuoteRequestPage />} />
+        <Route path="/quote/:serviceId" element={<QuoteRequestPage />} />
         <Route path="/book" element={<BookingFlowPage />} />
         <Route path="/book/:serviceId" element={<BookingFlowPage />} />
         <Route path="/privacy" element={<PrivacyPage onBack={() => navigate('/')} />} />
@@ -1053,6 +1109,8 @@ function AppRouter() {
       <Route path="/customer" element={<CustomerLayout onLogout={handleLogout} />}>
         <Route index element={<CustomerDashboardRoute />} />
         <Route path="booking" element={<BookingFlowPage />} />
+        <Route path="quote" element={<CustomerQuoteRequestPage />} />
+        <Route path="quote/:serviceId" element={<CustomerQuoteRequestPage />} />
         <Route path="bookings/:bookingId" element={<CustomerBookingDetailRoute />} />
         <Route path="billing" element={<CustomerBillingRoute />} />
         <Route path="profile" element={<CustomerProfileRoute />} />
@@ -1085,6 +1143,7 @@ function AppRouter() {
           <Route path="staff" element={<AdminStaffManagement />} />
           <Route path="staff/:staffId/profile" element={<AdminStaffProfile />} />
           <Route path="staff/:staffId/assignments" element={<AdminStaffAssignments />} />
+          <Route path="quotes" element={<AdminQuoteRequests />} />
           <Route path="bookings/:bookingId" element={<AdminBookingDetailRoute />} />
           <Route path="settings" element={<AdminSettings />} />
         </Route>

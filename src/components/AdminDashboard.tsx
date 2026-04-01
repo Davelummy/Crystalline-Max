@@ -6,13 +6,14 @@ import { useNavigate } from 'react-router-dom';
 import { db } from '../firebase';
 import { formatSchedule, getAfterPhotos, getAssignedStaffLabel, getBeforePhotos, getPrimaryAfterPhotoUrl, getPrimaryBeforePhotoUrl, getStatusLabel, getTaskProgressPercent, sortBookingsByCreatedAt, sortBookingsBySchedule } from '../lib/bookings';
 import { PhotoGalleryOverlay } from './PhotoGalleryOverlay';
-import type { AppUserData, BookingPhoto, BookingRecord, CheckIn } from '../types';
+import type { AppUserData, BookingPhoto, BookingRecord, CheckIn, QuoteRequestRecord } from '../types';
 
 export const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();
   const [checkins, setCheckins] = React.useState<CheckIn[]>([]);
   const [employees, setEmployees] = React.useState<AppUserData[]>([]);
   const [bookings, setBookings] = React.useState<BookingRecord[]>([]);
+  const [quoteRequests, setQuoteRequests] = React.useState<QuoteRequestRecord[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [galleryState, setGalleryState] = React.useState<{ title: string; photos: BookingPhoto[] } | null>(null);
 
@@ -20,6 +21,7 @@ export const AdminDashboard: React.FC = () => {
     const checkinsQuery = query(collection(db, 'checkins'), orderBy('timestamp', 'desc'));
     const employeesQuery = query(collection(db, 'users'), where('role', '==', 'employee'));
     const bookingsQuery = query(collection(db, 'bookings'));
+    const quoteRequestsQuery = query(collection(db, 'quoteRequests'));
 
     const unsubCheckins = onSnapshot(checkinsQuery, (snapshot) => {
       setCheckins(snapshot.docs.map((entry) => ({ id: entry.id, ...(entry.data() as Omit<CheckIn, 'id'>) })));
@@ -35,11 +37,18 @@ export const AdminDashboard: React.FC = () => {
       setBookings(sortBookingsByCreatedAt(records));
       setLoading(false);
     }, () => setLoading(false));
+    const unsubQuotes = onSnapshot(quoteRequestsQuery, (snapshot) => {
+      setQuoteRequests(snapshot.docs.map((entry) => ({
+        id: entry.id,
+        ...(entry.data() as Omit<QuoteRequestRecord, 'id'>),
+      })));
+    });
 
     return () => {
       unsubCheckins();
       unsubEmployees();
       unsubBookings();
+      unsubQuotes();
     };
   }, []);
 
@@ -48,6 +57,7 @@ export const AdminDashboard: React.FC = () => {
     bookings.filter((booking) => !['completed', 'cancelled'].includes(booking.status)),
   ).slice(0, 5);
   const pendingCount = bookings.filter((booking) => booking.status === 'pending').length;
+  const pendingQuoteCount = quoteRequests.filter((quote) => ['submitted', 'reviewing'].includes(quote.status)).length;
   const revenue = bookings
     .filter((booking) => booking.paymentStatus === 'paid')
     .reduce((sum, booking) => sum + (booking.paymentAmount != null ? booking.paymentAmount / 100 : booking.total), 0);
@@ -135,6 +145,22 @@ export const AdminDashboard: React.FC = () => {
             <div className="dark-card p-6">
               <p className="text-[10px] text-white/60 uppercase tracking-widest mb-2">Revenue</p>
               <p className="text-2xl font-display text-teal">£{revenue.toFixed(0)}</p>
+            </div>
+          </div>
+
+          <div className="dark-card p-6">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-[10px] text-white/60 uppercase tracking-widest mb-2">Open Quote Requests</p>
+                <p className="text-2xl font-display text-teal">{pendingQuoteCount}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => navigate('/admin/quotes')}
+                className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-white/80 transition-colors hover:border-teal hover:text-teal"
+              >
+                Open Queue
+              </button>
             </div>
           </div>
 

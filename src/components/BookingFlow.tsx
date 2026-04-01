@@ -1,10 +1,11 @@
 import React from 'react';
 import { DayPicker } from 'react-day-picker';
 import { AnimatePresence, motion } from 'motion/react';
-import { ChevronRight, Check, Clock, LogIn, MapPin, Sparkles } from 'lucide-react';
+import { Check, Clock, LogIn, MapPin, Sparkles } from 'lucide-react';
+import { signOut } from 'firebase/auth';
 import { addDoc, collection, doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
-import { getAuthErrorMessage, signInWithGoogle } from '../lib/auth';
+import { getAuthErrorMessage, getClientStayLoggedInPreference, isCompanyEmail, signInWithGoogle } from '../lib/auth';
 import { cn } from '@/lib/utils';
 import { auth, db, functions } from '../firebase';
 import { MapLocationPicker } from './MapLocationPicker';
@@ -31,6 +32,7 @@ const steps = [
 
 interface BookingFlowProps {
   initialServiceId?: string;
+  onRequestQuote?: (serviceId: string) => void;
   onComplete?: () => void;
 }
 
@@ -54,7 +56,7 @@ interface AvailabilitySnapshotResponse {
   bookedDateCounts: Record<string, number>;
 }
 
-export const BookingFlow: React.FC<BookingFlowProps> = ({ initialServiceId, onComplete }) => {
+export const BookingFlow: React.FC<BookingFlowProps> = ({ initialServiceId, onRequestQuote, onComplete }) => {
   const todayIso = React.useMemo(() => dateToIso(new Date()), []);
   const [currentStep, setCurrentStep] = React.useState(initialServiceId ? 2 : 1);
   const [user, setUser] = React.useState(auth.currentUser);
@@ -67,6 +69,7 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ initialServiceId, onCo
   const [submitting, setSubmitting] = React.useState(false);
   const [authLoading, setAuthLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const [stayLoggedIn, setStayLoggedIn] = React.useState(getClientStayLoggedInPreference());
   const [selection, setSelection] = React.useState<BookingSelection>({
     serviceId: initialServiceId || '',
     addons: [],
@@ -81,6 +84,11 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ initialServiceId, onCo
     timeWindow: '',
     date: todayIso,
   });
+  const customerSession = Boolean(
+    user &&
+    !isCompanyEmail(user.email || '') &&
+    (!userData || userData.role === 'client'),
+  );
 
   const loadAvailabilitySnapshot = React.useCallback(async () => {
     setAvailabilityLoading(true);
@@ -153,18 +161,10 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ initialServiceId, onCo
   }, [availableAddons, selectedService, selection.addons, userData?.bookingCount]);
 
   const nextStep = () => {
-    if (currentStep === 4 && user) {
-      setCurrentStep(6);
-      return;
-    }
     setCurrentStep((step) => Math.min(step + 1, 6));
   };
 
   const prevStep = () => {
-    if (currentStep === 6 && user) {
-      setCurrentStep(4);
-      return;
-    }
     setCurrentStep((step) => Math.max(step - 1, 1));
   };
 
@@ -210,7 +210,10 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ initialServiceId, onCo
     setError(null);
 
     try {
-      const result = await signInWithGoogle('customer');
+      if (user && !customerSession) {
+        await signOut(auth);
+      }
+      const result = await signInWithGoogle('customer', { stayLoggedIn });
       if (!result?.user) return;
       setCurrentStep(6);
     } catch (authError) {
@@ -221,9 +224,21 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ initialServiceId, onCo
     }
   };
 
+  const continueAsSignedInCustomer = () => {
+    setError(null);
+    setCurrentStep(6);
+  };
+
   const handleFinalize = async () => {
-    if (!user || !selectedService) {
-      setError('Sign in to continue with your booking request.');
+    if (!selectedService) {
+      setError('Select a valid service before submitting your booking.');
+      setCurrentStep(1);
+      return;
+    }
+
+    if (!customerSession || !user) {
+      setError('Sign in with a customer Google account before completing your booking.');
+      setCurrentStep(5);
       return;
     }
 
@@ -270,6 +285,13 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ initialServiceId, onCo
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
         });
+      } else {
+        const existingProfile = latestUserDoc.data() as AppUserData;
+        if (existingProfile.role && existingProfile.role !== 'client') {
+          setError('This signed-in account belongs to workforce access. Switch to a customer Google account.');
+          setCurrentStep(5);
+          return;
+        }
       }
 
       await addDoc(collection(db, 'bookings'), {
@@ -357,6 +379,10 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ initialServiceId, onCo
                 <button
                   key={item.id}
                   onClick={() => {
+                    if (item.requiresQuote) {
+                      onRequestQuote?.(item.id);
+                      return;
+                    }
                     setSelection((prev) => ({ ...prev, serviceId: item.id, addons: [] }));
                     nextStep();
                   }}
@@ -372,11 +398,13 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ initialServiceId, onCo
                     <div className="text-left">
                       <span className="block font-bold uppercase tracking-wider">{item.label}</span>
                       <span className="text-xs text-charcoal/60 uppercase tracking-widest">
-                        Starting from £{item.basePrice}
+                        {item.requiresQuote ? 'Request tailored quote' : `Starting from £${item.basePrice}`}
                       </span>
                     </div>
                   </div>
-                  <ChevronRight size={20} className="text-silver" />
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-teal">
+                    {item.requiresQuote ? 'Request Quote' : 'Select'}
+                  </span>
                 </button>
               ))}
             </div>
@@ -559,17 +587,81 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ initialServiceId, onCo
             <div className="w-20 h-20 bg-teal/10 text-teal rounded-full flex items-center justify-center mx-auto mb-6">
               <LogIn size={40} />
             </div>
-            <h3 className="text-2xl uppercase font-display tracking-wider">Sign In To Save Your Booking</h3>
-            <p className="text-charcoal/60 text-sm max-w-sm mx-auto">
-              Bookings are tied to a customer account so you can track status, billing, and future discounts.
-            </p>
-            <button
-              onClick={handleSocialLogin}
-              disabled={authLoading}
-              className="btn-primary w-full flex items-center justify-center gap-3 disabled:opacity-50"
-            >
-              <LogIn size={18} /> {authLoading ? 'SYNCING ACCOUNT...' : 'CONTINUE WITH GOOGLE'}
-            </button>
+            {customerSession ? (
+              <>
+                <h3 className="text-2xl uppercase font-display tracking-wider">Account Confirmed</h3>
+                <p className="text-charcoal/60 text-sm max-w-sm mx-auto">
+                  You are signed in as {user?.email}. Continue to final confirmation or switch account.
+                </p>
+                <button
+                  onClick={continueAsSignedInCustomer}
+                  className="btn-primary w-full flex items-center justify-center gap-3"
+                >
+                  CONTINUE TO CONFIRMATION
+                </button>
+                <button
+                  onClick={handleSocialLogin}
+                  disabled={authLoading}
+                  className="btn-secondary w-full disabled:opacity-50"
+                >
+                  {authLoading ? 'SWITCHING ACCOUNT...' : 'USE A DIFFERENT GOOGLE ACCOUNT'}
+                </button>
+                <label className="flex items-center gap-3 rounded-xl border border-charcoal/10 bg-charcoal/5 px-4 py-3 text-left">
+                  <input
+                    type="checkbox"
+                    checked={stayLoggedIn}
+                    onChange={(event) => setStayLoggedIn(event.target.checked)}
+                    className="h-4 w-4 accent-teal"
+                  />
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-charcoal/70">
+                    Stay logged in on this device
+                  </span>
+                </label>
+                {error && (
+                  <div className="rounded-2xl border border-red-500/20 bg-red-500/5 p-4 text-sm text-red-500">
+                    {error}
+                  </div>
+                )}
+              </>
+            ) : (
+              <>
+                <h3 className="text-2xl uppercase font-display tracking-wider">Sign In To Save Your Booking</h3>
+                <p className="text-charcoal/60 text-sm max-w-sm mx-auto">
+                  Bookings are tied to a customer account so you can track status, billing, and future discounts.
+                </p>
+                {user && (
+                  <div className="rounded-2xl border border-amber-500/25 bg-amber-500/10 p-4 text-xs text-amber-700">
+                    Signed in as {user.email || 'workforce user'}. Continue with Google to use a customer account.
+                  </div>
+                )}
+                <button
+                  onClick={handleSocialLogin}
+                  disabled={authLoading}
+                  className="btn-primary w-full flex items-center justify-center gap-3 disabled:opacity-50"
+                >
+                  <LogIn size={18} /> {authLoading ? 'SYNCING ACCOUNT...' : 'CONTINUE WITH GOOGLE'}
+                </button>
+                <label className="flex items-center gap-3 rounded-xl border border-charcoal/10 bg-charcoal/5 px-4 py-3 text-left">
+                  <input
+                    type="checkbox"
+                    checked={stayLoggedIn}
+                    onChange={(event) => setStayLoggedIn(event.target.checked)}
+                    className="h-4 w-4 accent-teal"
+                  />
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-charcoal/70">
+                    Stay logged in on this device
+                  </span>
+                </label>
+                <p className="text-[10px] uppercase tracking-widest text-charcoal/55">
+                  If left unchecked, inactivity signs you out automatically.
+                </p>
+                {error && (
+                  <div className="rounded-2xl border border-red-500/20 bg-red-500/5 p-4 text-sm text-red-500">
+                    {error}
+                  </div>
+                )}
+              </>
+            )}
           </div>
         );
       case 6:

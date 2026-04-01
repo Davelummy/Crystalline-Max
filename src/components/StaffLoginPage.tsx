@@ -1,6 +1,7 @@
 import React from 'react';
 import { ArrowRight, BadgeCheck, Briefcase, Lock, Mail } from 'lucide-react';
 import { AuthPortalLayout } from './AuthPortalLayout';
+import type { UserRole } from '@/types';
 
 interface StaffLoginPageProps {
   onBack: () => void;
@@ -8,6 +9,8 @@ interface StaffLoginPageProps {
   onCreateAccount: () => void;
   isLoggingIn?: boolean;
   error?: string | null;
+  activeSessionEmail?: string | null;
+  activeSessionRole?: UserRole | null;
 }
 
 export const StaffLoginPage: React.FC<StaffLoginPageProps> = ({
@@ -16,6 +19,8 @@ export const StaffLoginPage: React.FC<StaffLoginPageProps> = ({
   onCreateAccount,
   isLoggingIn,
   error,
+  activeSessionEmail,
+  activeSessionRole,
 }) => {
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
@@ -47,6 +52,12 @@ export const StaffLoginPage: React.FC<StaffLoginPageProps> = ({
       )}
     >
       <form onSubmit={handleSubmit} className="space-y-5">
+        {activeSessionEmail && activeSessionRole && activeSessionRole !== 'employee' && (
+          <div className="rounded-2xl border border-amber-500/25 bg-amber-500/10 p-4 text-xs uppercase tracking-widest text-amber-700">
+            Active {activeSessionRole} session detected ({activeSessionEmail}). Sign in with staff credentials to access the staff portal.
+          </div>
+        )}
+
         <div>
           <label className="block text-[10px] font-bold uppercase tracking-widest text-white/68 mb-2">
             Company Email

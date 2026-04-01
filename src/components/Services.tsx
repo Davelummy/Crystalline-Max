@@ -51,11 +51,13 @@ const services = [
     ],
     icon: Building2,
     price: 'Custom Quote',
+    requiresQuote: true,
   },
 ];
 
 interface ServicesProps {
   onBook?: (serviceId: string) => void;
+  onRequestQuote?: (serviceId: string) => void;
   onEstimate?: () => void;
   onContact?: () => void;
 }
@@ -84,7 +86,7 @@ const comparisons = [
   },
 ];
 
-export const Services: React.FC<ServicesProps> = ({ onBook, onEstimate, onContact }) => {
+export const Services: React.FC<ServicesProps> = ({ onBook, onRequestQuote, onEstimate, onContact }) => {
   const [expandedId, setExpandedId] = React.useState<string | null>(null);
   const [activeComparison, setActiveComparison] = React.useState(0);
 
@@ -161,10 +163,10 @@ export const Services: React.FC<ServicesProps> = ({ onBook, onEstimate, onContac
                   </button>
                 </div>
                 <button
-                  onClick={() => onBook?.(service.bookingId)}
+                  onClick={() => (service.requiresQuote ? onRequestQuote?.(service.bookingId) : onBook?.(service.bookingId))}
                   className="btn-primary w-full py-3 text-[10px] flex items-center justify-center gap-2"
                 >
-                  BOOK NOW <ArrowRight size={14} />
+                  {service.requiresQuote ? 'REQUEST QUOTE' : 'BOOK NOW'} <ArrowRight size={14} />
                 </button>
               </div>
             </motion.div>

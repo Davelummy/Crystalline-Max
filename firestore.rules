@@ -288,6 +288,64 @@ service cloud.firestore {
              ));
     }
 
+    function isValidQuoteRequest(data) {
+      let requiredFields = [
+        'userId',
+        'customerName',
+        'customerEmail',
+        'phoneNumber',
+        'serviceId',
+        'serviceLabel',
+        'address',
+        'city',
+        'postcode',
+        'frequency',
+        'preferredSchedule',
+        'budgetRange',
+        'preferredContact',
+        'scopeSummary',
+        'scopeDetails',
+        'status',
+        'source',
+        'createdAt'
+      ];
+      let allowedFields = requiredFields.concat([
+        'companyName',
+        'adminNote',
+        'quotedAmount',
+        'quotedAt',
+        'closedAt',
+        'updatedAt'
+      ]);
+
+      return data.keys().hasAll(requiredFields) &&
+             data.keys().hasOnly(allowedFields) &&
+             data.userId is string &&
+             data.customerName is string &&
+             data.customerEmail is string &&
+             data.phoneNumber is string &&
+             data.serviceId is string &&
+             data.serviceLabel is string &&
+             data.address is string &&
+             data.city is string &&
+             data.postcode is string &&
+             data.frequency in ['one_off', 'weekly', 'fortnightly', 'monthly', 'custom'] &&
+             data.preferredSchedule is string &&
+             data.budgetRange is string &&
+             data.preferredContact in ['email', 'phone'] &&
+             data.scopeSummary is string &&
+             data.scopeDetails is string &&
+             data.status in ['submitted', 'reviewing', 'quoted', 'closed'] &&
+             data.source in ['public', 'customer_portal'] &&
+             (!('companyName' in data) || data.companyName == null || data.companyName is string) &&
+             (!('adminNote' in data) || data.adminNote == null || data.adminNote is string) &&
+             (!('quotedAmount' in data) || data.quotedAmount == null || data.quotedAmount is number) &&
+             (!('quotedAt' in data) || data.quotedAt == null || data.quotedAt is timestamp || data.quotedAt is string) &&
+             (!('closedAt' in data) || data.closedAt == null || data.closedAt is timestamp || data.closedAt is string) &&
+             (data.createdAt is timestamp || data.createdAt is string) &&
+             (!('updatedAt' in data) || data.updatedAt is timestamp || data.updatedAt is string);
+    }
+
     function isAssignedStaff() {
       return isStaff() && (
         resource.data.assignedStaffId == request.auth.uid ||
@@ -374,6 +432,29 @@ service cloud.firestore {
         isAssignedStaff() &&
         isValidBooking(request.resource.data)
       );
+    }
+
+    match /quoteRequests/{requestId} {
+      allow get: if isAuthenticated() && (
+        isAdmin() ||
+        resource.data.userId == request.auth.uid
+      );
+      allow list: if isAuthenticated() && (
+        isAdmin() ||
+        resource.data.userId == request.auth.uid
+      );
+      allow create: if isAuthenticated() &&
+                    isValidQuoteRequest(request.resource.data) &&
+                    request.resource.data.userId == request.auth.uid &&
+                    request.resource.data.customerEmail == request.auth.token.email &&
+                    request.resource.data.status == 'submitted' &&
+                    (!('adminNote' in request.resource.data) || request.resource.data.adminNote == null || request.resource.data.adminNote == '') &&
+                    (!('quotedAmount' in request.resource.data) || request.resource.data.quotedAmount == null) &&
+                    (!('quotedAt' in request.resource.data) || request.resource.data.quotedAt == null) &&
+                    (!('closedAt' in request.resource.data) || request.resource.data.closedAt == null);
+      allow update: if isAdmin() &&
+                    isValidQuoteRequest(request.resource.data);
+      allow delete: if isAdmin();
     }
 
     match /checkins/{checkinId} {

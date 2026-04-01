@@ -1,5 +1,5 @@
 import React from 'react';
-import { Calendar, ChevronRight, Clock, MapPin, Repeat, User } from 'lucide-react';
+import { Calendar, ChevronRight, Clock, FileText, MapPin, Repeat, User } from 'lucide-react';
 import { collection, onSnapshot, query, where } from 'firebase/firestore';
 import { db } from '../firebase';
 import { formatSchedule, getAfterPhotos, getBeforePhotos, getPrimaryAfterPhotoUrl, getPrimaryBeforePhotoUrl, getStatusLabel, getTaskProgressPercent, hasJobCompleted, hasJobStarted, isUpcomingBooking, sortBookingsByCreatedAt, sortBookingsBySchedule } from '../lib/bookings';
@@ -194,6 +194,9 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
             <h4 className="text-sm font-bold uppercase tracking-widest text-charcoal/60">Quick Actions</h4>
             <button onClick={() => onNavigate('booking')} className="w-full btn-primary flex items-center justify-center gap-2 py-6">
               <Repeat size={18} /> NEW BOOKING
+            </button>
+            <button onClick={() => onNavigate('quote')} className="w-full btn-secondary flex items-center justify-center gap-2 py-6 border-charcoal/10 hover:border-teal/50">
+              <FileText size={18} /> REQUEST QUOTE
             </button>
             <button onClick={() => onNavigate('profile')} className="w-full btn-secondary flex items-center justify-center gap-2 py-6 border-charcoal/10 hover:border-teal/50">
               <User size={18} /> EDIT PROFILE
