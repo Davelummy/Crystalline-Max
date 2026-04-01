@@ -6,10 +6,11 @@ import { SERVICES, CAR_ADDONS, HOME_ADDONS } from '../constants';
 
 interface CostEstimatorProps {
   onBook?: (serviceId: string) => void;
+  onRequestQuote?: (serviceId: string) => void;
   onContact?: () => void;
 }
 
-export const CostEstimator: React.FC<CostEstimatorProps> = ({ onBook, onContact }) => {
+export const CostEstimator: React.FC<CostEstimatorProps> = ({ onBook, onRequestQuote, onContact }) => {
   const [selectedService, setSelectedService] = React.useState(SERVICES[0]);
   const [selectedAddons, setSelectedAddons] = React.useState<string[]>([]);
 
@@ -27,6 +28,7 @@ export const CostEstimator: React.FC<CostEstimatorProps> = ({ onBook, onContact 
       const addon = currentAddons.find(a => a.id === id);
       return acc + (addon?.price || 0);
     }, 0);
+  const requiresQuote = Boolean(selectedService.requiresQuote);
 
   return (
     <div className="min-h-screen bg-charcoal pt-32 pb-20 px-4">
@@ -133,10 +135,10 @@ export const CostEstimator: React.FC<CostEstimatorProps> = ({ onBook, onContact 
               </div>
 
               <button 
-                onClick={() => onBook?.(selectedService.id)}
+                onClick={() => (requiresQuote ? onRequestQuote?.(selectedService.id) : onBook?.(selectedService.id))}
                 className="btn-primary w-full py-5 text-lg flex items-center justify-center gap-3 group"
               >
-                BOOK THIS SERVICE
+                {requiresQuote ? 'REQUEST TAILORED QUOTE' : 'BOOK THIS SERVICE'}
                 <motion.div
                   animate={{ x: [0, 5, 0] }}
                   transition={{ repeat: Infinity, duration: 1.5 }}

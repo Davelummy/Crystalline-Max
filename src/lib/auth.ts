@@ -1,6 +1,9 @@
 import {
+  browserLocalPersistence,
+  browserSessionPersistence,
   createUserWithEmailAndPassword,
   GoogleAuthProvider,
+  setPersistence,
   signInWithEmailAndPassword,
   signInWithPopup,
   signInWithRedirect,
@@ -10,6 +13,7 @@ import type { Portal } from '../types';
 
 const LOGIN_TARGET_KEY = 'crystalline-max-login-target';
 const LOGIN_RETURN_PATH_KEY = 'crystalline-max-login-return-path';
+const CLIENT_STAY_LOGGED_IN_KEY = 'crystalline-max-client-stay-logged-in';
 export const COMPANY_EMAIL_DOMAIN = '@ctmds.co.uk';
 
 function readLoginTargetStorage() {
@@ -71,6 +75,21 @@ export function clearLoginReturnPath() {
   window.localStorage.removeItem(LOGIN_RETURN_PATH_KEY);
 }
 
+export function getClientStayLoggedInPreference() {
+  if (typeof window === 'undefined') return false;
+  const saved =
+    window.sessionStorage.getItem(CLIENT_STAY_LOGGED_IN_KEY) ??
+    window.localStorage.getItem(CLIENT_STAY_LOGGED_IN_KEY);
+  return saved === '1';
+}
+
+export function setClientStayLoggedInPreference(enabled: boolean) {
+  if (typeof window === 'undefined') return;
+  const value = enabled ? '1' : '0';
+  window.sessionStorage.setItem(CLIENT_STAY_LOGGED_IN_KEY, value);
+  window.localStorage.setItem(CLIENT_STAY_LOGGED_IN_KEY, value);
+}
+
 export function shouldUseRedirectAuth() {
   if (typeof navigator === 'undefined') return false;
 
@@ -79,9 +98,18 @@ export function shouldUseRedirectAuth() {
   return inAppBrowser;
 }
 
-export async function signInWithGoogle(targetPortal: Exclude<Portal, 'public'>) {
+export async function signInWithGoogle(
+  targetPortal: Exclude<Portal, 'public'>,
+  options?: { stayLoggedIn?: boolean },
+) {
   const provider = createGoogleProvider();
   saveLoginTarget(targetPortal);
+
+  const stayLoggedIn = Boolean(options?.stayLoggedIn);
+  if (targetPortal === 'customer') {
+    setClientStayLoggedInPreference(stayLoggedIn);
+    await setPersistence(auth, stayLoggedIn ? browserLocalPersistence : browserSessionPersistence);
+  }
 
   if (shouldUseRedirectAuth()) {
     await signInWithRedirect(auth, provider);

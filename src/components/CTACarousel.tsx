@@ -9,6 +9,7 @@ import officeAfter from '../assets/images/office-after.jpg';
 
 interface CTACarouselProps {
   onBook: (serviceId: string) => void;
+  onRequestQuote: (serviceId: string) => void;
   onEstimate: () => void;
 }
 
@@ -39,10 +40,11 @@ const slides = [
     cta: 'Request a Quote',
     image: officeAfter,
     accent: 'teal' as const,
+    quoteOnly: true,
   },
 ];
 
-export const CTACarousel: React.FC<CTACarouselProps> = ({ onBook, onEstimate }) => {
+export const CTACarousel: React.FC<CTACarouselProps> = ({ onBook, onRequestQuote, onEstimate }) => {
   const [current, setCurrent] = React.useState(0);
 
   const next = () => setCurrent((p) => (p + 1) % slides.length);
@@ -90,7 +92,7 @@ export const CTACarousel: React.FC<CTACarouselProps> = ({ onBook, onEstimate }) 
                 </p>
                 <div className="flex flex-wrap gap-4 pt-2">
                   <button
-                    onClick={() => onBook(slide.id)}
+                    onClick={() => (slide.quoteOnly ? onRequestQuote(slide.id) : onBook(slide.id))}
                     className="btn-primary flex items-center gap-3 group"
                   >
                     {slide.cta}

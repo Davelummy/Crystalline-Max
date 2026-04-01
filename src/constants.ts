@@ -1,12 +1,12 @@
 import { Car, Home, Building2, ShieldCheck } from 'lucide-react';
 
 export const SERVICES = [
-  { id: 'car-full', label: 'Full Detailing Package', icon: Car, basePrice: 85, type: 'car' },
-  { id: 'car-exterior', label: 'Exterior Wash & Polish', icon: Car, basePrice: 45, type: 'car' },
-  { id: 'car-interior', label: 'Interior Deep Clean', icon: Car, basePrice: 55, type: 'car' },
-  { id: 'home', label: 'Residential Cleaning', icon: Home, basePrice: 45, type: 'home' },
-  { id: 'office', label: 'Office Cleaning', icon: Building2, basePrice: 120, type: 'office' },
-  { id: 'industrial', label: 'Industrial Cleaning', icon: ShieldCheck, basePrice: 250, type: 'industrial' },
+  { id: 'car-full', label: 'Full Detailing Package', icon: Car, basePrice: 85, type: 'car', requiresQuote: false },
+  { id: 'car-exterior', label: 'Exterior Wash & Polish', icon: Car, basePrice: 45, type: 'car', requiresQuote: false },
+  { id: 'car-interior', label: 'Interior Deep Clean', icon: Car, basePrice: 55, type: 'car', requiresQuote: false },
+  { id: 'home', label: 'Residential Cleaning', icon: Home, basePrice: 45, type: 'home', requiresQuote: false },
+  { id: 'office', label: 'Office Cleaning', icon: Building2, basePrice: 120, type: 'office', requiresQuote: true },
+  { id: 'industrial', label: 'Industrial Cleaning', icon: ShieldCheck, basePrice: 250, type: 'industrial', requiresQuote: true },
 ];
 
 export const CAR_ADDONS = [

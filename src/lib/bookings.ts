@@ -39,6 +39,10 @@ export function getServiceById(serviceId: string) {
   return SERVICES.find((service) => service.id === serviceId) ?? null;
 }
 
+export function serviceRequiresQuote(serviceId: string) {
+  return Boolean(getServiceById(serviceId)?.requiresQuote);
+}
+
 export function getAddonLabel(serviceId: string, addonId: string) {
   const service = getServiceById(serviceId);
   const addons = service?.type === 'car' ? CAR_ADDONS : service?.type === 'home' ? HOME_ADDONS : [];

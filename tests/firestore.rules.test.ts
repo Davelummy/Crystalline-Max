@@ -65,6 +65,36 @@ function customerBookingData(overrides: Record<string, unknown> = {}) {
   };
 }
 
+function quoteRequestData(overrides: Record<string, unknown> = {}) {
+  return {
+    userId: 'client-1',
+    customerName: 'Client One',
+    customerEmail: 'client1@example.com',
+    phoneNumber: '07425241192',
+    companyName: 'Client One Holdings',
+    serviceId: 'office',
+    serviceLabel: 'Office Cleaning',
+    address: '61 Mosley Street',
+    city: 'Manchester',
+    postcode: 'M2 3HZ',
+    frequency: 'weekly',
+    preferredSchedule: 'Weekday evenings',
+    budgetRange: '£600 - £900 monthly',
+    preferredContact: 'email',
+    scopeSummary: 'Office and common area sanitization for 3 floors.',
+    scopeDetails: 'Needs after-hours access, washroom deep clean, and reception polish.',
+    status: 'submitted',
+    source: 'public',
+    adminNote: null,
+    quotedAmount: null,
+    quotedAt: null,
+    closedAt: null,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+    ...overrides,
+  };
+}
+
 beforeAll(async () => {
   testEnv = await initializeTestEnvironment({
     projectId,
@@ -186,6 +216,41 @@ describe('Firestore rules', () => {
     const adminDb = testEnv.authenticatedContext('admin-1', { email: 'admin@ctmds.co.uk' }).firestore();
     const snapshot = await assertSucceeds(getDoc(doc(adminDb, 'settings/general')));
     expect(snapshot.exists()).toBe(true);
+  });
+
+  it('allows a customer to create their own quote request', async () => {
+    const customerDb = testEnv.authenticatedContext('client-1', { email: 'client1@example.com' }).firestore();
+    await assertSucceeds(setDoc(doc(customerDb, 'quoteRequests/quote-1'), quoteRequestData()));
+  });
+
+  it('rejects a customer reading another customer quote request', async () => {
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      await setDoc(doc(context.firestore(), 'quoteRequests/quote-1'), quoteRequestData({
+        userId: 'client-2',
+        customerEmail: 'client2@example.com',
+      }));
+    });
+
+    const customerDb = testEnv.authenticatedContext('client-1', { email: 'client1@example.com' }).firestore();
+    await assertFails(getDoc(doc(customerDb, 'quoteRequests/quote-1')));
+  });
+
+  it('allows an admin to update quote request status and note', async () => {
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      await setDoc(doc(context.firestore(), 'users/admin-1'), {
+        uid: 'admin-1',
+        email: 'admin@ctmds.co.uk',
+        role: 'admin',
+      });
+      await setDoc(doc(context.firestore(), 'quoteRequests/quote-1'), quoteRequestData());
+    });
+
+    const adminDb = testEnv.authenticatedContext('admin-1', { email: 'admin@ctmds.co.uk' }).firestore();
+    await assertSucceeds(updateDoc(doc(adminDb, 'quoteRequests/quote-1'), {
+      status: 'reviewing',
+      adminNote: 'Site survey requested for next Tuesday.',
+      updatedAt: serverTimestamp(),
+    }));
   });
 
   it('allows public read access to settings/general only', async () => {

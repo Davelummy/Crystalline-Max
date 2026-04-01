@@ -1,7 +1,7 @@
 import React from 'react';
 import type { User as FirebaseUser } from 'firebase/auth';
 import { Logo } from './Logo';
-import { Menu, X, LogOut, Calendar, User, History, CreditCard } from 'lucide-react';
+import { Menu, X, LogOut, Calendar, User, History, CreditCard, FileText } from 'lucide-react';
 import type { View } from '../types';
 
 interface CustomerNavbarProps {
@@ -33,6 +33,9 @@ export const CustomerNavbar: React.FC<CustomerNavbarProps> = ({ onNavigate, user
             <button onClick={() => onNavigate('billing')} className="text-xs font-bold tracking-widest text-white hover:text-teal transition-colors uppercase flex items-center gap-2">
               <CreditCard size={14} /> Billing
             </button>
+            <button onClick={() => onNavigate('quote')} className="text-xs font-bold tracking-widest text-white hover:text-teal transition-colors uppercase flex items-center gap-2">
+              <FileText size={14} /> Request Quote
+            </button>
 
             <div className="flex items-center gap-4 pl-4 border-l border-white/10">
               <div className="text-right">
@@ -59,6 +62,7 @@ export const CustomerNavbar: React.FC<CustomerNavbarProps> = ({ onNavigate, user
           <button onClick={() => { onNavigate('booking'); setIsOpen(false); }} className="text-xs font-bold tracking-widest text-white text-left uppercase">New Booking</button>
           <button onClick={() => { onNavigate('customer'); setIsOpen(false); }} className="text-xs font-bold tracking-widest text-white text-left uppercase">My Services</button>
           <button onClick={() => { onNavigate('billing'); setIsOpen(false); }} className="text-xs font-bold tracking-widest text-white text-left uppercase">Billing</button>
+          <button onClick={() => { onNavigate('quote'); setIsOpen(false); }} className="text-xs font-bold tracking-widest text-white text-left uppercase">Request Quote</button>
           <button onClick={() => { onNavigate('profile'); setIsOpen(false); }} className="text-xs font-bold tracking-widest text-white text-left uppercase">Edit Profile</button>
           <button onClick={() => { onLogout(); setIsOpen(false); }} className="text-xs font-bold tracking-widest text-red-500 text-left uppercase">Logout</button>
         </div>

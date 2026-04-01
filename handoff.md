@@ -30,12 +30,15 @@ The product is built around one shared operational truth: bookings live in Fires
 - Primary service-region baseline now includes Oxfordshire alongside Manchester, Salford, and Stockport.
 - General settings normalization now upgrades legacy region strings that mention the Manchester/Salford/Stockport baseline but omit Oxfordshire.
 - New public Contact page (`/contact`) reads live data from `settings/general` and routes users into booking or portal flows.
+- New public quote route (`/quote` and `/quote/:serviceId`) captures complex-service requirements (commercial/industrial) into a managed quote queue.
+- Public navbar/footer now include direct quote navigation.
 
 ### Customer Portal
 
 - Google sign-in flow
 - Customer onboarding and profile editing
 - Live booking creation
+- Dedicated quote-request route (`/customer/quote` and `/customer/quote/:serviceId`) for complex service scopes
 - Billing and booking history
 - Live job progress visibility
 - Before and after photo evidence viewing
@@ -67,6 +70,7 @@ The product is built around one shared operational truth: bookings live in Fires
 - Admin booking detail with confirm, cancel, reassign, unassign, and offline payment override controls
 - Availability and capacity controls backed by `settings/availability`
 - General configuration in `settings/general` now drives public business/contact output instead of acting as dead config
+- Dedicated admin quote queue route (`/admin/quotes`) with status lifecycle handling (`submitted -> reviewing -> quoted -> closed`), internal notes, and quoted amount capture
 - Staff cards in Staff Management open a modal that routes to two dedicated subpages:
   - `/admin/staff/:staffId/profile` — employment record, contact details, and payroll allocation editing
   - `/admin/staff/:staffId/assignments` — active bookings, completed history, cancellations, and average task progress stats
@@ -83,6 +87,16 @@ Booking is now a real Firestore-backed workflow rather than a fake success flow.
 - App reverse-geocodes and stores verified coordinates and label
 - Booking is created in Firestore as a live booking document
 - Booking becomes the single source of truth for assignment, execution, progress, and completion
+- Services marked `requiresQuote` (currently `office` and `industrial`) now route to quote flow instead of forcing standard booking submission
+
+### Quote Request Flow
+
+- Complex service requests are submitted from:
+  - public route: `/quote` and `/quote/:serviceId`
+  - customer portal route: `/customer/quote` and `/customer/quote/:serviceId`
+- Customer must authenticate with Google customer account before submit (same persistence/toggle model as customer login)
+- Submitted quote requests write to `quoteRequests` with source attribution (`public` or `customer_portal`)
+- Admin processes requests from `/admin/quotes` with lifecycle status, note, and pricing updates
 
 ### Staff Account Creation Flow
 
@@ -149,6 +163,7 @@ Main collections:
 - `bookings`
 - `employeeInvites`
 - `checkins`
+- `quoteRequests`
 - `settings`
 - `notificationLogs` — admin-read only; written by Cloud Functions on email delivery failure
 
@@ -260,6 +275,14 @@ Roadmap corrections already accepted before implementation:
 - Added shared auth helpers in [src/lib/auth.ts](/Users/davidolumide/Crystalline-Max/src/lib/auth.ts)
 - Stabilized redirect and portal state handling
 - Restricted admin entry to `/admin`
+- Customer sign-in now supports an explicit `Stay logged in` choice:
+  - checked: persistent local Firebase session
+  - unchecked: session persistence plus automatic inactivity timeout (default `30` minutes, configurable via `VITE_CLIENT_IDLE_TIMEOUT_MINUTES`)
+- Inactivity timeout enforcement runs only for customer sessions that are not marked `Stay logged in`
+- Portal-role isolation is now enforced in routing:
+  - staff/admin sessions cannot auto-enter customer portal; `/customer/*` redirects to `/login` and requires customer authentication
+  - customer/admin sessions cannot auto-enter staff portal; `/staff/*` redirects to `/staff/login` and requires staff authentication
+  - customer and staff login screens display active-session warnings when the current session role does not match the target portal
 
 ### Firestore Rules Alignment
 

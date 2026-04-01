@@ -15,6 +15,7 @@ export const PublicNavbar: React.FC<PublicNavbarProps> = ({ onNavigate }) => {
   const navItems: Array<{ label: string; view: View; match: (pathname: string) => boolean }> = [
     { label: 'Home', view: 'landing', match: (pathname) => pathname === '/' },
     { label: 'Services', view: 'services', match: (pathname) => pathname === '/services' },
+    { label: 'Quotes', view: 'quote', match: (pathname) => pathname === '/quote' || pathname.startsWith('/quote/') },
     { label: 'Estimator', view: 'estimator', match: (pathname) => pathname === '/estimate' },
     { label: 'Contact', view: 'contact', match: (pathname) => pathname === '/contact' },
   ];

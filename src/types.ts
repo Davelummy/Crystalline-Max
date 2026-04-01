@@ -4,6 +4,7 @@ export type View =
   | 'landing'
   | 'services'
   | 'booking'
+  | 'quote'
   | 'customer'
   | 'admin'
   | 'brand'
@@ -36,6 +37,7 @@ export type BookingStatus =
 
 export type PaymentStatus = 'pending' | 'paid' | 'not_required';
 export type AvailabilityTimeWindow = 'morning' | 'afternoon' | 'evening';
+export type QuoteRequestStatus = 'submitted' | 'reviewing' | 'quoted' | 'closed';
 
 export interface BookingPhoto {
   url: string;
@@ -162,4 +164,32 @@ export interface AvailabilitySettings {
   blockedDates: string[];
   availableDetailingTimes: string[];
   availableTimeWindows: AvailabilityTimeWindow[];
+}
+
+export interface QuoteRequestRecord {
+  id: string;
+  userId: string;
+  customerName: string;
+  customerEmail: string;
+  phoneNumber: string;
+  companyName?: string | null;
+  serviceId: string;
+  serviceLabel: string;
+  address: string;
+  city: string;
+  postcode: string;
+  frequency: 'one_off' | 'weekly' | 'fortnightly' | 'monthly' | 'custom';
+  preferredSchedule: string;
+  budgetRange: string;
+  preferredContact: 'email' | 'phone';
+  scopeSummary: string;
+  scopeDetails: string;
+  status: QuoteRequestStatus;
+  source: 'public' | 'customer_portal';
+  adminNote?: string | null;
+  quotedAmount?: number | null;
+  quotedAt?: unknown | null;
+  closedAt?: unknown | null;
+  createdAt?: unknown;
+  updatedAt?: unknown;
 }
