@@ -1,16 +1,18 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { Star, ShieldCheck, Zap, MapPin, Award } from 'lucide-react';
-
-const stats = [
-  { icon: Star, label: '5-Star Rated', value: 'Google & Trustpilot', fill: true },
-  { icon: ShieldCheck, label: 'Fully Insured', value: 'Public liability covered' },
-  { icon: Zap, label: 'Same-Week Booking', value: 'Subject to availability' },
-  { icon: MapPin, label: 'Manchester & GM', value: 'Greater Manchester area' },
-  { icon: Award, label: 'Satisfaction Guarantee', value: 'Or we return free' },
-];
+import { ClipboardCheck, ShieldCheck, Zap, MapPin, Award } from 'lucide-react';
+import { useGeneralSettings } from '@/lib/generalSettings';
 
 export const TrustStrip: React.FC = () => {
+  const { settings } = useGeneralSettings();
+  const stats = [
+    { icon: ClipboardCheck, label: 'Verified Service Records', value: 'Live status + photo evidence', fill: false },
+    { icon: ShieldCheck, label: 'Fully Insured', value: 'Public liability covered', fill: false },
+    { icon: Zap, label: 'Same-Week Booking', value: 'Subject to availability', fill: false },
+    { icon: MapPin, label: 'Primary Coverage', value: settings.serviceRegion, fill: false },
+    { icon: Award, label: 'Satisfaction Guarantee', value: 'Or we return free', fill: false },
+  ];
+
   return (
     <div className="bg-white/[0.02] border-y border-white/5 py-5 overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -32,7 +34,7 @@ export const TrustStrip: React.FC = () => {
                   <p className="text-[10px] font-bold uppercase tracking-widest text-white leading-none">
                     {stat.label}
                   </p>
-                  <p className="text-[9px] uppercase tracking-widest text-white/50 mt-0.5">
+                  <p className="text-[9px] uppercase tracking-widest text-white/60 mt-0.5">
                     {stat.value}
                   </p>
                 </div>

@@ -6,9 +6,10 @@ import { SERVICES, CAR_ADDONS, HOME_ADDONS } from '../constants';
 
 interface CostEstimatorProps {
   onBook?: (serviceId: string) => void;
+  onContact?: () => void;
 }
 
-export const CostEstimator: React.FC<CostEstimatorProps> = ({ onBook }) => {
+export const CostEstimator: React.FC<CostEstimatorProps> = ({ onBook, onContact }) => {
   const [selectedService, setSelectedService] = React.useState(SERVICES[0]);
   const [selectedAddons, setSelectedAddons] = React.useState<string[]>([]);
 
@@ -146,10 +147,17 @@ export const CostEstimator: React.FC<CostEstimatorProps> = ({ onBook }) => {
             </div>
 
             <div className="mt-6 glass-card p-6 border-white/5">
-              <p className="text-xs text-white/60 leading-relaxed italic">
-                "Crystalline Max provides the most transparent pricing in Manchester. The quote I got online was exactly what I paid at the door."
-                <span className="block mt-2 font-bold not-italic text-teal">— David S., Salford</span>
+              <p className="text-xs text-white/68 leading-relaxed">
+                This estimator gives a planning baseline across Manchester, Salford, Stockport, and Oxfordshire.
+                Final pricing is confirmed after service scope and site conditions are verified.
               </p>
+              <button
+                type="button"
+                onClick={onContact}
+                className="mt-4 text-[10px] font-bold uppercase tracking-widest text-teal transition-colors hover:text-white"
+              >
+                Need a tailored commercial scope? Contact the team
+              </button>
             </div>
           </div>
         </div>

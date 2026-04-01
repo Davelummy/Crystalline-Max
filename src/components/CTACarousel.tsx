@@ -23,7 +23,7 @@ const slides = [
     accent: 'teal' as const,
   },
   {
-    id: 'home-standard',
+    id: 'home',
     label: 'Residential',
     heading: 'A Home That Breathes Clean.',
     sub: 'Weekly, fortnightly, or one-off deep cleans · eco products · vetted specialists',
@@ -32,7 +32,7 @@ const slides = [
     accent: 'vibrant-blue' as const,
   },
   {
-    id: 'commercial',
+    id: 'office',
     label: 'Commercial',
     heading: 'A Workspace That Performs.',
     sub: 'Flexible scheduling · industrial sanitization · tailored commercial quotes',

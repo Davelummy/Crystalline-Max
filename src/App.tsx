@@ -22,6 +22,7 @@ import { AdminStaffProfile } from './components/AdminStaffProfile';
 import { AdminStaffAssignments } from './components/AdminStaffAssignments';
 import { AdminBookingDetail } from './components/AdminBookingDetail';
 import { BookingFlow } from './components/BookingFlow';
+import { ContactPage } from './components/ContactPage';
 import { CostEstimator } from './components/CostEstimator';
 import { CustomerBilling } from './components/CustomerBilling';
 import { CustomerBookingDetail } from './components/CustomerBookingDetail';
@@ -163,6 +164,13 @@ function PublicFooter() {
             <h5 className="text-xs font-bold uppercase tracking-widest mb-6 text-teal">Contact</h5>
             <p className="text-sm text-white/75">{settings.supportEmail}</p>
             <p className="text-sm text-white/75">{settings.supportPhone}</p>
+            <button
+              type="button"
+              onClick={() => navigate('/contact')}
+              className="mt-4 text-[10px] font-bold uppercase tracking-widest text-white/70 transition-colors hover:text-teal"
+            >
+              Contact Page
+            </button>
           </div>
           <div>
             <h5 className="text-xs font-bold uppercase tracking-widest mb-6 text-teal">Location</h5>
@@ -176,7 +184,12 @@ function PublicFooter() {
         </div>
         <div className="mt-20 flex flex-col gap-4 border-t border-white/5 pt-8 text-[10px] font-bold uppercase tracking-widest text-white/60 md:flex-row md:items-center md:justify-between">
           <p>© 2026 CRYSTALLINE MAX LTD. ALL RIGHTS RESERVED.</p>
-          <div className="flex gap-8">
+          <div className="flex flex-wrap gap-6">
+            <button type="button" onClick={() => navigate('/')} className="hover:text-teal transition-colors">Home</button>
+            <button type="button" onClick={() => navigate('/services')} className="hover:text-teal transition-colors">Services</button>
+            <button type="button" onClick={() => navigate('/estimate')} className="hover:text-teal transition-colors">Estimator</button>
+            <button type="button" onClick={() => navigate('/contact')} className="hover:text-teal transition-colors">Contact</button>
+            <button type="button" onClick={() => navigate('/portal')} className="hover:text-teal transition-colors">Portals</button>
             <button type="button" onClick={() => navigate('/privacy')} className="hover:text-teal transition-colors">Privacy</button>
             <button type="button" onClick={() => navigate('/terms')} className="hover:text-teal transition-colors">Terms</button>
           </div>
@@ -193,13 +206,14 @@ function LandingPage() {
     <>
       <Hero
         onBookNow={() => navigate('/book')}
-        onViewServices={() => {
-          const element = document.getElementById('services');
-          element?.scrollIntoView({ behavior: 'smooth' });
-        }}
+        onViewServices={() => navigate('/services')}
       />
       <TrustStrip />
-      <Services onBook={(serviceId) => navigate(`/book/${serviceId}`)} />
+      <Services
+        onBook={(serviceId) => navigate(`/book/${serviceId}`)}
+        onEstimate={() => navigate('/estimate')}
+        onContact={() => navigate('/contact')}
+      />
       <HowItWorks />
       <Testimonials />
       <CTACarousel
@@ -212,12 +226,23 @@ function LandingPage() {
 
 function ServicesPage() {
   const navigate = useNavigate();
-  return <Services onBook={(serviceId) => navigate(`/book/${serviceId}`)} />;
+  return (
+    <Services
+      onBook={(serviceId) => navigate(`/book/${serviceId}`)}
+      onEstimate={() => navigate('/estimate')}
+      onContact={() => navigate('/contact')}
+    />
+  );
 }
 
 function CostEstimatorPage() {
   const navigate = useNavigate();
-  return <CostEstimator onBook={(serviceId) => navigate(`/book/${serviceId}`)} />;
+  return <CostEstimator onBook={(serviceId) => navigate(`/book/${serviceId}`)} onContact={() => navigate('/contact')} />;
+}
+
+function ContactPageRoute() {
+  const navigate = useNavigate();
+  return <ContactPage onBookNow={() => navigate('/book')} onGoToPortal={() => navigate('/portal')} />;
 }
 
 function BookingFlowPage() {
@@ -236,12 +261,20 @@ function PublicLayout() {
   const navigate = useNavigate();
 
   const handleNavigate = React.useCallback((view: View) => {
+    if (view === 'services') {
+      navigate('/services');
+      return;
+    }
     if (view === 'booking') {
       navigate('/book');
       return;
     }
     if (view === 'estimator') {
       navigate('/estimate');
+      return;
+    }
+    if (view === 'contact') {
+      navigate('/contact');
       return;
     }
     if (view === 'selection') {
@@ -1004,6 +1037,7 @@ function AppRouter() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/services" element={<ServicesPage />} />
         <Route path="/estimate" element={<CostEstimatorPage />} />
+        <Route path="/contact" element={<ContactPageRoute />} />
         <Route path="/book" element={<BookingFlowPage />} />
         <Route path="/book/:serviceId" element={<BookingFlowPage />} />
         <Route path="/privacy" element={<PrivacyPage onBack={() => navigate('/')} />} />
