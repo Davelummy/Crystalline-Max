@@ -21,7 +21,7 @@ const slides = [
     beforeImage: carBefore,
     tag: 'Transformation',
     tagValue: 'Dirty to Dazzling',
-    location: 'Manchester City Centre',
+    location: 'Manchester, Salford, Stockport',
   },
   {
     id: 2,
@@ -32,7 +32,7 @@ const slides = [
     beforeImage: homeBefore,
     tag: 'Sanitization',
     tagValue: 'Crystalline Standard',
-    location: 'Salford, Stockport & Oxfordshire',
+    location: 'Manchester, Salford, Stockport + Oxfordshire',
   },
   {
     id: 3,
@@ -43,9 +43,10 @@ const slides = [
     beforeImage: officeBefore,
     tag: 'Business Solutions',
     tagValue: 'Custom Quotes',
-    location: 'Manchester & Oxfordshire Hub',
+    location: 'Manchester, Salford, Stockport + Oxfordshire',
   },
 ];
+
 
 interface HeroProps {
   onBookNow: () => void;
@@ -100,7 +101,7 @@ export const Hero: React.FC<HeroProps> = ({ onBookNow, onViewServices }) => {
                   <Clock size={14} className="text-teal" /> 24/7 BOOKING
                 </div>
                 <div className="flex items-center gap-2">
-                  <MapPin size={14} className="text-teal" /> {settings.serviceRegion.toUpperCase()}
+                  <MapPin size={14} className="text-teal" /> {slide.location.toUpperCase()}
                 </div>
               </div>
             </motion.div>

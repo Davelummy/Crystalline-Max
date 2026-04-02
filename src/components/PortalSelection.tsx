@@ -35,7 +35,7 @@ export const PortalSelection: React.FC<PortalSelectionProps> = ({
             Choose Your Login
           </h1>
           <p className="text-white/72 max-w-2xl mx-auto text-sm md:text-base leading-relaxed">
-            Customer and staff access live here. Administrative access is restricted to the dedicated `/admin` path.
+            Select the portal you need to continue.
           </p>
         </div>
 

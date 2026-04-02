@@ -147,6 +147,7 @@ function isSafeDestination(pathname: string | undefined, prefix: '/customer' | '
 function PublicFooter() {
   const navigate = useNavigate();
   const { settings } = useGeneralSettings();
+  const serviceRegion = settings.serviceRegion.replace(/and close environs/gi, '').replace(/\s+,/g, ',').trim();
   const addressLines = settings.businessAddress
     .split('\n')
     .map((line) => line.trim())
@@ -159,7 +160,7 @@ function PublicFooter() {
           <div className="col-span-2">
             <h4 className="text-2xl mb-6 uppercase">{settings.businessName}</h4>
             <p className="text-white/68 text-sm max-w-sm leading-relaxed">
-              Premium mobile car detailing and residential/commercial cleaning services based in {settings.serviceRegion}.
+              Premium mobile car detailing and residential/commercial cleaning services based in {serviceRegion}.
               Precision in every detail, excellence in every clean.
             </p>
           </div>
@@ -177,7 +178,7 @@ function PublicFooter() {
           </div>
           <div>
             <h5 className="text-xs font-bold uppercase tracking-widest mb-6 text-teal">Location</h5>
-            <p className="text-sm text-white/75">{settings.serviceRegion}</p>
+            <p className="text-sm text-white/75">{serviceRegion}</p>
             <div className="mt-3 space-y-1">
               {addressLines.map((line) => (
                 <p key={line} className="text-sm text-white/75">{line}</p>

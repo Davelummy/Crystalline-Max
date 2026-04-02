@@ -18,7 +18,7 @@ export const DEFAULT_GENERAL_SETTINGS: GeneralSettings = {
   supportEmail: 'admin@ctmds.co.uk',
   supportPhone: '07425 241192',
   businessAddress: 'International House\n61 Mosley Street\nManchester\nM2 3HZ',
-  serviceRegion: 'Manchester, Salford, Stockport, Oxfordshire and close environs',
+  serviceRegion: 'Manchester, Salford, Stockport, Oxfordshire',
   maintenanceMode: false,
   requireTwoFactor: true,
   publicRegistration: true,

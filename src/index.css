@@ -84,6 +84,41 @@
   @apply bg-charcoal text-teal;
 }
 
+.truststrip-marquee {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+}
+
+.truststrip-track {
+  display: flex;
+  align-items: center;
+  width: max-content;
+  white-space: nowrap;
+  animation: truststrip-scroll 22s linear infinite;
+}
+
+.truststrip-marquee:hover .truststrip-track {
+  animation-play-state: paused;
+}
+
+.truststrip-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0 2.5rem;
+}
+
+@keyframes truststrip-scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+
 .rdp-root {
   --rdp-accent-color: #00F5D4;
   --rdp-accent-background-color: rgba(0, 245, 212, 0.14);
