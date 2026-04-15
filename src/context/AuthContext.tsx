@@ -70,13 +70,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   React.useEffect(() => {
     if (typeof window === 'undefined') return;
-    if (!user || userRole !== 'client') return;
-    if (getClientStayLoggedInPreference()) return;
+    if (!user || !userRole) return;
 
-    const timeoutMinutes = Number(import.meta.env.VITE_CLIENT_IDLE_TIMEOUT_MINUTES || '30');
-    const idleTimeoutMs = Number.isFinite(timeoutMinutes) && timeoutMinutes > 0
-      ? timeoutMinutes * 60 * 1000
-      : 30 * 60 * 1000;
+    const clientTimeoutMinutes = Number(import.meta.env.VITE_CLIENT_IDLE_TIMEOUT_MINUTES || '30');
+    const getIdleTimeoutMinutes = (role: AppUserData['role']) => {
+      if (role === 'admin') return 15;
+      if (role === 'employee') return 60;
+      if (role === 'client') {
+        return Number.isFinite(clientTimeoutMinutes) && clientTimeoutMinutes > 0 ? clientTimeoutMinutes : 30;
+      }
+      return 30;
+    };
+
+    if (userRole === 'client' && getClientStayLoggedInPreference()) return;
+
+    const idleTimeoutMs = getIdleTimeoutMinutes(userRole) * 60 * 1000;
 
     let timerId: number | null = null;
 

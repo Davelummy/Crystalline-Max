@@ -3,7 +3,7 @@ import { FieldValue, getFirestore } from 'firebase-admin/firestore';
 import { onDocumentCreated, onDocumentUpdated } from 'firebase-functions/v2/firestore';
 import { HttpsError, onCall, onRequest } from 'firebase-functions/v2/https';
 import { setGlobalOptions } from 'firebase-functions/v2/options';
-import { defineSecret } from 'firebase-functions/params';
+import { defineSecret, defineString } from 'firebase-functions/params';
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { Resend } from 'resend';
 import Stripe from 'stripe';
@@ -30,6 +30,7 @@ const db = getFirestore();
 const stripeSecret = defineSecret('STRIPE_SECRET_KEY');
 const stripeWebhookSecret = defineSecret('STRIPE_WEBHOOK_SECRET');
 const resendApiKey = defineSecret('RESEND_API_KEY');
+const appOrigin = defineString('APP_ORIGIN', { default: 'http://localhost:3000' });
 
 function getBookingOwnerId(data: unknown) {
   if (!data || typeof data !== 'object' || !('userId' in data) || typeof data.userId !== 'string') {
@@ -45,31 +46,6 @@ function asRecord(value: unknown) {
 
 function getString(value: unknown) {
   return typeof value === 'string' ? value : null;
-}
-
-function getHeaderString(value: unknown) {
-  if (typeof value === 'string') {
-    return value;
-  }
-
-  if (Array.isArray(value) && typeof value[0] === 'string') {
-    return value[0];
-  }
-
-  return null;
-}
-
-function getOriginFromHeader(value: unknown) {
-  const header = getHeaderString(value);
-  if (!header) {
-    return null;
-  }
-
-  try {
-    return new URL(header).origin;
-  } catch {
-    return header.replace(/\/$/, '');
-  }
 }
 
 function getNumber(value: unknown) {
@@ -322,7 +298,7 @@ export const validateCheckin = onCall(async (request) => {
   return { success: true };
 });
 
-export const createCheckoutSession = onCall({ secrets: [stripeSecret] }, async (request) => {
+export const createCheckoutSession = onCall({ secrets: [stripeSecret], params: [appOrigin] }, async (request) => {
   if (!request.auth) {
     throw new HttpsError('unauthenticated', 'Must be signed in.');
   }
@@ -361,10 +337,7 @@ export const createCheckoutSession = onCall({ secrets: [stripeSecret] }, async (
   const customerEmail = getString(booking.customerEmail);
   const serviceId = getString(booking.serviceId) ?? '';
   const addons = getStringArray(booking.addons);
-  const origin =
-    getOriginFromHeader(request.rawRequest.headers.origin) ||
-    getOriginFromHeader(request.rawRequest.headers.referer) ||
-    'http://localhost:3000';
+  const origin = appOrigin.value();
 
   if (amount == null || !serviceLabel || !customerEmail) {
     throw new HttpsError('failed-precondition', 'Booking is missing payment details.');
