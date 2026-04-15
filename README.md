@@ -8,6 +8,12 @@ Crystalline Max is a premium service operations platform for a mobile detailing 
 
 The platform runs on React, Vite, TypeScript, Firebase Authentication, Firestore, and Firebase Storage. The booking record is the operational source of truth, so customer progress, staff execution, and admin oversight all stay synchronized in real time.
 
+## Deployment Status
+
+The MVP is live at **[ctmds-pilot-app.netlify.app](https://ctmds-pilot-app.netlify.app)**. The employer has reviewed the pilot and provided feedback. Post-review iterations are in progress — see the migration status below for what has shipped since the initial MVP handover.
+
+---
+
 Current migration status:
 
 - Phase 1 foundation cleanup is complete
@@ -26,6 +32,11 @@ Current migration status:
 - MVP landing page expansion is complete with a trust-signal strip, How It Works section, and a rotating CTA carousel
 - Staff management deep-linking is complete with per-employee profile and assignments subpages accessible from a click-through card modal
 - Firestore rules are hardened with assignment-scoped booking reads, a dedicated `isStaff()` helper, reduced expression depth, and a `notificationLogs` rule
+- Post-review: testimonials replaced with compliance-safe industry standards section; Oxfordshire added as a covered service region
+- Post-review: public IA hardened with a dedicated Contact page, Oxfordshire rolled out across hero, trust strip, map picker, and cost estimator
+- Post-review: quote-request workflow added as a pre-booking conversion path; strict portal role isolation enforced to prevent cross-role navigation
+- Post-review: hero locations, trust strip marquee, and portal copy updated to reflect live service regions and accurate operator details
+- Post-review: auth hardened, booking rules tightened, payment redirect flows patched, structured backend logging added
 
 ## Approved Roadmap
 
@@ -57,6 +68,10 @@ Key approved constraints from that brief:
 - Dedicated `/admin` access path for admin
 - Footer and legal contact details now use the live business identity stored in `settings/general`
 - Public footer contact details and service-region copy now read from `settings/general`, so admin changes affect the live public surface
+- Quote-request flow at `/quote` as a pre-booking conversion path for visitors not ready to book directly
+- Dedicated Contact page at `/contact`
+- Service regions expanded to include Oxfordshire across hero, trust strip, map picker, and cost estimator
+- Industry standards section replaces the old testimonials block for compliance
 
 ### Customer Experience
 
