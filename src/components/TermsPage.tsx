@@ -10,7 +10,7 @@ export const TermsPage: React.FC<TermsPageProps> = ({ onBack }) => {
   const { settings } = useGeneralSettings();
 
   return (
-    <LegalPageLayout title="Terms of Service" lastUpdated="24 March 2026" onBack={onBack}>
+    <LegalPageLayout title="Terms of Service" lastUpdated="15 April 2026" onBack={onBack}>
       <section>
         <h2 className="mb-3 text-xs font-bold uppercase tracking-[0.25em] text-teal">Service Scope</h2>
         <p>
@@ -39,15 +39,20 @@ export const TermsPage: React.FC<TermsPageProps> = ({ onBack }) => {
       </section>
 
       <section>
-        <h2 className="mb-3 text-xs font-bold uppercase tracking-[0.25em] text-teal">Cancellations And Refunds</h2>
+        <h2 className="mb-3 text-xs font-bold uppercase tracking-[0.25em] text-teal">Cancellations</h2>
         <p>
-          Customers may request cancellation through the platform where permitted by booking state. {settings.businessName} may also cancel bookings for operational, safety, staffing, or access reasons. The cancellation terms are:
+          Appointments can be cancelled or rescheduled up to 24 hours before the scheduled time without penalty. Cancellations made less than 24 hours before the appointment may not be eligible for a refund.
         </p>
-        <ul className="list-disc space-y-2 pl-5">
-          <li>Cancellation requested with reasonable notice before a confirmed appointment: no cancellation fee unless special materials or dedicated staffing were reserved.</li>
-          <li>Late cancellation, no access on arrival, or materially inaccurate job description: {settings.businessName} may retain a reasonable call-out or wasted-journey charge.</li>
-          <li>Refunds for online payments will be assessed against the booking state, work completed, and any evidence retained in the booking record.</li>
-        </ul>
+      </section>
+
+      <section>
+        <h2 className="mb-3 text-xs font-bold uppercase tracking-[0.25em] text-teal">Refunds</h2>
+        <p>
+          Refunds will only be considered in cases where {settings.businessName} is unable to provide the agreed service, or where a service has been performed incorrectly and cannot be rectified. Refunds will not be issued for dissatisfaction due to pre-existing vehicle conditions, wear and tear, or factors outside our control.
+        </p>
+        <p className="mt-3">
+          To initiate a refund request, contact our customer service team within 7 days of the service date by phone at <span className="font-bold text-white">{settings.supportPhone}</span> or by email at <span className="font-bold text-white">{settings.supportEmail}</span>, providing your name, contact details, service date, and a brief explanation of the issue. Eligible refunds will be issued within 14 days of the request using the original payment method.
+        </p>
       </section>
 
       <section>
