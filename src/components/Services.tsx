@@ -22,7 +22,7 @@ const services = [
       'Engine bay detailing',
     ],
     icon: Car,
-    price: 'From £85',
+    price: 'From £149',
   },
   {
     id: 'home',
@@ -36,7 +36,7 @@ const services = [
       'Eco-friendly cleaning agents',
     ],
     icon: Home,
-    price: 'From £45',
+    price: 'From £50',
   },
   {
     id: 'office',
