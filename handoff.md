@@ -279,6 +279,7 @@ Roadmap corrections already accepted before implementation:
   - checked: persistent local Firebase session
   - unchecked: session persistence plus automatic inactivity timeout (default `30` minutes, configurable via `VITE_CLIENT_IDLE_TIMEOUT_MINUTES`)
 - Inactivity timeout enforcement runs only for customer sessions that are not marked `Stay logged in`
+- Admin sessions now auto-expire after 15 minutes idle; staff sessions after 60 minutes idle (hard-coded defaults in AuthContext)
 - Portal-role isolation is now enforced in routing:
   - staff/admin sessions cannot auto-enter customer portal; `/customer/*` redirects to `/login` and requires customer authentication
   - customer/admin sessions cannot auto-enter staff portal; `/staff/*` redirects to `/staff/login` and requires staff authentication
@@ -302,6 +303,7 @@ Roadmap corrections already accepted before implementation:
 - Added `notificationLogs` collection rule: admin-read only, client write blocked
 - Refactored `isValidBooking()` by extracting photo-field checks into `hasValidPhotos()` and assignment-field checks into `hasValidAssignment()` to reduce expression depth and resolve emulator evaluation-limit denials
 - Added `bio`, `salaryAllocation`, and `salaryCurrency` to `isValidUser()` allowedFields to support the staff profile payroll form
+- Staff booking updates are now constrained to operational fields only via `diff().affectedKeys().hasOnly([...])` (prevents staff from mutating payment/customer fields)
 
 ### Data Integrity And Storage Hardening
 
@@ -367,6 +369,7 @@ Roadmap corrections already accepted before implementation:
 - Admin can mark bookings as offline-paid from [src/components/AdminBookingDetail.tsx](/Users/davidolumide/Crystalline-Max/src/components/AdminBookingDetail.tsx)
 - Admin revenue now counts only paid bookings in [src/components/AdminDashboard.tsx](/Users/davidolumide/Crystalline-Max/src/components/AdminDashboard.tsx)
 - Booking schema now includes `adminNote` for manual payment context in [src/types.ts](/Users/davidolumide/Crystalline-Max/src/types.ts)
+- Stripe Checkout origin is now sourced from `APP_ORIGIN` function param (no Origin header trust)
 - Current deployed Stripe webhook URL:
   - `https://stripewebhook-aa6far2tqa-nw.a.run.app`
 
@@ -380,6 +383,7 @@ Roadmap corrections already accepted before implementation:
 - Added scheduled reminder trigger in [functions/src/index.ts](/Users/davidolumide/Crystalline-Max/functions/src/index.ts)
 - Reminder schedule is now locked to `08:00` in `Europe/London`
 - Notification functions are tolerant of placeholder or missing `RESEND_API_KEY` and skip email instead of breaking booking updates
+- HTML email templates now escape user-supplied strings to prevent injection in staff/customer emails
 
 ### UI And Routing Improvements
 
@@ -393,6 +397,9 @@ Roadmap corrections already accepted before implementation:
   - `TrustStrip` — credibility bar directly below the hero: 5-star rating, insurance, same-week availability, coverage area, satisfaction guarantee
   - `HowItWorks` — four-step process overview (Book → Assign → Execute → Guarantee)
   - `CTACarousel` — bottom-of-page rotating service spotlight with per-service book and estimate actions, replacing the static CTA block
+- TrustStrip is now a continuous right-to-left marquee and sanitizes legacy location text to remove "and close environs"
+- Hero carousel location labels now match the current service coverage, and the left-side location badge mirrors each slide location
+- Portal selection helper text simplified to a neutral "Select the portal you need to continue."
 - Staff Management modal flow added: each staff card is now clickable and opens a modal with two navigation options — Employment Profile and Tasks & Assignments — each routing to a dedicated subpage
 - Admin routes added: `/admin/staff/:staffId/profile` (`AdminStaffProfile`) and `/admin/staff/:staffId/assignments` (`AdminStaffAssignments`)
 

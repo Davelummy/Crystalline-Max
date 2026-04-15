@@ -430,7 +430,15 @@ service cloud.firestore {
         isValidBooking(request.resource.data)
       ) || (
         isAssignedStaff() &&
-        isValidBooking(request.resource.data)
+        isValidBooking(request.resource.data) &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'beforePhotos', 'beforePhotoUrl', 'beforePhotoPath',
+          'afterPhotos', 'afterPhotoUrl', 'afterPhotoPath',
+          'startedAt', 'status', 'completedAt',
+          'completedTaskIds', 'taskProgressPercent',
+          'lastProgressAt', 'staffAcknowledgedAt', 'staffAcknowledgedByIds',
+          'updatedAt'
+        ])
       );
     }
 

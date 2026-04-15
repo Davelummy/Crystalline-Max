@@ -242,6 +242,27 @@ Deployed webhook endpoint:
 
 - `https://stripewebhook-aa6far2tqa-nw.a.run.app`
 
+### Stripe Checkout Origin
+
+Before deploying functions to production, set the allowed app origin:
+
+```
+firebase functions:params:set APP_ORIGIN="https://your-production-domain.com"
+```
+
+## Recent UX Updates
+
+- TrustStrip now runs as a continuous right-to-left marquee and strips legacy "and close environs" text from the displayed service region.
+- Hero carousel location labels now reflect the current service coverage, and the left-side hero location badge mirrors each slide.
+- Portal selection helper text simplified to a neutral call to action.
+
+## Recent Security Fixes
+
+- Admin sessions now idle-timeout after 15 minutes; staff after 60 minutes; client timeout remains controlled by `VITE_CLIENT_IDLE_TIMEOUT_MINUTES` unless "Stay logged in" is selected.
+- Staff booking updates are limited to operational fields only via Firestore rules (prevents payment/customer field changes).
+- Transactional email templates now HTML-escape user-supplied strings to prevent injection.
+- Stripe Checkout redirect origin is now sourced from `APP_ORIGIN` (no Origin header trust).
+
 ## Notifications Setup
 
 Notification logic now exists in deployed Functions for:
