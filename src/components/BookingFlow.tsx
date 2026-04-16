@@ -341,7 +341,7 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ initialServiceId, onRe
       }, 2500);
     } catch (bookingError) {
       console.error('Booking failed:', bookingError);
-      setError('The booking could not be saved. Check your Firebase rules and try again.');
+      setError('Your booking could not be saved. Please try again or contact support.');
     } finally {
       setSubmitting(false);
     }

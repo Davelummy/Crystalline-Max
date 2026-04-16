@@ -60,13 +60,23 @@ export function saveLoginReturnPath(pathname?: string | null) {
   window.localStorage.setItem(LOGIN_RETURN_PATH_KEY, value);
 }
 
+const ALLOWED_RETURN_PREFIXES = ['/customer/', '/staff/', '/admin/', '/book'];
+
+function isSafeReturnPath(path: string | null): path is string {
+  if (!path) return false;
+  // Reject anything that looks like an absolute URL or contains protocol
+  if (path.includes('://') || path.includes('//')) return false;
+  return ALLOWED_RETURN_PREFIXES.some((prefix) => path.startsWith(prefix));
+}
+
 export function getSavedLoginReturnPath() {
   if (typeof window === 'undefined') return null;
 
-  return (
+  const raw =
     window.sessionStorage.getItem(LOGIN_RETURN_PATH_KEY) ||
-    window.localStorage.getItem(LOGIN_RETURN_PATH_KEY)
-  );
+    window.localStorage.getItem(LOGIN_RETURN_PATH_KEY);
+
+  return isSafeReturnPath(raw) ? raw : null;
 }
 
 export function clearLoginReturnPath() {

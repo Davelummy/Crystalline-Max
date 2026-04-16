@@ -5,6 +5,51 @@ export interface StaffTask {
   priority: 'low' | 'medium' | 'high';
 }
 
+// Canonical server-side price table — must stay in sync with src/constants.ts
+const SERVICE_BASE_PRICES: Record<string, number> = {
+  'car-full': 149,
+  'car-exterior': 69,
+  'car-interior': 89,
+  'home': 50,
+  'office': 150,
+  'industrial': 300,
+};
+
+const ADDON_PRICES: Record<string, number> = {
+  'ceramic': 149,
+  'interior-steam': 50,
+  'engine': 35,
+  'leather': 35,
+  'clay': 40,
+  'pet': 25,
+  'windows': 35,
+  'carpet': 65,
+  'oven': 40,
+  'fridge': 20,
+};
+
+/**
+ * Recomputes the canonical booking total server-side.
+ * bookingCount is read from the user document — 0 = new customer (10% off), >=3 = loyal (5% off).
+ * Returns the expected total rounded to 2 decimal places.
+ */
+export function computeBookingTotal(serviceId: string, addons: string[], bookingCount: number): number {
+  const base = SERVICE_BASE_PRICES[serviceId] ?? 0;
+  const addonsSum = addons.reduce((sum, id) => sum + (ADDON_PRICES[id] ?? 0), 0);
+  const subtotal = base + addonsSum;
+
+  let total: number;
+  if (bookingCount === 0) {
+    total = subtotal * 0.9;
+  } else if (bookingCount >= 3) {
+    total = subtotal * 0.95;
+  } else {
+    total = subtotal;
+  }
+
+  return Math.round(total * 100) / 100;
+}
+
 const CAR_ADDON_LABELS: Record<string, string> = {
   'ceramic-boost': 'Ceramic boost finish',
   'seat-shampoo': 'Seat shampoo treatment',

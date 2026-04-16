@@ -7,7 +7,7 @@ import { defineSecret, defineString } from 'firebase-functions/params';
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { Resend } from 'resend';
 import Stripe from 'stripe';
-import { getAddonLabel, getBookingTasks } from './lib/bookings.js';
+import { computeBookingTotal, getAddonLabel, getBookingTasks } from './lib/bookings.js';
 import { getDistanceMeters } from './lib/distance.js';
 import {
   getCustomerCompletionEmailHtml,
@@ -157,10 +157,10 @@ async function sendEmail(input: {
   to: string;
   subject: string;
   html: string;
-}) {
+}): Promise<{ success: boolean; error?: string }> {
   if (!isConfiguredSecret(input.apiKey)) {
     console.log(`Skipping email "${input.subject}" because RESEND_API_KEY is not configured.`);
-    return;
+    return { success: false, error: 'RESEND_API_KEY not configured' };
   }
 
   const resend = getResendClient(input.apiKey);
@@ -172,12 +172,37 @@ async function sendEmail(input: {
       subject: input.subject,
       html: input.html,
     });
+    return { success: true };
   } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
     console.error(`Email send failed for "${input.subject}"`, error);
+    return { success: false, error: message };
   }
 }
 
-export const getAvailabilitySnapshot = onCall(async () => {
+async function logEmailFailure(input: {
+  type: 'assignment' | 'reminder' | 'confirmation' | 'completion';
+  bookingId: string;
+  recipientId: string;
+  error: string;
+}) {
+  try {
+    await db.collection('notificationLogs').add({
+      type: input.type,
+      bookingId: input.bookingId,
+      recipientId: input.recipientId,
+      error: input.error,
+      timestamp: FieldValue.serverTimestamp(),
+    });
+  } catch (logError) {
+    console.error('Failed to write notificationLog', logError);
+  }
+}
+
+export const getAvailabilitySnapshot = onCall(async (request) => {
+  if (!request.auth) {
+    throw new HttpsError('unauthenticated', 'Must be signed in.');
+  }
   const today = getUkDateString(new Date());
   const cutoff = getUkDateString(addDays(new Date(), 60));
   const availabilitySnapshot = await db.doc('settings/availability').get();
@@ -332,17 +357,32 @@ export const createCheckoutSession = onCall({ secrets: [stripeSecret], params: [
     throw new HttpsError('failed-precondition', 'Booking is marked for offline payment.');
   }
 
-  const amount = getNumber(booking.total);
   const serviceLabel = getString(booking.serviceLabel);
   const customerEmail = getString(booking.customerEmail);
   const serviceId = getString(booking.serviceId) ?? '';
   const addons = getStringArray(booking.addons);
   const origin = appOrigin.value();
 
-  if (amount == null || !serviceLabel || !customerEmail) {
+  if (!serviceLabel || !customerEmail) {
     throw new HttpsError('failed-precondition', 'Booking is missing payment details.');
   }
 
+  // Recompute the canonical total server-side — never trust the client-written value
+  const userSnapshot = await db.doc(`users/${request.auth.uid}`).get();
+  const bookingCount = getNumber(asRecord(userSnapshot.data())?.bookingCount) ?? 0;
+  const expectedTotal = computeBookingTotal(serviceId, addons, bookingCount);
+
+  if (expectedTotal < 0.50) {
+    throw new HttpsError('failed-precondition', 'Booking total is invalid.');
+  }
+
+  // Validate stored total is within £1 of expected (allows minor floating-point drift)
+  const storedTotal = getNumber(booking.total);
+  if (storedTotal != null && Math.abs(storedTotal - expectedTotal) > 1.00) {
+    throw new HttpsError('failed-precondition', 'Booking total does not match expected amount.');
+  }
+
+  const chargeAmount = expectedTotal;
   const addonLabels = addons.map((addonId) => getAddonLabel(serviceId, addonId));
   const stripe = getStripeClient(stripeSecret.value());
   const session = await stripe.checkout.sessions.create({
@@ -353,7 +393,7 @@ export const createCheckoutSession = onCall({ secrets: [stripeSecret], params: [
         quantity: 1,
         price_data: {
           currency: 'gbp',
-          unit_amount: Math.round(amount * 100),
+          unit_amount: Math.round(chargeAmount * 100),
           product_data: {
             name: serviceLabel,
             description: addonLabels.length > 0 ? `Add-ons: ${addonLabels.join(', ')}` : undefined,
@@ -402,15 +442,19 @@ export const stripeWebhook = onRequest({ secrets: [stripeSecret, stripeWebhookSe
       const bookingSnapshot = await bookingRef.get();
       const booking = bookingSnapshot.data();
 
-      if (booking && booking.paymentStatus !== 'paid') {
-        await bookingRef.update({
-          paymentStatus: 'paid',
-          paymentSessionId: session.id,
-          paymentAmount: session.amount_total ?? null,
-          paidAt: FieldValue.serverTimestamp(),
-          updatedAt: FieldValue.serverTimestamp(),
-        });
+      // Idempotency guard: if already paid, acknowledge without re-writing
+      if (!booking || booking.paymentStatus === 'paid') {
+        response.json({ received: true });
+        return;
       }
+
+      await bookingRef.update({
+        paymentStatus: 'paid',
+        paymentSessionId: session.id,
+        paymentAmount: session.amount_total ?? null,
+        paidAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+      });
     }
   }
 
@@ -491,13 +535,16 @@ export const onBookingUpdated = onDocumentUpdated(
         const staffEmail = getString(staff?.email);
 
         if (staffEmail) {
-          await sendEmail({
+          const result = await sendEmail({
             apiKey: resendKey,
             from: NOTIFICATION_FROM,
             to: staffEmail,
             subject: `New job assigned: ${bookingInput.serviceLabel}`,
             html: getStaffAssignmentEmailHtml(bookingInput),
           });
+          if (!result.success && result.error) {
+            await logEmailFailure({ type: 'assignment', bookingId, recipientId: staffId, error: result.error });
+          }
         }
       }
     }
@@ -505,9 +552,10 @@ export const onBookingUpdated = onDocumentUpdated(
     if (beforeRecord.status === 'pending' && afterRecord.status === 'confirmed') {
       const customerEmail = getString(afterRecord.customerEmail);
       const total = getNumber(afterRecord.total);
+      const customerId = getString(afterRecord.userId) ?? bookingId;
 
       if (customerEmail) {
-        await sendEmail({
+        const result = await sendEmail({
           apiKey: resendKey,
           from: NOTIFICATION_FROM,
           to: customerEmail,
@@ -517,20 +565,27 @@ export const onBookingUpdated = onDocumentUpdated(
             total,
           }),
         });
+        if (!result.success && result.error) {
+          await logEmailFailure({ type: 'confirmation', bookingId, recipientId: customerId, error: result.error });
+        }
       }
     }
 
     if (beforeRecord.status !== 'completed' && afterRecord.status === 'completed') {
       const customerEmail = getString(afterRecord.customerEmail);
+      const customerId = getString(afterRecord.userId) ?? bookingId;
 
       if (customerEmail) {
-        await sendEmail({
+        const result = await sendEmail({
           apiKey: resendKey,
           from: NOTIFICATION_FROM,
           to: customerEmail,
           subject: 'Your job is complete',
           html: getCustomerCompletionEmailHtml(bookingInput),
         });
+        if (!result.success && result.error) {
+          await logEmailFailure({ type: 'completion', bookingId, recipientId: customerId, error: result.error });
+        }
       }
     }
   },
@@ -553,6 +608,13 @@ export const sendJobReminders = onSchedule(
         return entry.data && (status === 'confirmed' || status === 'in_progress') && getAssignedStaffIdsFromBooking(entry.data).length > 0;
       });
 
+    // Batch-fetch all unique staff documents to avoid sequential reads
+    const allStaffIds = [...new Set(jobs.flatMap((job) => getAssignedStaffIdsFromBooking(job.data)))];
+    const staffDocs = allStaffIds.length > 0
+      ? await db.getAll(...allStaffIds.map((id) => db.doc(`users/${id}`)))
+      : [];
+    const staffById = new Map(staffDocs.map((snap) => [snap.id, asRecord(snap.data())]));
+
     for (const job of jobs) {
       const staffIds = getAssignedStaffIdsFromBooking(job.data);
       if (staffIds.length === 0 || !job.data) {
@@ -561,15 +623,14 @@ export const sendJobReminders = onSchedule(
 
       const bookingInput = getBookingNotificationInput(job.id, job.data);
       for (const staffId of staffIds) {
-        const staffSnapshot = await db.doc(`users/${staffId}`).get();
-        const staff = asRecord(staffSnapshot.data());
+        const staff = staffById.get(staffId);
         const staffEmail = getString(staff?.email);
 
         if (!staffEmail) {
           continue;
         }
 
-        await sendEmail({
+        const result = await sendEmail({
           apiKey: resendKey,
           from: NOTIFICATION_FROM,
           to: staffEmail,
@@ -577,12 +638,11 @@ export const sendJobReminders = onSchedule(
           html: getStaffReminderEmailHtml(bookingInput),
         });
 
-        const payload = getNotificationPayload(bookingInput);
-        console.log('Reminder prepared', {
-          bookingId: job.id,
-          staffId,
-          title: payload.title,
-        });
+        if (!result.success && result.error) {
+          await logEmailFailure({ type: 'reminder', bookingId: job.id, recipientId: staffId, error: result.error });
+        }
+
+        console.log('Reminder sent', { bookingId: job.id, staffId, success: result.success });
       }
     }
   },
