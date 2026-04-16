@@ -17,7 +17,12 @@
     "test:emulator": "PATH=\"/usr/local/opt/openjdk/bin:$PATH\" firebase emulators:exec --only auth,firestore \"npm run test:rules\"",
     "test:e2e": "playwright test",
     "verify": "npm run lint && npm run test && npm run test:emulator && npm run build",
-    "verify:full": "npm run verify && npm run test:e2e"
+    "verify:full": "npm run verify && npm run test:e2e",
+    "deploy:rules": "bash scripts/deploy.sh rules",
+    "deploy:functions": "bash scripts/deploy.sh functions",
+    "deploy:hosting": "bash scripts/deploy.sh hosting",
+    "deploy:all": "bash scripts/deploy.sh all",
+    "emulators": "bash scripts/emulator.sh"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.14",

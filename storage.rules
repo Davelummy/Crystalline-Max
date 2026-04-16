@@ -29,7 +29,9 @@ service firebase.storage {
 
     match /bookings/{bookingId}/{fileName} {
       allow read: if isAdmin() || isAssignedStaff(bookingId) || isBookingOwner(bookingId);
-      allow write: if isAssignedStaff(bookingId);
+      allow write: if isAssignedStaff(bookingId) &&
+                      request.resource.size < 15 * 1024 * 1024 &&
+                      request.resource.contentType.matches('image/.*');
       allow delete: if isAdmin();
     }
 

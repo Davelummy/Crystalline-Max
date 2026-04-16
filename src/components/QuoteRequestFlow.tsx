@@ -107,6 +107,11 @@ export const QuoteRequestFlow: React.FC<QuoteRequestFlowProps> = ({ initialServi
       return;
     }
 
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.customerEmail.trim())) {
+      setError('A valid email address is required.');
+      return;
+    }
+
     setSubmitting(true);
     setError(null);
 
@@ -267,6 +272,7 @@ export const QuoteRequestFlow: React.FC<QuoteRequestFlowProps> = ({ initialServi
                     value={form.customerName}
                     onChange={(event) => setForm((prev) => ({ ...prev, customerName: event.target.value }))}
                     className="input-field-light"
+                    maxLength={100}
                   />
                 </div>
                 <div>
@@ -287,6 +293,7 @@ export const QuoteRequestFlow: React.FC<QuoteRequestFlowProps> = ({ initialServi
                     onChange={(event) => setForm((prev) => ({ ...prev, phoneNumber: event.target.value }))}
                     className="input-field-light"
                     placeholder="07425 241192"
+                    maxLength={20}
                   />
                 </div>
                 <div>
@@ -296,6 +303,7 @@ export const QuoteRequestFlow: React.FC<QuoteRequestFlowProps> = ({ initialServi
                     value={form.companyName}
                     onChange={(event) => setForm((prev) => ({ ...prev, companyName: event.target.value }))}
                     className="input-field-light"
+                    maxLength={200}
                   />
                 </div>
                 <div>
@@ -305,6 +313,7 @@ export const QuoteRequestFlow: React.FC<QuoteRequestFlowProps> = ({ initialServi
                     value={form.address}
                     onChange={(event) => setForm((prev) => ({ ...prev, address: event.target.value }))}
                     className="input-field-light"
+                    maxLength={200}
                   />
                 </div>
                 <div>
@@ -314,6 +323,7 @@ export const QuoteRequestFlow: React.FC<QuoteRequestFlowProps> = ({ initialServi
                     value={form.city}
                     onChange={(event) => setForm((prev) => ({ ...prev, city: event.target.value }))}
                     className="input-field-light"
+                    maxLength={100}
                   />
                 </div>
                 <div>
@@ -323,6 +333,7 @@ export const QuoteRequestFlow: React.FC<QuoteRequestFlowProps> = ({ initialServi
                     value={form.postcode}
                     onChange={(event) => setForm((prev) => ({ ...prev, postcode: event.target.value }))}
                     className="input-field-light"
+                    maxLength={10}
                   />
                 </div>
                 <div>
@@ -347,6 +358,7 @@ export const QuoteRequestFlow: React.FC<QuoteRequestFlowProps> = ({ initialServi
                     onChange={(event) => setForm((prev) => ({ ...prev, preferredSchedule: event.target.value }))}
                     className="input-field-light"
                     placeholder="Weekday evenings, after 6 PM"
+                    maxLength={200}
                   />
                 </div>
                 <div className="md:col-span-2">
@@ -357,6 +369,7 @@ export const QuoteRequestFlow: React.FC<QuoteRequestFlowProps> = ({ initialServi
                     onChange={(event) => setForm((prev) => ({ ...prev, budgetRange: event.target.value }))}
                     className="input-field-light"
                     placeholder="e.g. £500 - £900 monthly"
+                    maxLength={100}
                   />
                 </div>
                 <div className="md:col-span-2">
@@ -367,6 +380,7 @@ export const QuoteRequestFlow: React.FC<QuoteRequestFlowProps> = ({ initialServi
                     onChange={(event) => setForm((prev) => ({ ...prev, scopeSummary: event.target.value }))}
                     className="input-field-light"
                     placeholder="What should be cleaned and how often?"
+                    maxLength={300}
                   />
                 </div>
                 <div className="md:col-span-2">
@@ -376,6 +390,7 @@ export const QuoteRequestFlow: React.FC<QuoteRequestFlowProps> = ({ initialServi
                     onChange={(event) => setForm((prev) => ({ ...prev, scopeDetails: event.target.value }))}
                     className="input-field-light min-h-40"
                     placeholder="Share complexity, access constraints, preferred chemicals/equipment, compliance, and any special instructions."
+                    maxLength={2000}
                   />
                 </div>
               </div>

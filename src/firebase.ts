@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { initializeAppCheck, ReCaptchaV3Provider } from 'firebase/app-check';
-import { browserLocalPersistence, getAuth, setPersistence } from 'firebase/auth';
+import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getFunctions } from 'firebase/functions';
 import { getStorage } from 'firebase/storage';
@@ -36,6 +36,16 @@ const firestoreDatabaseId = env.VITE_FIREBASE_DATABASE_ID || '(default)';
 const app = initializeApp(resolvedConfig);
 const recaptchaSiteKey = env.VITE_RECAPTCHA_SITE_KEY;
 
+if (!recaptchaSiteKey) {
+  if (import.meta.env.PROD) {
+    throw new Error(
+      'VITE_RECAPTCHA_SITE_KEY is required in production. App Check cannot be disabled on a live deployment.',
+    );
+  } else {
+    console.warn('[App Check] VITE_RECAPTCHA_SITE_KEY not set — App Check disabled in dev mode.');
+  }
+}
+
 let appCheck = null;
 if (typeof window !== 'undefined' && recaptchaSiteKey) {
   try {
@@ -53,7 +63,4 @@ export const auth = getAuth(app);
 export const functions = getFunctions(app, 'europe-west2');
 export const storage = getStorage(app);
 export { appCheck };
-
-setPersistence(auth, browserLocalPersistence).catch((error) => {
-  console.error("Error setting persistence:", error);
-});
+// Auth persistence is managed per-user in src/lib/auth.ts signInWithGoogle
