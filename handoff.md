@@ -229,7 +229,8 @@ Roadmap corrections already accepted before implementation:
 - Phase 10 legal and policy drafting is now implemented and verified
 - Phase 11 multi-employee job assignment is now implemented and verified
 - Phase 12 testing and local verification is now implemented in-repo with unit tests, Firestore rules tests, Playwright smoke scaffolding, and repo-local verify commands
-- Phase 13 pre-launch hardening is now partially implemented with App Check bootstrap hooks and bounded photo-upload validation, with remaining production-console tasks still pending
+- Phase 13 pre-launch hardening is now substantially complete with App Check hard-fail in production, security headers, server-side price validation, webhook idempotency, notification failure logging, input length constraints, return-path whitelist, and storage MIME enforcement — remaining tasks are infra-only and require production domain access
+- Service pricing updated to market rates; cancellation and refund policy updated to employer-confirmed terms
 - MVP landing page expansion is complete: TrustStrip, HowItWorks, and CTACarousel sections added to the public landing page
 - Staff Management deep-linking is complete: card modal routes to AdminStaffProfile and AdminStaffAssignments dedicated subpages
 - Firestore rules hardened: isStaff() helper, assignment-scoped booking reads, scoped checkins list, notificationLogs rule, reduced isValidBooking() expression depth
@@ -304,6 +305,44 @@ Roadmap corrections already accepted before implementation:
 - Refactored `isValidBooking()` by extracting photo-field checks into `hasValidPhotos()` and assignment-field checks into `hasValidAssignment()` to reduce expression depth and resolve emulator evaluation-limit denials
 - Added `bio`, `salaryAllocation`, and `salaryCurrency` to `isValidUser()` allowedFields to support the staff profile payroll form
 - Staff booking updates are now constrained to operational fields only via `diff().affectedKeys().hasOnly([...])` (prevents staff from mutating payment/customer fields)
+
+### Security Hardening Pass (April 2026)
+
+Committed as `620a917`. All code-level security findings resolved:
+
+- **C1+C2 (Stripe price trust):** `createCheckoutSession` now recomputes booking total server-side from the canonical price table in `functions/src/lib/bookings.ts` and validates the stored amount within a £1 tolerance before charging. Client-supplied values are never trusted for the charge amount.
+- **C3 (App Check):** `src/firebase.ts` throws a hard error in `PROD` if `VITE_RECAPTCHA_SITE_KEY` is absent; warns in dev. Console enforcement toggle still required in Firebase Console.
+- **H1 (Security headers):** `public/_headers` adds CSP, `X-Frame-Options: DENY`, `X-Content-Type-Options`, `Referrer-Policy`, and `Permissions-Policy` for all Netlify routes.
+- **H2 (Webhook idempotency):** `stripeWebhook` skips processing if booking is already `paymentStatus: paid`, preventing duplicate emails on Stripe retries.
+- **H3 (Notification observability):** `sendEmail` returns `{success, error}`. Failures write a structured record to `notificationLogs/{auto-id}` with `type`, `bookingId`, `recipientId`, `error`, and `timestamp` — visible to admin.
+- **H4 (Availability auth gate):** `getAvailabilitySnapshot` callable now rejects unauthenticated callers.
+- **H5 (Input length bounds):** All `QuoteRequestFlow.tsx` inputs and the scope details textarea have `maxLength` attributes. `isValidBooking()` and `isValidQuoteRequest()` in `firestore.rules` now enforce string size constraints server-side.
+- **L1 (Error message):** `BookingFlow.tsx` booking submit failure now shows a generic user-facing message instead of leaking internal error text.
+- **L2 (Auth persistence):** Global `setPersistence` call removed from `firebase.ts`; persistence is handled per-user in `auth.ts` as intended.
+- **L5 (Email validation):** `QuoteRequestFlow.tsx` validates email format with `/.+@.+\..+/` before submitting to Firestore.
+- **M2 (Return path):** `getSavedLoginReturnPath()` now validates against an allowed-prefix whitelist and rejects any path containing `://`.
+- **M3 (Min charge):** `createCheckoutSession` rejects totals below £0.50.
+- **M4 (Storage MIME):** `storage.rules` enforces `image/*` content type and a 15 MB size cap on staff photo uploads.
+- **M5 (Batch reads):** `sendJobReminders` now fetches all referenced staff documents in a single `db.getAll()` call instead of sequential per-document reads.
+- **Automation scripts:** `scripts/deploy.sh`, `scripts/verify.sh`, `scripts/emulator.sh` added for repeatable ops tasks.
+
+**Remaining infra tasks (require domain/account access):**
+- Firebase Auth authorized domains → restrict to production domain only
+- Google Cloud API key HTTP referrer restrictions
+- Firebase Console App Check enforcement ON (Firestore, Storage, Functions)
+- Resend domain verification: SPF/DKIM/DMARC for `ctmds.co.uk`
+- Stripe production webhook endpoint registration + live key swap
+
+**Remaining code task:**
+- Sentry: `src/lib/sentry.ts` init helper, `initSentry()` in `main.tsx`, `Sentry.ErrorBoundary` in `App.tsx`, scoped `captureException` at auth/booking/payment/upload failure points
+
+---
+
+### Pricing Update (April 2026)
+
+Service and add-on prices updated to match Manchester/Oxfordshire market rates. Canonical server-side price table is in `functions/src/lib/bookings.ts` and must be kept in sync with `src/constants.ts`. Key changes: Full Detailing £85→£149, Ceramic Coating £60→£149, Home Cleaning £45→£50, Office Cleaning £120→£150, Industrial £250→£300.
+
+---
 
 ### Data Integrity And Storage Hardening
 
@@ -480,11 +519,17 @@ Phase 12 verification currently available in this repo:
 
 ## Remaining Launch Tasks
 
-- tighten Firebase Authentication authorized domains for production
-- restrict browser API keys in Google Cloud Console
-- add the Stripe Apple Pay domain association file on the production domain
-- install and verify Sentry with a real DSN
-- run final E2E and production smoke tests from an unrestricted machine
+**Code:**
+- Sentry: `src/lib/sentry.ts` init helper, call `initSentry()` at top of `main.tsx`, wrap root in `Sentry.ErrorBoundary` in `App.tsx`, add scoped `captureException` calls at: auth sign-in failure, booking submit failure, file upload failure, payment redirect failure, check-in callable rejection
+
+**Infra (blocked on production domain and account access):**
+- Firebase Auth → Authorized Domains: restrict to production domain, remove localhost entries
+- Google Cloud Console → Credentials → Browser API key: add HTTP referrer restrictions
+- Firebase Console → App Check: enable enforcement for Firestore, Storage, and Functions
+- Resend → add `ctmds.co.uk` as verified sending domain; add SPF, DKIM, DMARC DNS records; confirm deliverability with a real test send from `admin@ctmds.co.uk`
+- Stripe → register production webhook endpoint pointing at `stripeWebhook` function URL; switch Stripe publishable + secret keys to live mode
+- Add Stripe Apple Pay domain association file to Firebase Hosting public dir on production domain
+- Run final E2E and production smoke tests from an unrestricted machine
 
 ## Netlify Pilot Deployment
 

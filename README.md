@@ -37,6 +37,24 @@ Current migration status:
 - Post-review: quote-request workflow added as a pre-booking conversion path; strict portal role isolation enforced to prevent cross-role navigation
 - Post-review: hero locations, trust strip marquee, and portal copy updated to reflect live service regions and accurate operator details
 - Post-review: auth hardened, booking rules tightened, payment redirect flows patched, structured backend logging added
+- Post-review: service pricing aligned to Manchester/Oxfordshire market rates; cancellation and refund policy updated to employer-confirmed terms
+- Security hardening pass complete: server-side price recomputation and validation in Stripe checkout, App Check hard-fail in production, HTTP security headers (CSP/X-Frame/Referrer-Policy), webhook idempotency, notification failure logging to Firestore, auth guard on availability callable, input maxLength constraints, return-path whitelist, storage MIME and size enforcement, batch staff reads in reminder job
+
+## Remaining Launch Tasks
+
+**Code:**
+- Sentry: `src/lib/sentry.ts`, call `initSentry()` in `main.tsx`, `Sentry.ErrorBoundary` in `App.tsx`, scoped `captureException` at auth/booking/payment/upload failure points
+
+**Infra (blocked on domain and account access):**
+- Firebase Auth authorized domains → production domain only
+- Google Cloud API key → add HTTP referrer restrictions
+- Firebase Console → enable App Check enforcement for Firestore, Storage, Functions
+- Resend → add `ctmds.co.uk`, configure SPF/DKIM/DMARC
+- Stripe → register production webhook endpoint, switch to live keys
+- Stripe Apple Pay domain association file on production domain
+- Full E2E and production smoke test run from an unrestricted machine
+
+---
 
 ## Approved Roadmap
 
