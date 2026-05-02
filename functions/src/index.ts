@@ -24,7 +24,12 @@ setGlobalOptions({
   maxInstances: 10,
 });
 
-initializeApp();
+const firebaseProjectId =
+  process.env.GCLOUD_PROJECT ||
+  process.env.GCP_PROJECT ||
+  'crystalline-max-dolumide-2026';
+
+initializeApp({ projectId: firebaseProjectId });
 
 const db = getFirestore();
 const stripeSecret = defineSecret('STRIPE_SECRET_KEY');
@@ -323,7 +328,7 @@ export const validateCheckin = onCall(async (request) => {
   return { success: true };
 });
 
-export const createCheckoutSession = onCall({ secrets: [stripeSecret], params: [appOrigin] }, async (request) => {
+export const createCheckoutSession = onCall({ secrets: [stripeSecret] }, async (request) => {
   if (!request.auth) {
     throw new HttpsError('unauthenticated', 'Must be signed in.');
   }
