@@ -2,7 +2,7 @@ import React from 'react';
 import type { User as FirebaseUser } from 'firebase/auth';
 import { NavLink } from 'react-router-dom';
 import { Logo } from './Logo';
-import { Menu, X, LogOut, Users, BarChart3, Settings, FileText } from 'lucide-react';
+import { Menu, X, LogOut, Users, BarChart3, Settings, FileText, Mail } from 'lucide-react';
 
 interface AdminNavbarProps {
   user: FirebaseUser;
@@ -13,6 +13,7 @@ const navItems = [
   { to: '/admin/dashboard', label: 'Dashboard', icon: BarChart3 },
   { to: '/admin/staff', label: 'Staff', icon: Users },
   { to: '/admin/quotes', label: 'Quotes', icon: FileText },
+  { to: '/admin/broadcasts', label: 'Broadcasts', icon: Mail },
   { to: '/admin/settings', label: 'Settings', icon: Settings },
 ] as const;
 

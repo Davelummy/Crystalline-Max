@@ -480,6 +480,17 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // Marketing: server-only collections (Cloud Functions write via Admin SDK)
+    match /scheduledEmails/{emailId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    match /campaigns/{campaignId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
     match /{path=**} {
       allow read, write: if false;
     }

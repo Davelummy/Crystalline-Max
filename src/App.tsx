@@ -16,6 +16,7 @@ import { AdminDashboard } from './components/AdminDashboard';
 import { AdminLoginPage } from './components/AdminLoginPage';
 import { AdminNavbar } from './components/AdminNavbar';
 import { AdminOnboarding } from './components/AdminOnboarding';
+import { AdminBroadcasts } from './components/AdminBroadcasts';
 import { AdminQuoteRequests } from './components/AdminQuoteRequests';
 import { AdminSettings } from './components/AdminSettings';
 import { AdminStaffManagement } from './components/AdminStaffManagement';
@@ -1145,6 +1146,7 @@ function AppRouter() {
           <Route path="staff/:staffId/profile" element={<AdminStaffProfile />} />
           <Route path="staff/:staffId/assignments" element={<AdminStaffAssignments />} />
           <Route path="quotes" element={<AdminQuoteRequests />} />
+          <Route path="broadcasts" element={<AdminBroadcasts />} />
           <Route path="bookings/:bookingId" element={<AdminBookingDetailRoute />} />
           <Route path="settings" element={<AdminSettings />} />
         </Route>

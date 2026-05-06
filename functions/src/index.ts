@@ -18,6 +18,18 @@ import {
   getStaffReminderEmailHtml,
 } from './lib/notifications.js';
 
+// Marketing & engagement functions
+export {
+  onFirstBooking,
+  onBookingCompleted as onBookingCompletedMarketing,
+  processScheduledEmails,
+  sendReEngagementEmails,
+  sendQuoteReminders,
+  sendBroadcastEmail,
+  getAudienceCount,
+  handleUnsubscribe,
+} from './lib/marketing.js';
+
 setGlobalOptions({
   region: 'europe-west2',
   memory: '256MiB',
@@ -477,6 +489,7 @@ export const onBookingCreated = onDocumentCreated('bookings/{bookingId}', async 
   await db.doc(`users/${userId}`).set(
     {
       bookingCount: FieldValue.increment(1),
+      lastBookingDate: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
     },
     { merge: true },
