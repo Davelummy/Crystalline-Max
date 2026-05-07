@@ -6,6 +6,7 @@ import { auth, db } from '@/firebase';
 import { SERVICES } from '@/constants';
 import { getAuthErrorMessage, getClientStayLoggedInPreference, isCompanyEmail, signInWithGoogle } from '@/lib/auth';
 import { getServiceById } from '@/lib/bookings';
+import { captureAppException } from '@/lib/sentry';
 
 interface QuoteRequestFlowProps {
   initialServiceId?: string;
@@ -72,6 +73,10 @@ export const QuoteRequestFlow: React.FC<QuoteRequestFlowProps> = ({ initialServi
       await signInWithGoogle('customer', { stayLoggedIn });
     } catch (authError) {
       console.error('Quote login failed:', authError);
+      captureAppException(authError, {
+        action: 'quote_customer_login',
+        source,
+      });
       setError(getAuthErrorMessage(authError));
     } finally {
       setAuthLoading(false);
@@ -162,6 +167,12 @@ export const QuoteRequestFlow: React.FC<QuoteRequestFlowProps> = ({ initialServi
       setIsSuccess(true);
     } catch (submitError) {
       console.error('Quote request submission failed:', submitError);
+      captureAppException(submitError, {
+        action: 'quote_submit',
+        source,
+        serviceId: service.id,
+        hasCompanyName: Boolean(form.companyName.trim()),
+      });
       setError('Quote request could not be submitted. Try again in a moment.');
     } finally {
       setSubmitting(false);

@@ -4,6 +4,7 @@ import { collection, onSnapshot, query, where } from 'firebase/firestore';
 import { db } from '../firebase';
 import { formatSchedule, getStatusLabel, getTaskProgressPercent, sortBookingsByCreatedAt } from '../lib/bookings';
 import { canPayNow, getPaymentDisplayLabel, startCheckoutSession } from '../lib/payments';
+import { captureAppException } from '../lib/sentry';
 import type { BookingRecord } from '../types';
 
 interface CustomerBillingProps {
@@ -41,6 +42,10 @@ export const CustomerBilling: React.FC<CustomerBillingProps> = ({ user, onBack }
       await startCheckoutSession(bookingId);
     } catch (error) {
       console.error('Checkout session failed:', error);
+      captureAppException(error, {
+        action: 'checkout_from_billing',
+        bookingId,
+      });
       setPaymentError(error instanceof Error ? error.message : 'Payment session could not be created.');
       setBusyBookingId(null);
     }

@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { LogIn, LogOut, MapPin, CheckCircle2, AlertCircle, Clock } from 'lucide-react';
 import { formatSchedule, getAfterPhotos, getAssignedStaffLabel, getTaskProgressPercent, sortBookingsBySchedule } from '../lib/bookings';
 import { subscribeToAssignedBookings } from '@/lib/assignedBookings';
+import { captureAppException } from '@/lib/sentry';
 import type { BookingRecord, CheckIn } from '../types';
 
 const CHECKIN_RADIUS_METERS = 200;
@@ -83,6 +84,9 @@ export const EmployeeCheckIn: React.FC = () => {
       setLoading(false);
     }, (err) => {
       console.error("Error fetching status:", err);
+      captureAppException(err, {
+        action: 'checkin_status_sync',
+      });
       setError("Failed to sync status. Please check your connection.");
       setLoading(false);
     });
@@ -209,6 +213,12 @@ export const EmployeeCheckIn: React.FC = () => {
 
     } catch (err) {
       console.error('Check-in error:', err);
+      captureAppException(err, {
+        action: 'staff_checkin',
+        type,
+        bookingId: assignment?.id,
+        hasLocation: Boolean(distanceFromSite != null),
+      });
       setError(err instanceof Error ? err.message : 'Permission denied or server error. Ensure you are logged in as an employee.');
     } finally {
       setLoading(false);

@@ -13,6 +13,7 @@ import {
 import { collection, onSnapshot, orderBy, query } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import { db, functions } from '@/firebase';
+import { captureAppException } from '@/lib/sentry';
 
 type Tab = 'compose' | 'history';
 type Audience = 'all' | 'inactive_30d' | 'recent_30d' | 'new';
@@ -103,7 +104,11 @@ export const AdminBroadcasts: React.FC = () => {
         const getCount = httpsCallable<{ audience: string }, { count: number }>(functions, 'getAudienceCount');
         const result = await getCount({ audience });
         if (active) setAudienceCount(result.data.count);
-      } catch {
+      } catch (countError) {
+        captureAppException(countError, {
+          action: 'broadcast_audience_count',
+          audience,
+        });
         if (active) setAudienceCount(null);
       } finally {
         if (active) setLoadingCount(false);
@@ -140,6 +145,11 @@ export const AdminBroadcasts: React.FC = () => {
       setCtaText('');
       setCtaUrl('');
     } catch (err) {
+      captureAppException(err, {
+        action: 'broadcast_send',
+        audience,
+        hasCta: Boolean(ctaText && ctaUrl),
+      });
       setError(err instanceof Error ? err.message : 'Failed to send broadcast.');
     } finally {
       setSending(false);

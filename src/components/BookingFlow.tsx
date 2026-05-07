@@ -11,6 +11,7 @@ import { auth, db, functions } from '../firebase';
 import { MapLocationPicker } from './MapLocationPicker';
 import { CAR_ADDONS, HOME_ADDONS, SERVICES } from '../constants';
 import { getAddonLabel, getServiceById } from '../lib/bookings';
+import { captureAppException } from '@/lib/sentry';
 import {
   DEFAULT_AVAILABILITY_SETTINGS,
   TIME_WINDOW_OPTIONS,
@@ -107,6 +108,9 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ initialServiceId, onRe
       };
     } catch (snapshotError) {
       console.error('Availability snapshot failed:', snapshotError);
+      captureAppException(snapshotError, {
+        action: 'availability_snapshot',
+      });
       setAvailabilityError('Availability could not be loaded. You can still continue, but capacity will be rechecked before booking.');
       return {
         availability: DEFAULT_AVAILABILITY_SETTINGS,
@@ -218,6 +222,10 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ initialServiceId, onRe
       setCurrentStep(6);
     } catch (authError) {
       console.error('Login failed:', authError);
+      captureAppException(authError, {
+        action: 'booking_customer_login',
+        step: currentStep,
+      });
       setError(getAuthErrorMessage(authError));
     } finally {
       setAuthLoading(false);
@@ -341,6 +349,13 @@ export const BookingFlow: React.FC<BookingFlowProps> = ({ initialServiceId, onRe
       }, 2500);
     } catch (bookingError) {
       console.error('Booking failed:', bookingError);
+      captureAppException(bookingError, {
+        action: 'booking_submit',
+        serviceId: selectedService.id,
+        addonCount: selection.addons.length,
+        hasVerifiedLocation: selection.locationVerified,
+        hasDate: Boolean(selection.date),
+      });
       setError('Your booking could not be saved. Please try again or contact support.');
     } finally {
       setSubmitting(false);

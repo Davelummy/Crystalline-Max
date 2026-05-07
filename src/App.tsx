@@ -73,6 +73,7 @@ import {
 } from './lib/auth';
 import { serviceRequiresQuote } from './lib/bookings';
 import { useGeneralSettings } from './lib/generalSettings';
+import { captureAppException, setSentryUser } from './lib/sentry';
 import type { AppUserData, EmployeeInvite, UserRole, View } from './types';
 
 function AccessMessage({
@@ -785,6 +786,10 @@ function AppRouter() {
       .join(' ');
   }, []);
 
+  React.useEffect(() => {
+    setSentryUser(user ? { uid: user.uid, role: userRole ?? undefined } : null);
+  }, [user, userRole]);
+
   const resolveTargetPath = React.useCallback(
     (target: 'customer' | 'staff' | 'admin', fromPath?: string) => {
       if (target === 'customer') {
@@ -855,6 +860,10 @@ function AppRouter() {
           navigate(nextPath, { replace: true });
         } catch (error) {
           console.error('Redirect login failed:', error);
+          captureAppException(error, {
+            action: 'auth_redirect_complete',
+            targetPortal: getSavedLoginTarget(),
+          });
           setAuthError(error instanceof Error ? error.message : getAuthErrorMessage(error));
           navigate(getLoginPathForTarget(getSavedLoginTarget()), { replace: true });
         } finally {
@@ -864,6 +873,10 @@ function AppRouter() {
       .catch((error) => {
         if (!active) return;
         console.error('Redirect login failed:', error);
+        captureAppException(error, {
+          action: 'auth_redirect_result',
+          targetPortal: getSavedLoginTarget(),
+        });
         setAuthError(getAuthErrorMessage(error));
         navigate(getLoginPathForTarget(getSavedLoginTarget()), { replace: true });
         setIsLoggingIn(false);
@@ -897,6 +910,10 @@ function AppRouter() {
       return await completePortalLogin(result.user, 'customer', fromPath);
     } catch (error) {
       console.error('Customer login failed:', error);
+      captureAppException(error, {
+        action: 'customer_login',
+        fromPath: fromPath?.split('?')[0],
+      });
       setAuthError(getAuthErrorMessage(error));
       return undefined;
     } finally {
@@ -922,6 +939,10 @@ function AppRouter() {
       return await completePortalLogin(result.user, 'staff', fromPath);
     } catch (error) {
       console.error('Staff login failed:', error);
+      captureAppException(error, {
+        action: 'staff_login',
+        fromPath: fromPath?.split('?')[0],
+      });
       setAuthError(error instanceof Error ? error.message : getAuthErrorMessage(error));
       return undefined;
     } finally {
@@ -1032,10 +1053,19 @@ function AppRouter() {
       return resolveTargetPath('staff', fromPath);
     } catch (error) {
       console.error('Staff signup failed:', error);
+      captureAppException(error, {
+        action: 'staff_signup',
+        invitePresent: Boolean(normalizedEmployeeId),
+        profileCreated: staffProfileCreated,
+      });
 
       if (createdUser && !staffProfileCreated) {
         await deleteUser(createdUser).catch((cleanupError) => {
           console.error('Failed to remove incomplete staff account:', cleanupError);
+          captureAppException(cleanupError, {
+            action: 'staff_signup_cleanup',
+            profileCreated: staffProfileCreated,
+          });
         });
       }
 
@@ -1068,6 +1098,10 @@ function AppRouter() {
       return await completePortalLogin(result.user, 'admin', fromPath);
     } catch (error) {
       console.error('Admin login failed:', error);
+      captureAppException(error, {
+        action: 'admin_login',
+        fromPath: fromPath?.split('?')[0],
+      });
       setAuthError(error instanceof Error ? error.message : getAuthErrorMessage(error));
       return undefined;
     } finally {

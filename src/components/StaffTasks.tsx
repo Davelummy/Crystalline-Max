@@ -5,6 +5,7 @@ import { doc, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 import { auth, db, storage } from '../firebase';
 import { cn } from '@/lib/utils';
+import { captureAppException } from '@/lib/sentry';
 import {
   getAssignedStaffLabel,
   formatSchedule,
@@ -201,6 +202,12 @@ export const StaffTasks: React.FC<StaffTasksProps> = ({ onNavigate }) => {
       setSuccess(buildPhotoSummary(phase, uploadedPhotos.length));
     } catch (uploadError) {
       console.error(`${phase} photo upload failed:`, uploadError);
+      captureAppException(uploadError, {
+        action: 'staff_photo_upload',
+        phase,
+        bookingId: booking.id,
+        fileCount: files.length,
+      });
       setError(`The ${phase} photos could not be uploaded. Try again.`);
     } finally {
       setBusyAction(null);
@@ -234,6 +241,11 @@ export const StaffTasks: React.FC<StaffTasksProps> = ({ onNavigate }) => {
       });
     } catch (taskError) {
       console.error('Task update failed:', taskError);
+      captureAppException(taskError, {
+        action: 'staff_task_update',
+        bookingId: booking.id,
+        taskId,
+      });
       setError('Task progress could not be updated. Try again.');
     } finally {
       setBusyAction(null);
@@ -268,6 +280,11 @@ export const StaffTasks: React.FC<StaffTasksProps> = ({ onNavigate }) => {
       setSuccess('Job marked complete. Admin and customer views are now updated.');
     } catch (completeError) {
       console.error('Job completion failed:', completeError);
+      captureAppException(completeError, {
+        action: 'staff_job_complete',
+        bookingId: booking.id,
+        progress,
+      });
       setError('The job could not be marked complete. Try again.');
     } finally {
       setBusyAction(null);

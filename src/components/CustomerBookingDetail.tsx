@@ -10,6 +10,7 @@ import {
   getTaskProgressPercent,
 } from '@/lib/bookings';
 import { canPayNow, getPaymentDisplayLabel, startCheckoutSession } from '@/lib/payments';
+import { captureAppException } from '@/lib/sentry';
 import type { BookingPhoto, BookingRecord } from '@/types';
 import { PhotoGalleryOverlay } from './PhotoGalleryOverlay';
 
@@ -72,6 +73,10 @@ export const CustomerBookingDetail: React.FC<CustomerBookingDetailProps> = ({ bo
       await startCheckoutSession(booking.id);
     } catch (checkoutError) {
       console.error('Checkout session failed:', checkoutError);
+      captureAppException(checkoutError, {
+        action: 'checkout_from_booking_detail',
+        bookingId: booking.id,
+      });
       setPaymentError(checkoutError instanceof Error ? checkoutError.message : 'Payment session could not be created.');
       setOpeningCheckout(false);
     }
