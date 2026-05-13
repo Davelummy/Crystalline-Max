@@ -105,7 +105,12 @@ export function shouldUseRedirectAuth() {
 
   const userAgent = navigator.userAgent || '';
   const inAppBrowser = /FBAN|FBAV|Instagram|Line|TikTok|wv\)|WebView/i.test(userAgent);
-  return inAppBrowser;
+  if (inAppBrowser) return true;
+
+  // Safari's ITP blocks cross-origin storage in popups, breaking signInWithPopup.
+  // Use redirect auth for Safari (but not Chrome/Firefox on macOS which also contain "Safari").
+  const isSafari = /Safari/i.test(userAgent) && !/Chrome|Chromium|CriOS|FxiOS|EdgiOS/i.test(userAgent);
+  return isSafari;
 }
 
 export async function signInWithGoogle(
