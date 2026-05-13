@@ -134,17 +134,11 @@ export async function signInWithGoogle(
   try {
     const result = await signInWithPopup(auth, provider);
     return result;
-  } catch (error) {
-    const code = typeof error === 'object' && error && 'code' in error
-      ? String((error as { code: unknown }).code)
-      : '';
-
-    if (code === 'auth/popup-blocked' || code === 'auth/operation-not-supported-in-this-environment') {
-      await signInWithRedirect(auth, provider);
-      return null;
-    }
-
-    throw error;
+  } catch {
+    // Any popup failure (blocked, closed, cancelled, or silent rejection)
+    // falls back to redirect which works reliably for all accounts.
+    await signInWithRedirect(auth, provider);
+    return null;
   }
 }
 
