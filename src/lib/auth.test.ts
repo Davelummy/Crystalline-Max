@@ -2,17 +2,22 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('../firebase', () => ({
   auth: {},
+  functions: {},
 }));
 
 import {
   COMPANY_EMAIL_DOMAIN,
+  clearClientEmailForSignIn,
   clearLoginReturnPath,
   clearLoginTarget,
+  getSavedClientEmailForSignIn,
   getSavedLoginReturnPath,
   getSavedLoginTarget,
   hasSavedLoginTarget,
+  isClientEmail,
   isCompanyEmail,
   normalizeEmployeeId,
+  saveClientEmailForSignIn,
   saveLoginReturnPath,
   saveLoginTarget,
   shouldUseRedirectAuth,
@@ -21,6 +26,7 @@ import {
 afterEach(() => {
   clearLoginTarget();
   clearLoginReturnPath();
+  clearClientEmailForSignIn();
   vi.unstubAllGlobals();
 });
 
@@ -41,6 +47,21 @@ describe('isCompanyEmail', () => {
 describe('normalizeEmployeeId', () => {
   it('trims and uppercases the value', () => {
     expect(normalizeEmployeeId('  cmx-abc123  ')).toBe('CMX-ABC123');
+  });
+});
+
+describe('client email helpers', () => {
+  it('accepts personal emails for client email-link auth', () => {
+    expect(isClientEmail('customer@gmail.com')).toBe(true);
+  });
+
+  it(`rejects ${COMPANY_EMAIL_DOMAIN} for client email-link auth`, () => {
+    expect(isClientEmail('admin@ctmds.co.uk')).toBe(false);
+  });
+
+  it('stores and restores the pending email-link address', () => {
+    saveClientEmailForSignIn('  CUSTOMER@GMAIL.COM ');
+    expect(getSavedClientEmailForSignIn()).toBe('customer@gmail.com');
   });
 });
 

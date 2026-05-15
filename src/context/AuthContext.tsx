@@ -14,6 +14,11 @@ interface AuthContextValue {
 
 const AuthContext = React.createContext<AuthContextValue | undefined>(undefined);
 
+function getFallbackRole(nextUser: User): AppUserData['role'] | null {
+  if (isCompanyEmail(nextUser.email || '')) return null;
+  return nextUser.emailVerified ? 'client' : null;
+}
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = React.useState<User | null>(null);
   const [userData, setUserData] = React.useState<AppUserData | null>(null);
@@ -45,7 +50,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         (snapshot) => {
           if (!snapshot.exists()) {
             setUserData(null);
-            setUserRole(isCompanyEmail(nextUser.email || '') ? null : 'client');
+            setUserRole(getFallbackRole(nextUser));
             setLoading(false);
             return;
           }
@@ -58,7 +63,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         (error) => {
           console.error('Error listening to user data:', error);
           setUserData(null);
-          setUserRole(isCompanyEmail(nextUser.email || '') ? null : 'client');
+          setUserRole(getFallbackRole(nextUser));
           setLoading(false);
         },
       );

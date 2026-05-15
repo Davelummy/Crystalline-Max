@@ -60,6 +60,7 @@ import {
   clearLoginReturnPath,
   clearLoginTarget,
   COMPANY_EMAIL_DOMAIN,
+  completeClientEmailSignIn,
   createCompanyUser,
   getAuthErrorMessage,
   getSavedLoginReturnPath,
@@ -68,6 +69,7 @@ import {
   isCompanyEmail,
   normalizeEmployeeId,
   saveLoginReturnPath,
+  sendClientEmailSignInLink,
   signInWithCompanyEmail,
   signInWithGoogle,
 } from './lib/auth';
@@ -499,10 +501,14 @@ function PortalSelectionRoute() {
 
 function CustomerLoginRoute({
   onLogin,
+  onEmailLinkRequest,
+  onEmailLinkComplete,
   isLoggingIn,
   error,
 }: {
   onLogin: (stayLoggedIn: boolean, fromPath?: string) => Promise<string | undefined>;
+  onEmailLinkRequest: (email: string, stayLoggedIn: boolean, fromPath?: string) => Promise<boolean>;
+  onEmailLinkComplete: (email: string, fromPath?: string) => Promise<string | undefined>;
   isLoggingIn: boolean;
   error: string | null;
 }) {
@@ -527,6 +533,14 @@ function CustomerLoginRoute({
       onLogin={async (stayLoggedIn) => {
         const nextPath = await onLogin(stayLoggedIn, fromPath);
         if (nextPath) navigate(nextPath, { replace: true });
+      }}
+      onEmailLinkRequest={(email, stayLoggedIn) => onEmailLinkRequest(email, stayLoggedIn, fromPath)}
+      onEmailLinkComplete={async (email) => {
+        const searchParams = new URLSearchParams(location.search);
+        const returnPath = searchParams.get('returnPath') || fromPath || undefined;
+        const nextPath = await onEmailLinkComplete(email, returnPath);
+        if (nextPath) navigate(nextPath, { replace: true });
+        return Boolean(nextPath);
       }}
       isLoggingIn={isLoggingIn}
       error={error}
@@ -921,6 +935,60 @@ function AppRouter() {
     }
   }, [completePortalLogin, isLoggingIn]);
 
+  const handleCustomerEmailLinkRequest = React.useCallback(async (
+    email: string,
+    stayLoggedIn: boolean,
+    fromPath?: string,
+  ) => {
+    if (isLoggingIn) return false;
+
+    setIsLoggingIn(true);
+    setAuthError(null);
+
+    try {
+      await sendClientEmailSignInLink(email, { stayLoggedIn, returnPath: fromPath });
+      return true;
+    } catch (error) {
+      console.error('Customer email sign-in link request failed:', error);
+      captureAppException(error, {
+        action: 'customer_email_link_request',
+        fromPath: fromPath?.split('?')[0],
+      });
+      setAuthError(error instanceof Error ? error.message : getAuthErrorMessage(error));
+      return false;
+    } finally {
+      setIsLoggingIn(false);
+    }
+  }, [isLoggingIn]);
+
+  const handleCustomerEmailLinkComplete = React.useCallback(async (email: string, fromPath?: string) => {
+    if (isLoggingIn) return undefined;
+
+    setIsLoggingIn(true);
+    setAuthError(null);
+
+    try {
+      const result = await completeClientEmailSignIn(email);
+      clearLoginTarget();
+      clearLoginReturnPath();
+      return await completePortalLogin(
+        result.user,
+        'customer',
+        fromPath || getSavedLoginReturnPath() || undefined,
+      );
+    } catch (error) {
+      console.error('Customer email sign-in failed:', error);
+      captureAppException(error, {
+        action: 'customer_email_link_complete',
+        fromPath: fromPath?.split('?')[0],
+      });
+      setAuthError(error instanceof Error ? error.message : getAuthErrorMessage(error));
+      return undefined;
+    } finally {
+      setIsLoggingIn(false);
+    }
+  }, [completePortalLogin, isLoggingIn]);
+
   const handleStaffLogin = React.useCallback(async (email: string, password: string, fromPath?: string) => {
     if (isLoggingIn) return undefined;
 
@@ -1139,7 +1207,15 @@ function AppRouter() {
       <Route path="/portal" element={<PortalSelectionRoute />} />
       <Route
         path="/login"
-        element={<CustomerLoginRoute onLogin={handleCustomerLogin} isLoggingIn={isLoggingIn} error={authError} />}
+        element={(
+          <CustomerLoginRoute
+            onLogin={handleCustomerLogin}
+            onEmailLinkRequest={handleCustomerEmailLinkRequest}
+            onEmailLinkComplete={handleCustomerEmailLinkComplete}
+            isLoggingIn={isLoggingIn}
+            error={authError}
+          />
+        )}
       />
 
       <Route path="/customer" element={<CustomerLayout onLogout={handleLogout} />}>

@@ -1,4 +1,5 @@
 import { initializeApp } from 'firebase-admin/app';
+import { getAuth } from 'firebase-admin/auth';
 import { FieldValue, getFirestore } from 'firebase-admin/firestore';
 import { onDocumentCreated, onDocumentUpdated } from 'firebase-functions/v2/firestore';
 import { HttpsError, onCall, onRequest } from 'firebase-functions/v2/https';
@@ -17,6 +18,7 @@ import {
   getStaffAssignmentEmailHtml,
   getStaffReminderEmailHtml,
 } from './lib/notifications.js';
+import { getClientSignInEmailTemplate } from './lib/emailTemplates.js';
 
 // Marketing & engagement functions
 export {
@@ -167,6 +169,7 @@ function getBookingNotificationInput(
 }
 
 const NOTIFICATION_FROM = 'Crystalline Max Ltd <admin@ctmds.co.uk>';
+const COMPANY_EMAIL_DOMAIN = '@ctmds.co.uk';
 
 async function sendEmail(input: {
   apiKey: string;
@@ -215,6 +218,63 @@ async function logEmailFailure(input: {
     console.error('Failed to write notificationLog', logError);
   }
 }
+
+function normalizeEmail(email: string) {
+  return email.trim().toLowerCase();
+}
+
+function isClientAuthEmail(email: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && !email.endsWith(COMPANY_EMAIL_DOMAIN);
+}
+
+function sanitizeClientReturnPath(value: unknown) {
+  if (typeof value !== 'string') return null;
+  if (value.includes('://') || value.includes('//')) return null;
+  return value.startsWith('/customer/') || value === '/customer' || value.startsWith('/book')
+    ? value
+    : null;
+}
+
+export const sendClientSignInLink = onCall(
+  { secrets: [resendApiKey] },
+  async (request) => {
+    const payload = asRecord(request.data);
+    const email = normalizeEmail(getString(payload?.email) || '');
+
+    if (!isClientAuthEmail(email)) {
+      throw new HttpsError(
+        'invalid-argument',
+        `Use a personal email address for client access. ${COMPANY_EMAIL_DOMAIN} is reserved for staff and admin accounts.`,
+      );
+    }
+
+    const origin = appOrigin.value().replace(/\/$/, '');
+    const returnPath = sanitizeClientReturnPath(payload?.returnPath);
+    const continueUrl = new URL('/login', origin);
+    continueUrl.searchParams.set('clientEmailLink', '1');
+    if (returnPath) continueUrl.searchParams.set('returnPath', returnPath);
+
+    const signInUrl = await getAuth().generateSignInWithEmailLink(email, {
+      url: continueUrl.toString(),
+      handleCodeInApp: true,
+    });
+
+    const template = getClientSignInEmailTemplate({ signInUrl });
+    const result = await sendEmail({
+      apiKey: resendApiKey.value(),
+      from: NOTIFICATION_FROM,
+      to: email,
+      subject: template.subject,
+      html: template.html,
+    });
+
+    if (!result.success) {
+      throw new HttpsError('internal', 'The sign-in email could not be sent. Please try again.');
+    }
+
+    return { success: true };
+  },
+);
 
 export const getAvailabilitySnapshot = onCall(async (request) => {
   if (!request.auth) {

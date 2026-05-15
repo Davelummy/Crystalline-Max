@@ -3,17 +3,21 @@ import {
   browserSessionPersistence,
   createUserWithEmailAndPassword,
   GoogleAuthProvider,
+  isSignInWithEmailLink,
   setPersistence,
   signInWithEmailAndPassword,
+  signInWithEmailLink,
   signInWithPopup,
   signInWithRedirect,
 } from 'firebase/auth';
-import { auth } from '../firebase';
+import { httpsCallable } from 'firebase/functions';
+import { auth, functions } from '../firebase';
 import type { Portal } from '../types';
 
 const LOGIN_TARGET_KEY = 'crystalline-max-login-target';
 const LOGIN_RETURN_PATH_KEY = 'crystalline-max-login-return-path';
 const CLIENT_STAY_LOGGED_IN_KEY = 'crystalline-max-client-stay-logged-in';
+const CLIENT_EMAIL_LINK_KEY = 'crystalline-max-client-email-link';
 export const COMPANY_EMAIL_DOMAIN = '@ctmds.co.uk';
 
 function readLoginTargetStorage() {
@@ -100,6 +104,36 @@ export function setClientStayLoggedInPreference(enabled: boolean) {
   window.localStorage.setItem(CLIENT_STAY_LOGGED_IN_KEY, value);
 }
 
+export function normalizeEmail(email: string) {
+  return email.trim().toLowerCase();
+}
+
+export function isClientEmail(email: string) {
+  const normalized = normalizeEmail(email);
+  return normalized.includes('@') && !isCompanyEmail(normalized);
+}
+
+export function saveClientEmailForSignIn(email: string) {
+  if (typeof window === 'undefined') return;
+  const normalized = normalizeEmail(email);
+  window.sessionStorage.setItem(CLIENT_EMAIL_LINK_KEY, normalized);
+  window.localStorage.setItem(CLIENT_EMAIL_LINK_KEY, normalized);
+}
+
+export function getSavedClientEmailForSignIn() {
+  if (typeof window === 'undefined') return null;
+  return (
+    window.sessionStorage.getItem(CLIENT_EMAIL_LINK_KEY) ||
+    window.localStorage.getItem(CLIENT_EMAIL_LINK_KEY)
+  );
+}
+
+export function clearClientEmailForSignIn() {
+  if (typeof window === 'undefined') return;
+  window.sessionStorage.removeItem(CLIENT_EMAIL_LINK_KEY);
+  window.localStorage.removeItem(CLIENT_EMAIL_LINK_KEY);
+}
+
 export function shouldUseRedirectAuth() {
   if (typeof navigator === 'undefined') return false;
 
@@ -118,7 +152,6 @@ export async function signInWithGoogle(
   options?: { stayLoggedIn?: boolean },
 ) {
   const provider = createGoogleProvider();
-  saveLoginTarget(targetPortal);
 
   const stayLoggedIn = Boolean(options?.stayLoggedIn);
   if (targetPortal === 'customer') {
@@ -127,6 +160,7 @@ export async function signInWithGoogle(
   }
 
   if (shouldUseRedirectAuth()) {
+    saveLoginTarget(targetPortal);
     await signInWithRedirect(auth, provider);
     return null;
   }
@@ -137,6 +171,7 @@ export async function signInWithGoogle(
   } catch {
     // Any popup failure (blocked, closed, cancelled, or silent rejection)
     // falls back to redirect which works reliably for all accounts.
+    saveLoginTarget(targetPortal);
     await signInWithRedirect(auth, provider);
     return null;
   }
@@ -148,6 +183,50 @@ export async function signInWithCompanyEmail(email: string, password: string) {
 
 export async function createCompanyUser(email: string, password: string) {
   return createUserWithEmailAndPassword(auth, email.trim(), password);
+}
+
+export function isClientEmailSignInLink(url?: string) {
+  if (typeof window === 'undefined' && !url) return false;
+  return isSignInWithEmailLink(auth, url || window.location.href);
+}
+
+export async function sendClientEmailSignInLink(
+  email: string,
+  options?: { stayLoggedIn?: boolean; returnPath?: string },
+) {
+  const normalizedEmail = normalizeEmail(email);
+
+  if (!isClientEmail(normalizedEmail)) {
+    throw new Error(`Use a personal email address for client access. ${COMPANY_EMAIL_DOMAIN} is reserved for staff and admin accounts.`);
+  }
+
+  const stayLoggedIn = Boolean(options?.stayLoggedIn);
+  setClientStayLoggedInPreference(stayLoggedIn);
+  saveClientEmailForSignIn(normalizedEmail);
+  saveLoginReturnPath(options?.returnPath);
+
+  const sendLink = httpsCallable(functions, 'sendClientSignInLink');
+  await sendLink({
+    email: normalizedEmail,
+    returnPath: options?.returnPath || null,
+  });
+}
+
+export async function completeClientEmailSignIn(email: string, url?: string) {
+  const normalizedEmail = normalizeEmail(email);
+
+  if (!isClientEmail(normalizedEmail)) {
+    throw new Error(`Use a personal email address for client access. ${COMPANY_EMAIL_DOMAIN} is reserved for staff and admin accounts.`);
+  }
+
+  await setPersistence(
+    auth,
+    getClientStayLoggedInPreference() ? browserLocalPersistence : browserSessionPersistence,
+  );
+
+  const result = await signInWithEmailLink(auth, normalizedEmail, url || window.location.href);
+  clearClientEmailForSignIn();
+  return result;
 }
 
 export function isCompanyEmail(email: string) {
@@ -180,6 +259,10 @@ export function getAuthErrorMessage(error: unknown) {
       return 'This account does not exist in Firebase Authentication yet.';
     case 'auth/invalid-email':
       return 'Enter a valid email address.';
+    case 'auth/invalid-action-code':
+      return 'This email sign-in link is invalid or has already been used. Request a new link.';
+    case 'auth/expired-action-code':
+      return 'This email sign-in link has expired. Request a new link.';
     case 'auth/redirect-cancelled-by-user':
       return 'The login redirect was cancelled before completion.';
     case 'auth/redirect-operation-pending':

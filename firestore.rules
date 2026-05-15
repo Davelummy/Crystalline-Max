@@ -43,6 +43,11 @@ service cloud.firestore {
              request.auth.token.email == email;
     }
 
+    function isVerifiedAuthEmail(email) {
+      return isAuthEmail(email) &&
+             request.auth.token.email_verified == true;
+    }
+
     function inviteDoc(employeeId) {
       return get(/databases/$(database)/documents/employeeInvites/$(employeeId));
     }
@@ -363,7 +368,11 @@ service cloud.firestore {
                     isValidUser(request.resource.data, userId) &&
                     isAuthEmail(request.resource.data.email) &&
                     (
-                      request.resource.data.role == 'client' ||
+                      (
+                        request.resource.data.role == 'client' &&
+                        isVerifiedAuthEmail(request.resource.data.email) &&
+                        !isCompanyEmail()
+                      ) ||
                       (
                         request.resource.data.role == 'employee' &&
                         isCompanyEmail() &&

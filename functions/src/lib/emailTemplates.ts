@@ -275,3 +275,23 @@ export function getSeasonalEmailTemplate(input: {
     }),
   };
 }
+
+// ---------------------------------------------------------------------------
+// Template: Client passwordless sign-in
+// ---------------------------------------------------------------------------
+
+export function getClientSignInEmailTemplate(input: {
+  signInUrl: string;
+}): { subject: string; html: string } {
+  const content = `
+    <h2 style="margin:0 0 16px;font-size:22px;color:#0a0a0a">Sign in to your client portal</h2>
+    <p style="margin:0 0 20px">Use the secure link below to access your Crystalline Max client portal. This link verifies your email address and signs you in without a password.</p>
+    ${ctaButton('Sign In Securely', input.signInUrl)}
+    <p style="margin:24px 0 0;font-size:13px;color:#777777">If you did not request this email, you can safely ignore it.</p>
+    <p style="margin:8px 0 0;font-size:13px;color:#777777">For security, this link can only be used once and may expire.</p>`;
+
+  return {
+    subject: 'Your Crystalline Max sign-in link',
+    html: brandedEmailWrapper(content),
+  };
+}
