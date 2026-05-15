@@ -57,6 +57,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         },
         (error) => {
           console.error('Error listening to user data:', error);
+          setUserData(null);
+          setUserRole(isCompanyEmail(nextUser.email || '') ? null : 'client');
           setLoading(false);
         },
       );
